@@ -1,26 +1,675 @@
+/* ============================================================
+   GuardMate Design System — globals.css
+   Tailwind v4 with @theme directive
+   All colors reference CSS custom properties ONLY.
+   ============================================================ */
+
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────
+   LIGHT MODE — :root
+   ───────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Brand: Deep Navy Blue ─────────────────────────────────── */
+  --color-primary:            #1a2f5e;
+  --color-primary-hover:      #16284f;
+  --color-primary-light:      #e8ecf5;
+  --color-primary-foreground: #ffffff;
+
+  /* ── Accent: Amber/Gold (security theme) ──────────────────── */
+  --color-secondary:            #d4a017;
+  --color-secondary-hover:      #b88a12;
+  --color-secondary-light:      #fdf3d0;
+  --color-secondary-foreground: #1a1a1a;
+
+  /* ── Backgrounds ───────────────────────────────────────────── */
+  --color-bg-base:     #f5f7fa;
+  --color-bg-subtle:   #edf0f5;
+  --color-bg-elevated: #ffffff;
+  --color-bg-overlay:  #ffffff;
+
+  /* ── Surfaces ──────────────────────────────────────────────── */
+  --color-surface:        #ffffff;
+  --color-surface-hover:  #f0f3f8;
+  --color-surface-active: #e4eaf5;
+  --color-surface-border: #dde2ee;
+
+  /* ── Text ──────────────────────────────────────────────────── */
+  --color-text-primary:   #0f1c38;
+  --color-text-secondary: #3d4f72;
+  --color-text-muted:     #7a8aab;
+  --color-text-disabled:  #b0bad4;
+  --color-text-inverse:   #ffffff;
+  --color-text-on-primary:#ffffff;
+
+  /* ── Borders ───────────────────────────────────────────────── */
+  --color-border-default: #d1d9eb;
+  --color-border-strong:  #9aaad0;
+  --color-border-focus:   #1a2f5e;
+  --color-border-error:   #d93025;
+
+  /* ── Status: Success ───────────────────────────────────────── */
+  --color-success:            #16a34a;
+  --color-success-light:      #dcfce7;
+  --color-success-foreground: #ffffff;
+
+  /* ── Status: Warning ───────────────────────────────────────── */
+  --color-warning:            #d97706;
+  --color-warning-light:      #fef3c7;
+  --color-warning-foreground: #ffffff;
+
+  /* ── Status: Danger ────────────────────────────────────────── */
+  --color-danger:            #d93025;
+  --color-danger-light:      #fee2e2;
+  --color-danger-foreground: #ffffff;
+
+  /* ── Status: Info ──────────────────────────────────────────── */
+  --color-info:            #0369a1;
+  --color-info-light:      #e0f2fe;
+  --color-info-foreground: #ffffff;
+
+  /* ── Role Colors ───────────────────────────────────────────── */
+  --color-role-boss:       #1a2f5e;
+  --color-role-boss-light: #e8ecf5;
+  --color-role-mate:       #0e6655;
+  --color-role-mate-light: #d1fae5;
+  --color-role-admin:      #7c3aed;
+  --color-role-admin-light:#ede9fe;
+
+  /* ── Interactive ───────────────────────────────────────────── */
+  --color-link:       #1a2f5e;
+  --color-link-hover: #d4a017;
+  --color-focus-ring: #1a2f5e;
+
+  /* ── Shadows ───────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+
+  /* ── Border Radius ─────────────────────────────────────────── */
+  --radius-sm:   0.25rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-full: 9999px;
+
+  /* ── Typography ────────────────────────────────────────────── */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+
+  --font-size-xs:   0.75rem;
+  --font-size-sm:   0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg:   1.125rem;
+  --font-size-xl:   1.25rem;
+  --font-size-2xl:  1.5rem;
+  --font-size-3xl:  1.875rem;
+  --font-size-4xl:  2.25rem;
+
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  --line-height-tight:   1.25;
+  --line-height-normal:  1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ── Spacing Scale ─────────────────────────────────────────── */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-7:  1.75rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+
+  /* ── Transitions ───────────────────────────────────────────── */
+  --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Z-Index Scale ─────────────────────────────────────────── */
+  --z-dropdown: 1000;
+  --z-modal:    1050;
+  --z-toast:    1100;
+  --z-tooltip:  1200;
+
+  /* ────────────────────────────────────────────────────────────
+     COMPONENT-LEVEL VARIABLES
+     ──────────────────────────────────────────────────────────── */
+
+  /* ── Buttons: Primary ──────────────────────────────────────── */
+  --color-btn-primary-bg:        #1a2f5e;
+  --color-btn-primary-hover-bg:  #16284f;
+  --color-btn-primary-active-bg: #122044;
+  --color-btn-primary-text:      #ffffff;
+
+  /* ── Buttons: Secondary ────────────────────────────────────── */
+  --color-btn-secondary-bg:       #d4a017;
+  --color-btn-secondary-hover-bg: #b88a12;
+  --color-btn-secondary-text:     #1a1a1a;
+
+  /* ── Buttons: Outline ──────────────────────────────────────── */
+  --color-btn-outline-border:   #1a2f5e;
+  --color-btn-outline-hover-bg: #e8ecf5;
+  --color-btn-outline-text:     #1a2f5e;
+
+  /* ── Buttons: Ghost ────────────────────────────────────────── */
+  --color-btn-ghost-hover-bg: #f0f3f8;
+  --color-btn-ghost-text:     #1a2f5e;
+
+  /* ── Buttons: Danger ───────────────────────────────────────── */
+  --color-btn-danger-bg:       #d93025;
+  --color-btn-danger-hover-bg: #b91c1c;
+  --color-btn-danger-text:     #ffffff;
+
+  /* ── Buttons: Success ──────────────────────────────────────── */
+  --color-btn-success-bg:       #16a34a;
+  --color-btn-success-hover-bg: #15803d;
+  --color-btn-success-text:     #ffffff;
+
+  /* ── Buttons: Disabled ─────────────────────────────────────── */
+  --color-btn-disabled-bg:   #e2e8f0;
+  --color-btn-disabled-text: #94a3b8;
+
+  /* ── Inputs ────────────────────────────────────────────────── */
+  --color-input-bg:              #ffffff;
+  --color-input-border:          #d1d9eb;
+  --color-input-border-focus:    #1a2f5e;
+  --color-input-border-error:    #d93025;
+  --color-input-border-success:  #16a34a;
+  --color-input-text:            #0f1c38;
+  --color-input-placeholder:     #7a8aab;
+  --color-input-disabled-bg:     #f1f5f9;
+  --color-input-disabled-text:   #94a3b8;
+  --color-input-label:           #3d4f72;
+
+  /* ── Navigation ────────────────────────────────────────────── */
+  --color-nav-bg:              #ffffff;
+  --color-nav-border:          #d1d9eb;
+  --color-nav-text:            #3d4f72;
+  --color-nav-text-active:     #1a2f5e;
+  --color-nav-item-hover-bg:   #f0f3f8;
+  --color-nav-item-active-bg:  #e8ecf5;
+  --color-nav-item-active-text:#1a2f5e;
+
+  /* ── Sidebar ───────────────────────────────────────────────── */
+  --color-sidebar-bg:          #1a2f5e;
+  --color-sidebar-border:      #243d7a;
+  --color-sidebar-item-hover:  #243d7a;
+  --color-sidebar-item-active: #d4a017;
+
+  /* ── Cards ─────────────────────────────────────────────────── */
+  --color-card-bg:          #ffffff;
+  --color-card-border:      #dde2ee;
+  --color-card-shadow:      0 1px 3px rgb(0 0 0 / 0.06);
+  --color-card-hover-border:#9aaad0;
+  --color-card-header-bg:   #f5f7fa;
+
+  /* ── Tables ────────────────────────────────────────────────── */
+  --color-table-header-bg: #edf0f5;
+  --color-table-row-hover:  #f5f7fa;
+  --color-table-border:     #dde2ee;
+  --color-table-text:       #0f1c38;
+
+  /* ── Modals ────────────────────────────────────────────────── */
+  --color-modal-bg:      #ffffff;
+  --color-modal-border:  #dde2ee;
+  --color-modal-overlay: rgb(15 28 56 / 0.5);
+  --color-modal-shadow:  0 20px 25px -5px rgb(0 0 0 / 0.15);
+
+  /* ── Badges ────────────────────────────────────────────────── */
+  --color-badge-bg:     #e8ecf5;
+  --color-badge-text:   #1a2f5e;
+  --color-badge-border: #c5cede;
+
+  /* ── Scrollbar ─────────────────────────────────────────────── */
+  --color-scrollbar-track:       #f1f5f9;
+  --color-scrollbar-thumb:       #c8d1e6;
+  --color-scrollbar-thumb-hover: #9aaad0;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   DARK MODE — .dark class on <html>
+   ───────────────────────────────────────────────────────────── */
+.dark {
+  /* ── Brand ─────────────────────────────────────────────────── */
+  --color-primary:            #4a7fd4;
+  --color-primary-hover:      #5a8fe4;
+  --color-primary-light:      #1a2f5e;
+  --color-primary-foreground: #ffffff;
+
+  /* ── Accent ────────────────────────────────────────────────── */
+  --color-secondary:            #f5c842;
+  --color-secondary-hover:      #f0b820;
+  --color-secondary-light:      #3a2e0a;
+  --color-secondary-foreground: #1a1a1a;
+
+  /* ── Backgrounds ───────────────────────────────────────────── */
+  --color-bg-base:     #0d1117;
+  --color-bg-subtle:   #161b24;
+  --color-bg-elevated: #1c2333;
+  --color-bg-overlay:  #1c2333;
+
+  /* ── Surfaces ──────────────────────────────────────────────── */
+  --color-surface:        #1c2333;
+  --color-surface-hover:  #212d42;
+  --color-surface-active: #263350;
+  --color-surface-border: #2d3a52;
+
+  /* ── Text ──────────────────────────────────────────────────── */
+  --color-text-primary:   #e8edf7;
+  --color-text-secondary: #a8b8d8;
+  --color-text-muted:     #6a7da8;
+  --color-text-disabled:  #3d4f72;
+  --color-text-inverse:   #0f1c38;
+  --color-text-on-primary:#ffffff;
+
+  /* ── Borders ───────────────────────────────────────────────── */
+  --color-border-default: #2d3a52;
+  --color-border-strong:  #4a5e80;
+  --color-border-focus:   #4a7fd4;
+  --color-border-error:   #f87171;
+
+  /* ── Status ────────────────────────────────────────────────── */
+  --color-success:            #4ade80;
+  --color-success-light:      #052e16;
+  --color-success-foreground: #0d1117;
+
+  --color-warning:            #fbbf24;
+  --color-warning-light:      #2d1f02;
+  --color-warning-foreground: #0d1117;
+
+  --color-danger:            #f87171;
+  --color-danger-light:      #2d0505;
+  --color-danger-foreground: #0d1117;
+
+  --color-info:            #38bdf8;
+  --color-info-light:      #042040;
+  --color-info-foreground: #0d1117;
+
+  /* ── Role Colors ───────────────────────────────────────────── */
+  --color-role-boss:       #4a7fd4;
+  --color-role-boss-light: #1a2f5e;
+  --color-role-mate:       #34d399;
+  --color-role-mate-light: #064e3b;
+  --color-role-admin:      #a78bfa;
+  --color-role-admin-light:#2e1065;
+
+  /* ── Interactive ───────────────────────────────────────────── */
+  --color-link:       #4a7fd4;
+  --color-link-hover: #f5c842;
+  --color-focus-ring: #4a7fd4;
+
+  /* ── Shadows ───────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+
+  /* ── Buttons: Primary ──────────────────────────────────────── */
+  --color-btn-primary-bg:        #4a7fd4;
+  --color-btn-primary-hover-bg:  #5a8fe4;
+  --color-btn-primary-active-bg: #3a6fc4;
+  --color-btn-primary-text:      #ffffff;
+
+  /* ── Buttons: Secondary ────────────────────────────────────── */
+  --color-btn-secondary-bg:       #f5c842;
+  --color-btn-secondary-hover-bg: #f0b820;
+  --color-btn-secondary-text:     #0d1117;
+
+  /* ── Buttons: Outline ──────────────────────────────────────── */
+  --color-btn-outline-border:   #4a7fd4;
+  --color-btn-outline-hover-bg: #1a2f5e;
+  --color-btn-outline-text:     #4a7fd4;
+
+  /* ── Buttons: Ghost ────────────────────────────────────────── */
+  --color-btn-ghost-hover-bg: #212d42;
+  --color-btn-ghost-text:     #a8b8d8;
+
+  /* ── Buttons: Danger ───────────────────────────────────────── */
+  --color-btn-danger-bg:       #f87171;
+  --color-btn-danger-hover-bg: #ef4444;
+  --color-btn-danger-text:     #ffffff;
+
+  /* ── Buttons: Success ──────────────────────────────────────── */
+  --color-btn-success-bg:       #4ade80;
+  --color-btn-success-hover-bg: #22c55e;
+  --color-btn-success-text:     #0d1117;
+
+  /* ── Buttons: Disabled ─────────────────────────────────────── */
+  --color-btn-disabled-bg:   #1c2333;
+  --color-btn-disabled-text: #3d4f72;
+
+  /* ── Inputs ────────────────────────────────────────────────── */
+  --color-input-bg:             #161b24;
+  --color-input-border:         #2d3a52;
+  --color-input-border-focus:   #4a7fd4;
+  --color-input-border-error:   #f87171;
+  --color-input-border-success: #4ade80;
+  --color-input-text:           #e8edf7;
+  --color-input-placeholder:    #6a7da8;
+  --color-input-disabled-bg:    #0d1117;
+  --color-input-disabled-text:  #3d4f72;
+  --color-input-label:          #a8b8d8;
+
+  /* ── Navigation ────────────────────────────────────────────── */
+  --color-nav-bg:              #1c2333;
+  --color-nav-border:          #2d3a52;
+  --color-nav-text:            #a8b8d8;
+  --color-nav-text-active:     #e8edf7;
+  --color-nav-item-hover-bg:   #212d42;
+  --color-nav-item-active-bg:  #1a2f5e;
+  --color-nav-item-active-text:#4a7fd4;
+
+  /* ── Sidebar ───────────────────────────────────────────────── */
+  --color-sidebar-bg:          #0d1117;
+  --color-sidebar-border:      #1c2333;
+  --color-sidebar-item-hover:  #161b24;
+  --color-sidebar-item-active: #f5c842;
+
+  /* ── Cards ─────────────────────────────────────────────────── */
+  --color-card-bg:          #1c2333;
+  --color-card-border:      #2d3a52;
+  --color-card-shadow:      0 1px 3px rgb(0 0 0 / 0.3);
+  --color-card-hover-border:#4a5e80;
+  --color-card-header-bg:   #161b24;
+
+  /* ── Tables ────────────────────────────────────────────────── */
+  --color-table-header-bg: #161b24;
+  --color-table-row-hover: #212d42;
+  --color-table-border:    #2d3a52;
+  --color-table-text:      #e8edf7;
+
+  /* ── Modals ────────────────────────────────────────────────── */
+  --color-modal-bg:      #1c2333;
+  --color-modal-border:  #2d3a52;
+  --color-modal-overlay: rgb(0 0 0 / 0.7);
+  --color-modal-shadow:  0 20px 25px -5px rgb(0 0 0 / 0.5);
+
+  /* ── Badges ────────────────────────────────────────────────── */
+  --color-badge-bg:     #1a2f5e;
+  --color-badge-text:   #a8b8d8;
+  --color-badge-border: #2d3a52;
+
+  /* ── Scrollbar ─────────────────────────────────────────────── */
+  --color-scrollbar-track:       #0d1117;
+  --color-scrollbar-thumb:       #2d3a52;
+  --color-scrollbar-thumb-hover: #4a5e80;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TAILWIND v4 @theme — maps CSS variables to utility classes
+   Example: bg-primary, text-text-primary, border-border-default
+   ───────────────────────────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Fonts */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* Brand */
+  --color-primary:            var(--color-primary);
+  --color-primary-hover:      var(--color-primary-hover);
+  --color-primary-light:      var(--color-primary-light);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-secondary:            var(--color-secondary);
+  --color-secondary-hover:      var(--color-secondary-hover);
+  --color-secondary-light:      var(--color-secondary-light);
+  --color-secondary-foreground: var(--color-secondary-foreground);
+
+  /* Backgrounds */
+  --color-bg-base:     var(--color-bg-base);
+  --color-bg-subtle:   var(--color-bg-subtle);
+  --color-bg-elevated: var(--color-bg-elevated);
+  --color-bg-overlay:  var(--color-bg-overlay);
+
+  /* Surfaces */
+  --color-surface:        var(--color-surface);
+  --color-surface-hover:  var(--color-surface-hover);
+  --color-surface-active: var(--color-surface-active);
+  --color-surface-border: var(--color-surface-border);
+
+  /* Text */
+  --color-text-primary:   var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted:     var(--color-text-muted);
+  --color-text-disabled:  var(--color-text-disabled);
+  --color-text-inverse:   var(--color-text-inverse);
+  --color-text-on-primary:var(--color-text-on-primary);
+
+  /* Borders */
+  --color-border-default: var(--color-border-default);
+  --color-border-strong:  var(--color-border-strong);
+  --color-border-focus:   var(--color-border-focus);
+  --color-border-error:   var(--color-border-error);
+
+  /* Status */
+  --color-success:            var(--color-success);
+  --color-success-light:      var(--color-success-light);
+  --color-success-foreground: var(--color-success-foreground);
+  --color-warning:            var(--color-warning);
+  --color-warning-light:      var(--color-warning-light);
+  --color-warning-foreground: var(--color-warning-foreground);
+  --color-danger:             var(--color-danger);
+  --color-danger-light:       var(--color-danger-light);
+  --color-danger-foreground:  var(--color-danger-foreground);
+  --color-info:               var(--color-info);
+  --color-info-light:         var(--color-info-light);
+  --color-info-foreground:    var(--color-info-foreground);
+
+  /* Roles */
+  --color-role-boss:        var(--color-role-boss);
+  --color-role-boss-light:  var(--color-role-boss-light);
+  --color-role-mate:        var(--color-role-mate);
+  --color-role-mate-light:  var(--color-role-mate-light);
+  --color-role-admin:       var(--color-role-admin);
+  --color-role-admin-light: var(--color-role-admin-light);
+
+  /* Interactive */
+  --color-link:       var(--color-link);
+  --color-link-hover: var(--color-link-hover);
+  --color-focus-ring: var(--color-focus-ring);
+
+  /* Buttons */
+  --color-btn-primary-bg:        var(--color-btn-primary-bg);
+  --color-btn-primary-hover-bg:  var(--color-btn-primary-hover-bg);
+  --color-btn-primary-active-bg: var(--color-btn-primary-active-bg);
+  --color-btn-primary-text:      var(--color-btn-primary-text);
+  --color-btn-secondary-bg:       var(--color-btn-secondary-bg);
+  --color-btn-secondary-hover-bg: var(--color-btn-secondary-hover-bg);
+  --color-btn-secondary-text:     var(--color-btn-secondary-text);
+  --color-btn-outline-border:   var(--color-btn-outline-border);
+  --color-btn-outline-hover-bg: var(--color-btn-outline-hover-bg);
+  --color-btn-outline-text:     var(--color-btn-outline-text);
+  --color-btn-ghost-hover-bg: var(--color-btn-ghost-hover-bg);
+  --color-btn-ghost-text:     var(--color-btn-ghost-text);
+  --color-btn-danger-bg:       var(--color-btn-danger-bg);
+  --color-btn-danger-hover-bg: var(--color-btn-danger-hover-bg);
+  --color-btn-danger-text:     var(--color-btn-danger-text);
+  --color-btn-success-bg:       var(--color-btn-success-bg);
+  --color-btn-success-hover-bg: var(--color-btn-success-hover-bg);
+  --color-btn-success-text:     var(--color-btn-success-text);
+  --color-btn-disabled-bg:   var(--color-btn-disabled-bg);
+  --color-btn-disabled-text: var(--color-btn-disabled-text);
+
+  /* Inputs */
+  --color-input-bg:             var(--color-input-bg);
+  --color-input-border:         var(--color-input-border);
+  --color-input-border-focus:   var(--color-input-border-focus);
+  --color-input-border-error:   var(--color-input-border-error);
+  --color-input-border-success: var(--color-input-border-success);
+  --color-input-text:           var(--color-input-text);
+  --color-input-placeholder:    var(--color-input-placeholder);
+  --color-input-disabled-bg:    var(--color-input-disabled-bg);
+  --color-input-disabled-text:  var(--color-input-disabled-text);
+  --color-input-label:          var(--color-input-label);
+
+  /* Navigation */
+  --color-nav-bg:              var(--color-nav-bg);
+  --color-nav-border:          var(--color-nav-border);
+  --color-nav-text:            var(--color-nav-text);
+  --color-nav-text-active:     var(--color-nav-text-active);
+  --color-nav-item-hover-bg:   var(--color-nav-item-hover-bg);
+  --color-nav-item-active-bg:  var(--color-nav-item-active-bg);
+  --color-nav-item-active-text:var(--color-nav-item-active-text);
+  --color-sidebar-bg:          var(--color-sidebar-bg);
+  --color-sidebar-border:      var(--color-sidebar-border);
+  --color-sidebar-item-hover:  var(--color-sidebar-item-hover);
+  --color-sidebar-item-active: var(--color-sidebar-item-active);
+
+  /* Cards */
+  --color-card-bg:          var(--color-card-bg);
+  --color-card-border:      var(--color-card-border);
+  --color-card-hover-border:var(--color-card-hover-border);
+  --color-card-header-bg:   var(--color-card-header-bg);
+
+  /* Tables */
+  --color-table-header-bg: var(--color-table-header-bg);
+  --color-table-row-hover: var(--color-table-row-hover);
+  --color-table-border:    var(--color-table-border);
+  --color-table-text:      var(--color-table-text);
+
+  /* Modals */
+  --color-modal-bg:      var(--color-modal-bg);
+  --color-modal-border:  var(--color-modal-border);
+  --color-modal-overlay: var(--color-modal-overlay);
+
+  /* Badges */
+  --color-badge-bg:     var(--color-badge-bg);
+  --color-badge-text:   var(--color-badge-text);
+  --color-badge-border: var(--color-badge-border);
+
+  /* Scrollbar */
+  --color-scrollbar-track:       var(--color-scrollbar-track);
+  --color-scrollbar-thumb:       var(--color-scrollbar-thumb);
+  --color-scrollbar-thumb-hover: var(--color-scrollbar-thumb-hover);
+
+  /* Border Radius */
+  --radius-sm:   var(--radius-sm);
+  --radius-md:   var(--radius-md);
+  --radius-lg:   var(--radius-lg);
+  --radius-xl:   var(--radius-xl);
+  --radius-full: var(--radius-full);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  /* Transitions */
+  --transition-fast:   var(--transition-fast);
+  --transition-normal: var(--transition-normal);
+  --transition-slow:   var(--transition-slow);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─────────────────────────────────────────────────────────────
+   BASE STYLES
+   ───────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   CUSTOM SCROLLBAR
+   ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-scrollbar-track);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-thumb-hover);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   TOAST ANIMATIONS
+   ───────────────────────────────────────────────────────────── */
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-toast-in {
+  animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-toast-out {
+  animation: toast-slide-out 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-toast-progress {
+  animation: toast-progress linear forwards;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   DARK MODE VARIANT — for Tailwind v4 class-based dark mode
+   ───────────────────────────────────────────────────────────── */
+@variant dark (&:where(.dark, .dark *));

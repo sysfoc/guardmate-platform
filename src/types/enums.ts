@@ -1,0 +1,90 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// GuardMate — Central Enum Definitions
+// Single source of truth for all enumerated values in the application.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export enum UserRole {
+  BOSS  = 'BOSS',
+  MATE  = 'MATE',
+  ADMIN = 'ADMIN',
+}
+
+export enum UserStatus {
+  PENDING   = 'PENDING',
+  ACTIVE    = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  BANNED    = 'BANNED',
+}
+
+export enum AuthProvider {
+  EMAIL  = 'email',
+  GOOGLE = 'google',
+}
+
+export enum VerificationStatus {
+  UNVERIFIED     = 'UNVERIFIED',
+  PENDING        = 'PENDING',
+  VERIFIED       = 'VERIFIED',
+  REJECTED       = 'REJECTED',
+}
+
+export enum LicenseStatus {
+  VALID          = 'VALID',
+  EXPIRING_SOON  = 'EXPIRING_SOON',
+  EXPIRED        = 'EXPIRED',
+  PENDING_REVIEW = 'PENDING_REVIEW',
+}
+
+export enum NotificationType {
+  JOB_ALERT        = 'JOB_ALERT',
+  BID_RECEIVED     = 'BID_RECEIVED',
+  BID_ACCEPTED     = 'BID_ACCEPTED',
+  BID_REJECTED     = 'BID_REJECTED',
+  SHIFT_REMINDER   = 'SHIFT_REMINDER',
+  PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
+  DISPUTE_OPENED   = 'DISPUTE_OPENED',
+  ACCOUNT_ACTION   = 'ACCOUNT_ACTION',
+  LICENSE_EXPIRY   = 'LICENSE_EXPIRY',
+  SYSTEM           = 'SYSTEM',
+}
+
+export enum JobStatus {
+  DRAFT      = 'DRAFT',
+  OPEN       = 'OPEN',
+  IN_REVIEW  = 'IN_REVIEW',
+  ASSIGNED   = 'ASSIGNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED  = 'COMPLETED',
+  CANCELLED  = 'CANCELLED',
+  DISPUTED   = 'DISPUTED',
+}
+
+export enum BidStatus {
+  PENDING   = 'PENDING',
+  ACCEPTED  = 'ACCEPTED',
+  REJECTED  = 'REJECTED',
+  WITHDRAWN = 'WITHDRAWN',
+  EXPIRED   = 'EXPIRED',
+}
+
+export enum PaymentStatus {
+  PENDING    = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED  = 'COMPLETED',
+  FAILED     = 'FAILED',
+  REFUNDED   = 'REFUNDED',
+  DISPUTED   = 'DISPUTED',
+}
+
+export enum DisputeStatus {
+  OPEN       = 'OPEN',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  RESOLVED   = 'RESOLVED',
+  CLOSED     = 'CLOSED',
+}
+
+export enum AdminLevel {
+  SUPER   = 'SUPER',
+  MANAGER = 'MANAGER',
+  SUPPORT = 'SUPPORT',
+}
