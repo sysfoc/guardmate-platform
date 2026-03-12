@@ -26,6 +26,8 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -150,6 +152,36 @@ function AllUsersPageInner() {
   }, [searchInput, countryInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Actions ─────────────────────────────────────────────────────────────────
+
+  const handleApprove = async (uid: string) => {
+    setActionLoading(true);
+    try {
+      const resp = await updateUserStatus(uid, UserStatus.ACTIVE);
+      if (resp.success) {
+        toast.success('User approved!');
+        fetchUserList();
+      }
+    } catch {
+      toast.error('Failed to approve.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRestore = async (uid: string) => {
+    setActionLoading(true);
+    try {
+      const resp = await updateUserStatus(uid, UserStatus.ACTIVE, 'Restored by admin');
+      if (resp.success) {
+        toast.success('User restored!');
+        fetchUserList();
+      }
+    } catch {
+      toast.error('Failed to restore.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -426,14 +458,14 @@ function AllUsersPageInner() {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        
-                        {user.status !== UserStatus.SUSPENDED && user.status !== UserStatus.BANNED && user.role !== UserRole.ADMIN && (
+                        {user.status === UserStatus.PENDING && user.role !== UserRole.ADMIN && (
                           <button
-                            onClick={() => setRejectDialog({ uid: user.uid, name: user.fullName, action: 'suspend' })}
-                            title="Suspend User"
-                            className="p-1.5 rounded-lg hover:bg-[var(--color-warning-light)] text-[var(--color-text-muted)] hover:text-[var(--color-warning)] transition-colors"
+                            onClick={() => handleApprove(user.uid)}
+                            title="Approve User"
+                            disabled={actionLoading}
+                            className="p-1.5 rounded-lg hover:bg-[var(--color-success-light)] text-[var(--color-success)] transition-colors"
                           >
-                            <Ban className="h-4 w-4" />
+                            <CheckCircle2 className="h-4 w-4" />
                           </button>
                         )}
                         {user.status !== UserStatus.BANNED && user.role !== UserRole.ADMIN && (
@@ -445,7 +477,26 @@ function AllUsersPageInner() {
                             <XCircle className="h-4 w-4" />
                           </button>
                         )}
-                        {user.role !== UserRole.ADMIN && (
+                        {user.status !== UserStatus.SUSPENDED && user.status !== UserStatus.BANNED && user.role !== UserRole.ADMIN && (
+                          <button
+                            onClick={() => setRejectDialog({ uid: user.uid, name: user.fullName, action: 'suspend' })}
+                            title="Suspend User"
+                            className="p-1.5 rounded-lg hover:bg-[var(--color-warning-light)] text-[var(--color-text-muted)] hover:text-[var(--color-warning)] transition-colors"
+                          >
+                            <Ban className="h-4 w-4" />
+                          </button>
+                        )}
+                        {(user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED) && user.role !== UserRole.ADMIN && (
+                          <button
+                            onClick={() => handleRestore(user.uid)}
+                            title="Restore User"
+                            disabled={actionLoading}
+                            className="p-1.5 rounded-lg hover:bg-[var(--color-success-light)] text-[var(--color-text-muted)] hover:text-[var(--color-success)] transition-colors"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </button>
+                        )}
+                        {(user.status === UserStatus.PENDING || user.status === UserStatus.ACTIVE) && user.role !== UserRole.ADMIN && (
                           <button
                             onClick={() => setPromoteConfirm({ uid: user.uid, name: user.fullName })}
                             title="Promote to Admin"

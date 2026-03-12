@@ -117,12 +117,21 @@ export function UserTable({ users, onAction, isLoading }: UserTableProps) {
                     </Button>
                     {/* Simplified action menu simulation */}
                     <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-xl shadow-xl border border-[var(--color-surface-border)] overflow-hidden hidden group-hover/menu:block z-50">
-                      <button onClick={() => onAction(user.uid, 'suspend')} className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-bg-subtle)] flex items-center gap-2 text-amber-600">
-                        <UserX className="h-4 w-4" /> Suspend User
-                      </button>
-                      <button onClick={() => onAction(user.uid, 'ban')} className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-bold">
-                        <Ban className="h-4 w-4" /> Ban User
-                      </button>
+                      {user.status !== UserStatus.SUSPENDED && user.status !== UserStatus.BANNED && (
+                        <button onClick={() => onAction(user.uid, 'suspend')} className="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--color-bg-subtle)] flex items-center gap-2 text-amber-600">
+                          <UserX className="h-4 w-4" /> Suspend User
+                        </button>
+                      )}
+                      {user.status !== UserStatus.BANNED && (
+                        <button onClick={() => onAction(user.uid, 'ban')} className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-bold">
+                          <Ban className="h-4 w-4" /> Ban User
+                        </button>
+                      )}
+                      {(user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED) && (
+                        <button onClick={() => onAction(user.uid, 'restore')} className="w-full px-4 py-2.5 text-left text-sm hover:bg-emerald-50 flex items-center gap-2 text-emerald-600 font-bold">
+                          <ShieldCheck className="h-4 w-4" /> Restore User
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

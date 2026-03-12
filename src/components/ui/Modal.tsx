@@ -64,7 +64,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Modal Card */}
       <div className={cn(
-        'relative w-full bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-2xl shadow-[var(--color-modal-shadow)] overflow-hidden flex flex-col',
+        'relative w-full max-h-[85vh] bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-2xl shadow-[var(--color-modal-shadow)] overflow-hidden flex flex-col',
         'animate-in zoom-in-95 fade-in duration-300 slide-in-from-bottom-4',
         sizes[size]
       )}>

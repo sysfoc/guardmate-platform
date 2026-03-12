@@ -536,7 +536,7 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
                     <XCircle className="h-4 w-4 mr-1" /> Ban
                   </Button>
                 )}
-                {user.role !== UserRole.ADMIN && (
+                {user.role !== UserRole.ADMIN && user.status !== UserStatus.SUSPENDED && user.status !== UserStatus.BANNED && (
                   <Button size="sm" variant="ghost" onClick={() => setPromoteConfirm(true)} disabled={actionLoading}
                     className="text-[var(--color-role-admin)] hover:bg-[var(--color-role-admin-light)]">
                     <Crown className="h-4 w-4 mr-1" /> Promote to Admin

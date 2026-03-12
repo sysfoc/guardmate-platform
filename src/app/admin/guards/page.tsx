@@ -22,6 +22,7 @@ import {
   Crown,
   FileText,
   Filter,
+  RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -194,6 +195,21 @@ function GuardsPageInner() {
       }
     } catch {
       toast.error('Promotion failed.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRestore = async (uid: string) => {
+    try {
+      setActionLoading(true);
+      const resp = await updateUserStatus(uid, UserStatus.ACTIVE, 'Restored by admin');
+      if (resp.success) {
+        toast.success('Guard restored successfully!');
+        fetchGuards();
+      }
+    } catch {
+      toast.error('Failed to restore guard.');
     } finally {
       setActionLoading(false);
     }
@@ -450,27 +466,43 @@ function GuardsPageInner() {
                               <CheckCircle2 className="h-4 w-4" />
                             </button>
                           )}
-                          <button
-                            onClick={() => setRejectModal({ uid: user.uid, name: user.fullName, action: 'reject' })}
-                            title="Reject"
-                            className="p-1.5 rounded-lg hover:bg-[var(--color-danger-light)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setRejectModal({ uid: user.uid, name: user.fullName, action: 'suspend' })}
-                            title="Suspend"
-                            className="p-1.5 rounded-lg hover:bg-[var(--color-warning-light)] text-[var(--color-text-muted)] hover:text-[var(--color-warning)] transition-colors"
-                          >
-                            <Ban className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setPromoteConfirm({ uid: user.uid, name: user.fullName })}
-                            title="Promote to Admin"
-                            className="p-1.5 rounded-lg hover:bg-[var(--color-role-admin-light)] text-[var(--color-text-muted)] hover:text-[var(--color-role-admin)] transition-colors"
-                          >
-                            <Crown className="h-4 w-4" />
-                          </button>
+                          {user.status !== UserStatus.BANNED && (
+                            <button
+                              onClick={() => setRejectModal({ uid: user.uid, name: user.fullName, action: 'reject' })}
+                              title="Reject / Ban"
+                              className="p-1.5 rounded-lg hover:bg-[var(--color-danger-light)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          )}
+                          {user.status !== UserStatus.SUSPENDED && user.status !== UserStatus.BANNED && (
+                            <button
+                              onClick={() => setRejectModal({ uid: user.uid, name: user.fullName, action: 'suspend' })}
+                              title="Suspend"
+                              className="p-1.5 rounded-lg hover:bg-[var(--color-warning-light)] text-[var(--color-text-muted)] hover:text-[var(--color-warning)] transition-colors"
+                            >
+                              <Ban className="h-4 w-4" />
+                            </button>
+                          )}
+                          {(user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED) && (
+                            <button
+                              onClick={() => handleRestore(user.uid)}
+                              title="Restore"
+                              disabled={actionLoading}
+                              className="p-1.5 rounded-lg hover:bg-[var(--color-success-light)] text-[var(--color-text-muted)] hover:text-[var(--color-success)] transition-colors"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </button>
+                          )}
+                          {(user.status === UserStatus.PENDING || user.status === UserStatus.ACTIVE) && (
+                            <button
+                              onClick={() => setPromoteConfirm({ uid: user.uid, name: user.fullName })}
+                              title="Promote to Admin"
+                              className="p-1.5 rounded-lg hover:bg-[var(--color-role-admin-light)] text-[var(--color-text-muted)] hover:text-[var(--color-role-admin)] transition-colors"
+                            >
+                              <Crown className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
