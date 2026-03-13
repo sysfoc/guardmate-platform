@@ -10,13 +10,19 @@ import { Loader2 } from 'lucide-react';
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, isLoading, getDashboardPath, isOnboardingComplete } = useUser();
+  const { user, isLoading, getDashboardPath, isOnboardingComplete, fetchUser } = useUser();
 
   useEffect(() => {
-    if (!isLoading && user && isOnboardingComplete) {
-      router.replace(getDashboardPath());
+    // Fallback: If we have no user but we aren't loading, try one more time to fetchUser
+    // This handles cases where the state didn't move fast enough during redirection
+    if (!isLoading && !user) {
+      fetchUser();
     }
-  }, [user, isLoading, isOnboardingComplete, router, getDashboardPath]);
+
+    if (!isLoading && user && isOnboardingComplete) {
+      window.location.href = getDashboardPath();
+    }
+  }, [user, isLoading, isOnboardingComplete, getDashboardPath, fetchUser]);
 
   // Handle loading or redirect state
   if (isLoading || !user || isOnboardingComplete) {

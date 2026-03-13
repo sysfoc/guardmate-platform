@@ -16,6 +16,7 @@ import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/context/AuthContext';
 import { UserProvider } from '@/context/UserContext';
+import { PlatformProvider } from '@/context/PlatformContext';
 import { ThemeProvider, THEME_SCRIPT } from '@/context/ThemeContext';
 import './globals.css';
 
@@ -41,42 +42,44 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <UserProvider>
-              {children}
+              <PlatformProvider>
+                {children}
 
-              {/*
-               * ✅ CRITICAL: Toaster must be inside providers but at root level.
-               * Without this component, react-hot-toast calls (toast.success,
-               * toast.error, etc.) fire but render nothing visible.
-               */}
-              <Toaster
-                position="top-right"
-                gutter={8}
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-primary)',
-                    border: '1px solid var(--color-surface-border)',
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
-                  },
-                  success: {
-                    iconTheme: {
-                      primary: '#22c55e',
-                      secondary: '#fff',
+                {/*
+                 * ✅ CRITICAL: Toaster must be inside providers but at root level.
+                 * Without this component, react-hot-toast calls (toast.success,
+                 * toast.error, etc.) fire but render nothing visible.
+                 */}
+                <Toaster
+                  position="top-right"
+                  gutter={8}
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      background: 'var(--color-bg-secondary)',
+                      color: 'var(--color-text-primary)',
+                      border: '1px solid var(--color-surface-border)',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
                     },
-                  },
-                  error: {
-                    iconTheme: {
-                      primary: '#ef4444',
-                      secondary: '#fff',
+                    success: {
+                      iconTheme: {
+                        primary: '#22c55e',
+                        secondary: '#fff',
+                      },
                     },
-                    duration: 5000,
-                  },
-                }}
-              />
+                    error: {
+                      iconTheme: {
+                        primary: '#ef4444',
+                        secondary: '#fff',
+                      },
+                      duration: 5000,
+                    },
+                  }}
+                />
+              </PlatformProvider>
             </UserProvider>
           </AuthProvider>
         </ThemeProvider>

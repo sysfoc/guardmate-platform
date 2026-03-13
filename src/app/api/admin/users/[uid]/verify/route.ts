@@ -5,6 +5,7 @@ import User from '@/models/User.model';
 import AdminActivity from '@/models/AdminActivity.model';
 import { UserRole, LicenseStatus, VerificationStatus } from '@/types/enums';
 import { AdminActionType } from '@/types/admin.types';
+import { sendLicenseApproved, sendLicenseRejected } from '@/lib/email/emailTriggers';
 
 // Valid fields and their allowed values
 const VALID_FIELDS: Record<string, string[]> = {
@@ -110,6 +111,21 @@ export async function PATCH(
       ipAddress: getClientIp(request),
       userAgent: deviceInfo.userAgent,
     });
+
+    // Send Emails if it's a structural license verification change
+    if (field === 'licenseStatus' || field === 'companyLicenseStatus' || field === 'idVerificationStatus') {
+      const emailRef = targetUser.email;
+      const fName = targetUser.firstName;
+      
+      const licNumRaw = field === 'companyLicenseStatus' ? targetUser.companyLicenseNumber : targetUser.licenseNumber;
+      const licNum = licNumRaw ? `*${licNumRaw.slice(-4)}` : 'Document';
+
+      if (value === LicenseStatus.VALID || value === VerificationStatus.VERIFIED) {
+        await sendLicenseApproved(emailRef, fName, licNum);
+      } else if (value === VerificationStatus.REJECTED) {
+        await sendLicenseRejected(emailRef, fName, licNum, notes || 'Failed to meet criteria');
+      }
+    }
 
     return createApiResponse(
       true,

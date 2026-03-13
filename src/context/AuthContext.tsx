@@ -1,19 +1,13 @@
 'use client';
 
 /**
- * AuthContext.tsx — FIXED
- * 
- * Key fixes:
- * 1. register() now creates Firebase user first, THEN creates MongoDB doc
- * 2. login() now redirects based on role after fetching user
- * 3. loginWithGoogle() properly handles new vs existing users
- * 4. All errors surface correctly via thrown Error objects
- * 5. Token is refreshed and attached before any API call
+ * AuthContext.tsx — TS Error Cleanup
  */
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Unsubscribe } from 'firebase/auth';
 import Cookies from 'js-cookie';
+import { UserRole, UserStatus } from '@/types/enums';
 import {
   onAuthChange,
   signInWithEmail,
@@ -26,6 +20,7 @@ import {
   googleSignIn as apiGoogleSignIn,
   updateLoginMeta,
   registerUser,
+  getCurrentUser,
   type RegisterPayload,
 } from '@/lib/api/auth.api';
 
@@ -35,7 +30,7 @@ export interface AuthContextType {
   firebaseUser: User | null;
   loading: boolean;
   authError: string | null;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string, rememberMe?: boolean) => Promise<void>;
   loginWithGoogle: () => Promise<{ isNewUser: boolean }>;
   register: (payload: RegisterPayload, pass: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -58,13 +53,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe: Unsubscribe = onAuthChange(async (user) => {
       if (user) {
         try {
-          // Always get a fresh token and store in cookie for middleware
+          // By default, onAuthChange refreshes use a 14-day token if session exists
           const token = await user.getIdToken(true);
-          Cookies.set('__session', token, {
-            expires: 14,
+          const isPersisted = Cookies.get('__persisted') === 'true';
+          const currentRole = Cookies.get('__role');
+          const currentStatus = Cookies.get('__status');
+          
+          const cookieOptions: Cookies.CookieAttributes = {
+            path: '/',
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-          });
+          };
+          
+          if (isPersisted) {
+            cookieOptions.expires = 14; 
+          }
+
+          Cookies.set('__session', token, cookieOptions);
+          if (currentRole) Cookies.set('__role', currentRole, cookieOptions);
+          if (currentStatus) Cookies.set('__status', currentStatus, cookieOptions);
         } catch (e) {
           console.error('Failed to get fresh token:', e);
         }
@@ -72,6 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         Cookies.remove('__session');
         Cookies.remove('__role');
+        Cookies.remove('__status');
+        Cookies.remove('__persisted');
+        Cookies.remove('__onboarding_complete');
         if (!unmounted) setFirebaseUser(null);
       }
       if (!unmounted) setLoading(false);
@@ -86,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearError = () => setAuthError(null);
 
   // ─── Login with Email ───────────────────────────────────────────────────────
-  const login = async (email: string, pass: string): Promise<void> => {
+  const login = async (email: string, pass: string, rememberMe: boolean = false): Promise<void> => {
     setLoading(true);
     setAuthError(null);
 
@@ -99,13 +109,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Step 2: Refresh token immediately so cookie is fresh
       const token = await result.user.getIdToken(true);
-      Cookies.set('__session', token, {
-        expires: 14,
+      
+      const cookieOptions: Cookies.CookieAttributes = {
+        path: '/',
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-      });
+      };
+      
+      if (rememberMe) {
+        cookieOptions.expires = 14; 
+        Cookies.set('__persisted', 'true', { expires: 14, path: '/', secure: cookieOptions.secure });
+      } else {
+        Cookies.remove('__persisted');
+      }
 
-      // Step 3: Update login metadata in MongoDB (fire and forget)
+      Cookies.set('__session', token, cookieOptions);
+
+      // Step 3: Fetch full profile to verify status
+      const profileRes = await getCurrentUser();
+      
+      if (profileRes.success && profileRes.data) {
+        const { role, status } = profileRes.data;
+
+        // STRICT BLOCK: If BANNED or SUSPENDED, abort login immediately
+        if (status === UserStatus.BANNED || status === UserStatus.SUSPENDED) {
+          await signOutUser();
+          Cookies.remove('__session');
+          const errorMsg = status === UserStatus.BANNED 
+            ? 'Access Revoked: This account has been permanently banned.' 
+            : 'Access Suspended: This account is temporarily restricted.';
+          throw new Error(errorMsg);
+        }
+
+        const standardOptions: Cookies.CookieAttributes = {
+          expires: 14,
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+        };
+
+        if (role) Cookies.set('__role', role, standardOptions);
+        Cookies.set('__status', status, standardOptions);
+      }
+
+      // Step 4: Update login metadata in MongoDB (fire and forget)
       updateLoginMeta().catch((e) => console.warn('updateLoginMeta failed:', e));
 
     } catch (err: any) {
@@ -131,7 +178,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(response.message || 'Google sign-in failed.');
       }
 
-      const { isNewUser } = response.data;
+      const { isNewUser, user: profileData } = response.data;
+
+      if (profileData) {
+        // STRICT BLOCK for Google Login
+        if (profileData.status === UserStatus.BANNED || profileData.status === UserStatus.SUSPENDED) {
+          await signOutUser();
+          Cookies.remove('__session');
+          const errorMsg = profileData.status === UserStatus.BANNED 
+            ? 'Access Revoked: This account has been permanently banned.' 
+            : 'Access Suspended: This account is temporarily restricted.';
+          throw new Error(errorMsg);
+        }
+
+        const cookieOptions: Cookies.CookieAttributes = {
+          expires: 14,
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+        };
+        if (profileData.role) Cookies.set('__role', profileData.role, cookieOptions);
+        if (profileData.status) Cookies.set('__status', profileData.status, cookieOptions);
+      }
 
       if (!isNewUser) {
         // Existing user: update login metadata
@@ -193,13 +261,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(backendResponse.message || 'Failed to create account profile.');
       }
 
-      // Step 4: Store role cookie for middleware
-      if (backendResponse.data?.role) {
-        Cookies.set('__role', backendResponse.data.role, {
+      // Step 4: Store role and status cookies for middleware
+      if (backendResponse.data) {
+        const { role, status } = backendResponse.data;
+        const cookieOptions: Cookies.CookieAttributes = {
           expires: 14,
+          path: '/',
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
-        });
+        };
+        if (role) Cookies.set('__role', role, cookieOptions);
+        if (status) Cookies.set('__status', status, cookieOptions);
       }
 
       // Step 5: Reload Firebase user to sync state
@@ -229,6 +301,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear cookies first
       Cookies.remove('__session');
       Cookies.remove('__role');
+      Cookies.remove('__status');
+      Cookies.remove('__persisted');
+      Cookies.remove('__onboarding_complete');
 
       // Call backend logout endpoint
       try {

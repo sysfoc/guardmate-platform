@@ -50,8 +50,8 @@ export default function VerifyEmailPage() {
         // Refresh MongoDB user state
         await fetchUser();
         
-        // Redirect to onboarding
-        router.push('/onboarding');
+        // Redirect to onboarding (hard redirect to clear any auth page states)
+        window.location.href = '/onboarding';
       }
     } catch (error) {
       console.error('Error checking verification status:', error);

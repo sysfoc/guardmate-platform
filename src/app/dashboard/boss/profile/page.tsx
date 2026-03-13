@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -12,11 +13,13 @@ import { PhoneInput } from '@/components/ui/PhoneInput';
 import { updateUserProfile, uploadProfilePhoto, uploadDocument } from '@/lib/api/user.api';
 import type { BossProfile } from '@/types/user.types';
 import toast from 'react-hot-toast';
-import { Camera, Save, ArrowLeft, Loader2, Building2, User, Globe, MapPin, Phone, Mail, FileText, BadgeCheck, Upload } from 'lucide-react';
-
+import {
+  Camera, Save, ArrowLeft, Loader2, Building2, User, Globe, MapPin, Phone, Mail, FileText, Upload,
+} from 'lucide-react';
 export default function BossProfileEdit() {
   const router = useRouter();
   const { user, fetchUser } = useUser();
+  const { platformCountry } = usePlatformContext();
 
   const boss = user as BossProfile | null;
 
@@ -91,6 +94,13 @@ export default function BossProfileEdit() {
   }, [hasUnsavedChanges]);
 
   if (!boss) return null;
+
+  const lockedCountry = React.useMemo(() => platformCountry ? {
+    name: platformCountry.countryName,
+    code: platformCountry.countryCode,
+    dialCode: platformCountry.dialCode,
+    flag: platformCountry.flag,
+  } : null, [platformCountry]);
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -188,6 +198,10 @@ export default function BossProfileEdit() {
     }
     if (formData.bio && formData.bio.length > 1000) {
       toast.error('Bio cannot exceed 1000 characters.');
+      return;
+    }
+    if (platformCountry && formData.phoneCountryCode !== platformCountry.countryCode) {
+      toast.error(`Only ${platformCountry.countryName} phone numbers are accepted on this platform.`);
       return;
     }
 
@@ -534,6 +548,7 @@ export default function BossProfileEdit() {
                       value={formData.phone}
                       onChange={(val) => handleChange('phone', val)}
                       onCountryChange={(c) => handleChange('phoneCountryCode', c.code)}
+                      lockedCountry={lockedCountry}
                     />
                     <Input
                       label="Account Email"

@@ -70,7 +70,7 @@ function LoginForm() {
 
     setIsLoading(true);
     try {
-      await login(email.trim(), password);
+      await login(email.trim(), password, rememberMe);
       toast.success('Welcome back! Signing you in...');
       // ✅ Redirect happens via the useEffect above when user state populates
     } catch (error: any) {

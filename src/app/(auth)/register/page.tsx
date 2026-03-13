@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { assignRole } from '@/lib/api/auth.api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -48,6 +49,7 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const { register, loginWithGoogle, firebaseUser } = useAuth();
   const { fetchUser } = useUser();
+  const { platformCountry } = usePlatformContext();
 
   const [step, setStep] = useState<Step>(1);
   const [role, setRole] = useState<UserRole | null>(null);
@@ -88,6 +90,13 @@ function RegisterForm() {
     }
   }, [firebaseUser]);
 
+  const lockedCountry = React.useMemo(() => platformCountry ? {
+    name: platformCountry.countryName,
+    code: platformCountry.countryCode,
+    dialCode: platformCountry.dialCode,
+    flag: platformCountry.flag,
+  } : null, [platformCountry]);
+
   // ── Role Selection ─────────────────────────────────────────────────────────
   const handleRoleSelect = (selectedRole: UserRole) => {
     setRole(selectedRole);
@@ -114,14 +123,15 @@ function RegisterForm() {
           });
           await fetchUser();
           toast.success('Account created! Setting up your profile...');
-          router.push('/onboarding');
+          window.location.href = '/onboarding';
         } else {
           toast.success('Authenticated with Google! Now choose your role.');
           setStep(1);
         }
       } else {
         toast.success('Welcome back! Redirecting...');
-        router.replace('/dashboard/mate'); // UserContext will correct this
+        // For existing users, let the dashboard helper decide
+        window.location.href = '/dashboard/mate'; // Middleware/UserContext will correct to proper role
       }
     } catch (error: any) {
       toast.error(error.message || 'Google authentication failed.');
@@ -166,7 +176,7 @@ function RegisterForm() {
         await fetchUser();
 
         toast.success('Account created! Setting up your profile...');
-        router.push('/onboarding');
+        window.location.href = '/onboarding';
         return;
       }
 
@@ -174,6 +184,11 @@ function RegisterForm() {
       // Validate email-specific fields
       if (!formData.email.trim()) {
         toast.error('Please enter your email address.');
+        setIsLoading(false);
+        return;
+      }
+      if (platformCountry && formData.phoneCountryCode !== platformCountry.countryCode) {
+        toast.error(`Only ${platformCountry.countryName} phone numbers are accepted on this platform.`);
         setIsLoading(false);
         return;
       }
@@ -211,7 +226,7 @@ function RegisterForm() {
       );
 
       toast.success('Account created! Please verify your email.');
-      router.push('/verify-email');
+      window.location.href = '/verify-email';
 
     } catch (error: any) {
       toast.error(error.message || 'Registration failed. Please try again.');
@@ -400,6 +415,7 @@ function RegisterForm() {
               value={formData.phone}
               onChange={(val) => setFormData({ ...formData, phone: val })}
               onCountryChange={(c) => setFormData({ ...formData, phoneCountryCode: c.code })}
+              lockedCountry={lockedCountry}
               required
             />
 

@@ -9,6 +9,8 @@ import {
   createApiResponse 
 } from '@/lib/serverAuth';
 import { UserRole, UserStatus, AuthProvider } from '@/types/user.types';
+import { sendGuardSignupAlert, sendBossSignupAlert } from '@/lib/email/emailTriggers';
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -80,6 +82,13 @@ export async function POST(request: NextRequest) {
 
     // Sanitize output, exclude history, etc.
     const { loginHistory, ...sanitizedUser } = newUser.toObject();
+
+    // Trigger Admin Emails
+    if (role === UserRole.MATE) {
+      await sendGuardSignupAlert('admin@guardmate.com', firstName, decodedToken.email || ''); // Replace with real admin email later if needed
+    } else if (role === UserRole.BOSS) {
+      await sendBossSignupAlert('admin@guardmate.com', firstName, 'New Company', decodedToken.email || '');
+    }
 
     const response = createApiResponse(true, sanitizedUser, 'Role assignment and registration successful.', 201);
     

@@ -36,6 +36,7 @@ export function middleware(request: NextRequest) {
   // Read auth cookies (set by AuthContext after login)
   const session = request.cookies.get('__session')?.value;
   const role    = request.cookies.get('__role')?.value as UserRole | undefined;
+  const status  = request.cookies.get('__status')?.value;
   const onboardingComplete = request.cookies.get('__onboarding_complete')?.value === 'true';
 
   // Always apply security headers
@@ -45,8 +46,20 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-  // ── 1. Logged-in user hitting auth pages → redirect to their dashboard ──────
+  // ── 1. Status Guard (Banned/Suspended) ──────────────────────────────────────
+  // If user is banned or suspended, they can't access ANY protected or onboarding routes
+  if (session && (status === 'BANNED' || status === 'SUSPENDED')) {
+    const targetPath = status === 'BANNED' ? '/banned' : '/suspended';
+    if (pathname !== targetPath) {
+      return NextResponse.redirect(new URL(targetPath, request.url));
+    }
+    return response; // Allow them to stay on their notice page
+  }
+
+  // ── 2. Logged-in user hitting auth pages → redirect to their dashboard ──────
   if (session && AUTH_ONLY_PAGES.some((page) => pathname.startsWith(page))) {
+    // If they are banned/suspended, handled above. 
+    // If they are active:
     if (role && DASHBOARD_PATHS[role]) {
       // Send to onboarding first if role assigned but profile incomplete
       if (!onboardingComplete) {
@@ -117,6 +130,6 @@ export const config = {
      * - Static assets (favicon, sitemap, robots)
      * - Public API auth endpoints (register, google, assign-role)
      */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/auth/register|api/auth/google|api/auth/assign-role|api/auth/logout).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/auth/register|api/auth/google|api/auth/assign-role|api/auth/logout|banned|suspended).*)',
   ],
 };

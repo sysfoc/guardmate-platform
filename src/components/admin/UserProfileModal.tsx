@@ -32,6 +32,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatPhoneNumber } from '@/lib/utils/phone';
 
 // ─── Tab Definition ───────────────────────────────────────────────────────────
 
@@ -209,7 +210,7 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
             <Field icon={User} label="Full Name" value={user.fullName} />
             <Field icon={Mail} label="Email" value={<>{user.email} {user.emailVerified && <Badge variant="success" size="sm">Verified</Badge>}</>} />
-            <Field icon={Phone} label="Phone" value={user.phone ? `${user.phoneCountryCode || ''} ${user.phone}` : null} />
+            <Field icon={Phone} label="Phone" value={formatPhoneNumber(user.phone, user.phoneCountryCode)} />
             <Field icon={MapPin} label="Location" value={[user.city, user.state, user.country].filter(Boolean).join(', ') || null} />
             <Field icon={Globe} label="Timezone" value={user.timezone} />
             <Field icon={Calendar} label="Registered" value={new Date(user.createdAt).toLocaleString()} />
@@ -268,7 +269,7 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
               <Field label="Industry" value={b.industry} />
               <Field label="Registration #" value={b.companyRegistrationNumber} />
               <Field icon={Mail} label="Company Email" value={b.companyEmail} />
-              <Field icon={Phone} label="Company Phone" value={b.companyPhone} />
+              <Field icon={Phone} label="Company Phone" value={formatPhoneNumber(b.companyPhone, b.companyCountry)} />
               <Field icon={Globe} label="Website" value={b.companyWebsite} />
               <Field icon={MapPin} label="Company Location" value={[b.companyAddress, b.companyCity, b.companyState, b.companyCountry].filter(Boolean).join(', ') || null} />
               <Field label="Verified" value={b.isCompanyVerified ? 'Yes' : 'No'} />

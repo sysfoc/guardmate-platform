@@ -25,6 +25,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatPhoneNumber } from '@/lib/utils/phone';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -399,7 +400,7 @@ function BossesPageInner() {
                         {user.email}
                       </td>
                       <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)] hidden lg:table-cell">
-                        {user.phone || '—'}
+                        {formatPhoneNumber(user.phone, user.phoneCountryCode)}
                       </td>
                       <td className="px-4 py-3 text-sm text-[var(--color-text-primary)] font-semibold hidden lg:table-cell truncate max-w-[140px]">
                         {boss.companyName || '—'}

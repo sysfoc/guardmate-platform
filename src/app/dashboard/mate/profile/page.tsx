@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -18,10 +19,10 @@ import {
   Camera, Save, ArrowLeft, Loader2, Upload, FileText, AlertCircle,
   User, Shield, Briefcase, MapPin, Phone, Mail, Star, Clock,
 } from 'lucide-react';
-
 export default function MateProfileEdit() {
   const router = useRouter();
   const { user, fetchUser } = useUser();
+  const { platformCountry } = usePlatformContext();
 
   const mate = user as MateProfile | null;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +96,13 @@ export default function MateProfileEdit() {
   }, [hasUnsavedChanges]);
 
   if (!mate) return null;
+
+  const lockedCountry = React.useMemo(() => platformCountry ? {
+    name: platformCountry.countryName,
+    code: platformCountry.countryCode,
+    dialCode: platformCountry.dialCode,
+    flag: platformCountry.flag,
+  } : null, [platformCountry]);
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -198,6 +206,10 @@ export default function MateProfileEdit() {
     }
     if (formData.bio && formData.bio.length > 1000) {
       toast.error('Bio cannot exceed 1000 characters.');
+      return;
+    }
+    if (platformCountry && formData.phoneCountryCode !== platformCountry.countryCode) {
+      toast.error(`Only ${platformCountry.countryName} phone numbers are accepted on this platform.`);
       return;
     }
 
@@ -324,25 +336,6 @@ export default function MateProfileEdit() {
                   onCheckedChange={(checked) => handleChange('isAvailable', checked)}
                 />
               </div>
-
-              {/* Skills preview */}
-              {/* <div className="px-4 py-3 border-b border-[var(--color-border-primary)]">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-2">Skills</p>
-                {skillsList.length > 0 ? (
-                  <div className="flex flex-wrap gap-1">
-                    {skillsList.map((skill) => (
-                      <span
-                        key={skill}
-                        className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] text-[var(--color-text-secondary)]"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-[var(--color-text-tertiary)]">No skills added yet</p>
-                )}
-              </div> */}
             </Card>
           </div>
 
@@ -375,6 +368,7 @@ export default function MateProfileEdit() {
                       value={formData.phone}
                       onChange={(val) => handleChange('phone', val)}
                       onCountryChange={(c) => handleChange('phoneCountryCode', c.code)}
+                      lockedCountry={lockedCountry}
                     />
                     <Input
                       label="Email Address"

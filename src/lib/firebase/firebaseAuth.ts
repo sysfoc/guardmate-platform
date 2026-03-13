@@ -6,6 +6,7 @@ import {
   sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
+  ActionCodeSettings,
   User,
   UserCredential,
   Unsubscribe,
@@ -96,8 +97,17 @@ export async function registerWithEmail(
 export async function sendEmailVerification(): Promise<void> {
   const user = auth.currentUser;
   if (!user) throw new Error('No user is currently signed in.');
+  
+  // Use custom action handler URL
+  const actionCodeSettings: ActionCodeSettings = {
+    // When verification is done (either in-app or via Firebase), 
+    // we want to land on our branded handler with the verify mode.
+    url: `${window.location.origin}/auth/action?mode=verifyEmail&continueUrl=${encodeURIComponent(window.location.origin + '/onboarding')}`,
+    handleCodeInApp: true,
+  };
+
   try {
-    await firebaseSendEmailVerification(user);
+    await firebaseSendEmailVerification(user, actionCodeSettings);
   } catch (error: any) {
     console.error('Send Email Verification Error:', error);
     throw new Error(getFirebaseErrorMessage(error.code));
@@ -105,8 +115,14 @@ export async function sendEmailVerification(): Promise<void> {
 }
 
 export async function sendPasswordReset(email: string): Promise<void> {
+  const actionCodeSettings: ActionCodeSettings = {
+    // For password reset, we land on our branded handler.
+    url: `${window.location.origin}/auth/action?mode=resetPassword`,
+    handleCodeInApp: true,
+  };
+
   try {
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(auth, email, actionCodeSettings);
   } catch (error: any) {
     console.error('Send Password Reset Error:', error);
     throw new Error(getFirebaseErrorMessage(error.code));

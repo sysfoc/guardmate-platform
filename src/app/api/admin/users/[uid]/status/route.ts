@@ -5,6 +5,12 @@ import User from '@/models/User.model';
 import AdminActivity from '@/models/AdminActivity.model';
 import { UserRole, UserStatus } from '@/types/enums';
 import { AdminActionType } from '@/types/admin.types';
+import { 
+  sendAccountApproved, 
+  sendAccountRejected, 
+  sendAccountSuspended, 
+  sendAccountBanned 
+} from '@/lib/email/emailTriggers';
 
 // ─── PATCH /api/admin/users/[uid]/status ──────────────────────────────────────
 
@@ -64,6 +70,20 @@ export async function PATCH(
       ipAddress: getClientIp(request),
       userAgent: deviceInfo.userAgent,
     });
+
+    // Send corresponding email to user
+    const userEmail = targetUser.email;
+    const userFName = targetUser.firstName;
+    const userRoleText = targetUser.role;
+    
+    if (status === UserStatus.ACTIVE) {
+      await sendAccountApproved(userEmail, userFName, userRoleText);
+    } else if (status === UserStatus.SUSPENDED) {
+      await sendAccountSuspended(userEmail, userFName, reason || 'Violation of terms.');
+    } else if (status === UserStatus.BANNED) {
+      // Treating BANNED as a sort of rejection/ban
+      await sendAccountBanned(userEmail, userFName, reason || 'Severe violation of terms.');
+    }
 
     return createApiResponse(true, {
       ...targetUser.toObject(),

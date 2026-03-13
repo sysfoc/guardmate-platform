@@ -4,28 +4,9 @@ import * as React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export interface Country {
-  name: string;
-  code: string;
-  dialCode: string;
-  flag: string;
-}
+import { countries, type Country } from '@/constants/countries';
 
-export const countries: Country[] = [
-  { name: 'United States', code: 'US', dialCode: '+1', flag: '🇺🇸' },
-  { name: 'United Kingdom', code: 'GB', dialCode: '+44', flag: '🇬🇧' },
-  { name: 'Canada', code: 'CA', dialCode: '+1', flag: '🇨🇦' },
-  { name: 'Australia', code: 'AU', dialCode: '+61', flag: '🇦🇺' },
-  { name: 'Pakistan', code: 'PK', dialCode: '+92', flag: '🇵🇰' },
-  { name: 'Germany', code: 'DE', dialCode: '+49', flag: '🇩🇪' },
-  { name: 'France', code: 'FR', dialCode: '+33', flag: '🇫🇷' },
-  { name: 'India', code: 'IN', dialCode: '+91', flag: '🇮🇳' },
-  { name: 'Nigeria', code: 'NG', dialCode: '+234', flag: '🇳🇬' },
-  { name: 'South Africa', code: 'ZA', dialCode: '+27', flag: '🇿🇦' },
-  { name: 'Brazil', code: 'BR', dialCode: '+55', flag: '🇧🇷' },
-  { name: 'United Arab Emirates', code: 'AE', dialCode: '+971', flag: '🇦🇪' },
-  // Add more as needed or use a library
-];
+export { type Country, countries };
 
 export interface PhoneInputProps {
   label?: string;
@@ -33,6 +14,7 @@ export interface PhoneInputProps {
   onChange: (value: string) => void;
   onCountryChange?: (country: Country) => void;
   defaultCountry?: string;
+  lockedCountry?: Country | null;
   error?: string;
   disabled?: boolean;
   required?: boolean;
@@ -44,13 +26,23 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   onChange,
   onCountryChange,
   defaultCountry = 'US',
+  lockedCountry,
   error,
   disabled,
   required,
 }) => {
   const [selectedCountry, setSelectedCountry] = React.useState<Country>(
-    countries.find((c) => c.code === defaultCountry) || countries[0]
+    lockedCountry || countries.find((c) => c.code === defaultCountry) || countries[0]
   );
+  
+  // React to lock changes
+  React.useEffect(() => {
+    if (lockedCountry && lockedCountry.code !== selectedCountry.code) {
+      setSelectedCountry(lockedCountry);
+      onCountryChange?.(lockedCountry);
+    }
+  }, [lockedCountry, selectedCountry.code, onCountryChange]);
+
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
@@ -93,8 +85,8 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         <div className="relative shrink-0" ref={dropdownRef}>
           <button
             type="button"
-            disabled={disabled}
-            onClick={() => setIsOpen(!isOpen)}
+            disabled={disabled || !!lockedCountry}
+            onClick={() => !lockedCountry && setIsOpen(!isOpen)}
             className={cn(
               'flex items-center justify-between gap-1.5 h-11 px-3 border rounded-lg bg-[var(--color-input-bg)] text-[var(--color-text-primary)] transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-focus-ring)] disabled:opacity-50 disabled:cursor-not-allowed min-w-[5.5rem]',
               error ? 'border-[var(--color-danger)]' : 'border-[var(--color-input-border)]'
@@ -104,10 +96,10 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
               <span className="text-xl leading-none flex items-center justify-center -mt-1">{selectedCountry.flag}</span>
               <span className="text-sm font-medium leading-none">{selectedCountry.dialCode}</span>
             </span>
-            <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} />
+            {!lockedCountry && <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} />}
           </button>
 
-          {isOpen && (
+          {isOpen && !lockedCountry && (
             <div className="absolute left-0 top-full mt-1 w-64 max-h-64 overflow-y-auto z-[99999] bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-lg shadow-lg">
               {countries.map((country) => (
                 <button

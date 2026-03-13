@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -14,10 +15,10 @@ import { updateUserProfile, uploadProfilePhoto } from '@/lib/api/user.api';
 import type { AdminProfile } from '@/types/user.types';
 import toast from 'react-hot-toast';
 import { Camera, Save, ArrowLeft, Loader2 } from 'lucide-react';
-
 export default function AdminProfileEdit() {
   const router = useRouter();
   const { user, fetchUser } = useUser();
+  const { platformCountry } = usePlatformContext();
   
   const admin = user as AdminProfile | null;
 
@@ -61,6 +62,13 @@ export default function AdminProfileEdit() {
   }, [hasUnsavedChanges]);
 
   if (!admin) return null;
+
+  const lockedCountry = React.useMemo(() => platformCountry ? {
+    name: platformCountry.countryName,
+    code: platformCountry.countryCode,
+    dialCode: platformCountry.dialCode,
+    flag: platformCountry.flag,
+  } : null, [platformCountry]);
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -123,6 +131,11 @@ export default function AdminProfileEdit() {
 
     if (formData.bio && formData.bio.length > 1000) {
       toast.error('Bio cannot exceed 1000 characters.');
+      return;
+    }
+
+    if (platformCountry && formData.phoneCountryCode !== platformCountry.countryCode) {
+      toast.error(`Only ${platformCountry.countryName} phone numbers are accepted on this platform.`);
       return;
     }
 
@@ -237,6 +250,7 @@ export default function AdminProfileEdit() {
                   value={formData.phone}
                   onChange={(val) => handleChange('phone', val)}
                   onCountryChange={(c) => handleChange('phoneCountryCode', c.code)}
+                  lockedCountry={lockedCountry}
                 />
                 <Input
                   label="Admin Email"
