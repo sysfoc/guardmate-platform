@@ -31,11 +31,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Size styles
     const sizes = {
-      xs: 'h-8 px-3 text-xs gap-1.5',
-      sm: 'h-9 px-4 text-sm gap-2',
-      md: 'h-10 px-5 text-base gap-2',
-      lg: 'h-12 px-6 text-lg gap-2.5',
-      xl: 'h-14 px-8 text-xl gap-3',
+      xs: 'h-8 px-2.5 text-xs gap-1.5',
+      sm: 'h-9 px-3 text-sm gap-2',
+      md: 'h-10 px-4 text-sm gap-2',
+      lg: 'h-12 px-5 text-base gap-2.5',
+      xl: 'h-14 px-6 text-lg gap-3',
     };
 
     return (

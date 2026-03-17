@@ -18,15 +18,17 @@ export function ProfileCompletionBanner() {
     'firstName', 'lastName', 'phone', 'country', 'city', 'bio',
     'licenseNumber', 'licenseType', 'licenseIssuingAuthority',
     'licenseExpiry', 'licenseDocument', 'skills', 'hourlyRate',
-    'experience', 'languages', 'availabilityCalendar', 'preferredWorkRadius'
+    'experience', 'languages', 'availabilityCalendar', 'preferredWorkRadius',
+    'idType', 'idNumber', 'idDocument', 'backgroundCheckDocument',
+    'firstAidCertificate'
   ];
 
   const bossRequired = [
     'firstName', 'lastName', 'phone', 'country', 'city', 'bio',
     'companyName', 'companyRegistrationNumber', 'companyLicenseNumber',
     'companyLicenseExpiry', 'companyLicenseDocument', 'companyAddress',
-    'companyCity', 'companyCountry', 'companyPhone', 'companyEmail',
-    'companyWebsite', 'companyDescription', 'industry'
+    'companyCity', 'companyState', 'companyCountry', 'companyPostalCode', 
+    'companyPhone', 'companyEmail', 'companyWebsite', 'companyDescription', 'industry'
   ];
 
   const requiredFields = user.role === UserRole.BOSS ? bossRequired : mateRequired;

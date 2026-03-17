@@ -10,6 +10,9 @@ const DOCUMENT_FIELD_MAP: Record<string, string> = {
   license: 'licenseDocument',
   id: 'idDocument',
   companyLicense: 'companyLicenseDocument',
+  firstAid: 'firstAidCertificate',
+  whiteCard: 'constructionWhiteCard',
+  childrenCheck: 'workingWithChildrenCheck',
 };
 
 const ALLOWED_MIME_TYPES = [
@@ -91,6 +94,12 @@ export async function POST(request: NextRequest) {
       updateData.companyLicenseStatus = 'PENDING_REVIEW';
     } else if (docType === 'id') {
       updateData.idVerificationStatus = 'PENDING';
+    } else if (docType === 'firstAid') {
+      updateData.firstAidCertificateStatus = 'PENDING_REVIEW';
+    } else if (docType === 'whiteCard') {
+      updateData.constructionWhiteCardStatus = 'PENDING_REVIEW';
+    } else if (docType === 'childrenCheck') {
+      updateData.workingWithChildrenCheckStatus = 'PENDING_REVIEW';
     }
 
     await User.findOneAndUpdate(

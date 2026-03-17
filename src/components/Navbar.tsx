@@ -10,6 +10,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui/Dropdown';
+import { User, Settings, LogOut as LogOutIcon, ChevronDown } from 'lucide-react';
 
 export function Navbar() {
   const router = useRouter();
@@ -38,34 +40,70 @@ export function Navbar() {
           <div className="bg-[var(--color-primary)] p-1.5 rounded-lg">
             <Shield className="h-6 w-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-[var(--color-text-primary)]">
+          <span className="text-xl font-bold tracking-tight text-[var(--color-text-primary)] hidden sm:block">
             GuardMate
           </span>
         </Link>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {firebaseUser && user ? (
             // Logged in
             <>
               <Link href={getDashboardPath()}>
                 <Button variant="ghost" size="sm" leftIcon={<LayoutDashboard className="h-4 w-4" />}>
-                  Dashboard
+                  <span className="hidden sm:inline">Dashboard</span>
                 </Button>
               </Link>
               <div className="flex items-center gap-2 pl-2 border-l border-[var(--color-surface-border)]">
                 <DarkModeToggle />
-                <Avatar src={user.profilePhoto ?? undefined} name={`${user.firstName} ${user.lastName}`} size="sm" />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  loading={loggingOut}
-                  onClick={handleLogout}
-                  leftIcon={<LogOut className="h-4 w-4" />}
-                  className="text-[var(--color-danger)] hover:bg-[var(--color-danger-light)]"
+                
+                <Dropdown
+                  trigger={
+                    <div className="flex items-center gap-2 p-1 pl-2 hover:bg-[var(--color-bg-secondary)] rounded-full transition-colors group">
+                      <div className="hidden sm:flex flex-col items-end mr-1">
+                        <span className="text-xs font-bold text-[var(--color-text-primary)] leading-tight">
+                          {user.firstName}
+                        </span>
+                        <span className="text-[10px] text-[var(--color-text-tertiary)] font-bold uppercase tracking-wider">
+                          {user.role}
+                        </span>
+                      </div>
+                      <Avatar 
+                        src={user.profilePhoto ?? undefined} 
+                        name={`${user.firstName} ${user.lastName}`} 
+                        size="sm" 
+                        role={user.role}
+                      />
+                      <ChevronDown className="h-3.5 w-3.5 text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-primary)] transition-colors" />
+                    </div>
+                  }
                 >
-                  Logout
-                </Button>
+                  <div className="px-4 py-3 border-b border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30">
+                    <p className="text-sm font-bold truncate">{user.firstName} {user.lastName}</p>
+                    <p className="text-[10px] text-[var(--color-text-tertiary)] truncate mt-0.5">{user.email}</p>
+                  </div>
+                  
+                  <DropdownItem onClick={() => router.push(user.role === 'BOSS' ? '/dashboard/boss/profile' : '/dashboard/mate/profile')}>
+                    <User className="h-4 w-4 mr-2" />
+                    My Profile
+                  </DropdownItem>
+                  
+                  <DropdownItem onClick={() => router.push('/dashboard/settings')}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Account Settings
+                  </DropdownItem>
+                  
+                  <DropdownDivider />
+                  
+                  <DropdownItem 
+                    variant="danger" 
+                    onClick={handleLogout}
+                  >
+                    <LogOutIcon className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownItem>
+                </Dropdown>
               </div>
             </>
           ) : (

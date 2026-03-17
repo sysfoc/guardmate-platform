@@ -39,6 +39,7 @@ export async function PATCH(request: NextRequest) {
 
     const { user, decodedToken } = authContext;
     const body = await request.json();
+    console.log("[DEBUG API] PATCH /users/me body received:", body);
 
     // Prevent overwriting sensitive fields that should only be changed via specialized flows
     const protectedFields = ['_id', 'uid', 'email', 'role', 'status', 'authProvider', 'createdAt', 'updatedAt'];

@@ -21,9 +21,9 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const paddings = {
     none: 'p-0',
-    sm: 'p-2',
-    md: 'p-4',
-    lg: 'p-6',
+    sm: 'p-1.5',
+    md: 'p-3',
+    lg: 'p-4',
   };
 
   const shadows = {
@@ -44,7 +44,7 @@ export const Card: React.FC<CardProps> = ({
       {...props}
     >
       {header && (
-        <div className="px-5 py-3 border-b border-[var(--color-card-border)] bg-[var(--color-card-header-bg)]">
+        <div className="px-4 py-2.5 border-b border-[var(--color-card-border)] bg-[var(--color-card-header-bg)]">
           {header}
         </div>
       )}
@@ -54,7 +54,7 @@ export const Card: React.FC<CardProps> = ({
       </div>
 
       {footer && (
-        <div className="px-6 py-4 border-t border-[var(--color-card-border)] bg-[var(--color-card-header-bg)]">
+        <div className="px-4 py-3 border-t border-[var(--color-card-border)] bg-[var(--color-card-header-bg)]">
           {footer}
         </div>
       )}

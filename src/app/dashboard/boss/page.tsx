@@ -1,26 +1,23 @@
 'use client';
 
-/**
- * BossDashboard.tsx — REDESIGNED
- *
- * Key fixes:
- * 1. Cast `user` to `BossProfile` for type-safe field access
- * 2. All boss-specific fields (companyName, companyRegistrationNumber, etc.) properly typed
- * 3. Safe fallbacks for optional fields
- */
-
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
-import { TrendingUp, FileText, ChevronRight, AlertTriangle } from 'lucide-react';
+import { 
+  TrendingUp, FileText, ChevronRight, AlertTriangle, 
+  Building2, MapPin, Star, Users, Briefcase, Plus, AlertCircle,
+  CheckCircle2, Clock, Calendar, Search, ArrowUpRight, MoreHorizontal, Shield
+} from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
+import { Button } from '@/components/ui/Button';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import { ProfileCompletionBanner } from '@/components/ui/ProfileCompletionBanner';
-import { Building2, MapPin, Star, Users, Briefcase, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { StatCard } from '@/components/ui/StatCard';
+import { StarRating } from '@/components/ui/StarRating';
 import type { BossProfile } from '@/types/user.types';
+import { VerificationStatus, LicenseStatus } from '@/types/enums';
 
 export default function BossDashboard() {
   const { user, isLoading } = useUser();
@@ -28,242 +25,202 @@ export default function BossDashboard() {
   if (isLoading) return <DashboardSkeleton />;
   if (!user) return null;
 
-  // Safe cast — this page only renders for Bosses (guaranteed by middleware + routing)
   const boss = user as BossProfile;
+  const isVerified = boss.isCompanyVerified && boss.companyLicenseStatus === LicenseStatus.VALID;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        
         <ProfileCompletionBanner />
 
-        {/* Verification Banner */}
-        {boss.companyLicenseStatus !== 'VALID' && (
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">Company Verification Required</h3>
-              <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
-                {!boss.companyLicenseDocument
-                  ? 'Please upload your company license document in your profile to get verified. You won\u2019t be able to search for guards or hire them until your documents are reviewed by an admin.'
-                  : 'Your company documents are pending admin review. You won\u2019t be able to search for guards or hire them until verified.'}
-              </p>
-              {!boss.companyLicenseDocument && (
-                <a href="/dashboard/boss/profile" className="inline-block mt-2 text-xs font-semibold text-amber-800 dark:text-amber-300 underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-200">
-                  Go to Profile →
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Welcome & Action Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--color-text-primary)] leading-tight">
-              Business Overview
+            <h1 className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">
+              Dashboard
             </h1>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-              Managing {boss.companyName ?? 'your business'} on GuardMate.
+            <p className="text-xs text-[var(--color-text-secondary)] font-medium mt-0.5">
+              Manage your company {boss.companyName ? `at ${boss.companyName}` : ''} • {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           </div>
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2">
             <Link href="/dashboard/boss/profile">
-              <Button variant="outline" size="md" className="text-sm px-4 py-1">
-                Edit Profile
+              <Button variant="ghost" size="sm" className="font-bold border border-[var(--color-border-primary)]">
+                View Profile
               </Button>
             </Link>
-            <Button size="md" className=" text-sm px-4 py-1" leftIcon={<Plus className="h-3.5 w-3.5" />}>
-              Post Job
-            </Button>
+            <Link href={isVerified ? "/dashboard/boss/jobs/new" : "#"}>
+              <Button 
+                disabled={!isVerified} 
+                size="sm"
+                className="shadow-md shadow-[var(--color-primary)]/10 px-5"
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                Post Job
+              </Button>
+            </Link>
           </div>
-        </header>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard
-            icon={<FileText className="h-4 w-4 text-blue-500" />}
-            iconBg="bg-blue-50 dark:bg-blue-950/40"
-            label="Open Vacancies"
-            value={String(boss.activeJobsCount ?? 0)}
-            trend={`${boss.totalJobsPosted ?? 0} total posted`}
-          />
-          <StatCard
-            icon={<Users className="h-4 w-4 text-emerald-500" />}
-            iconBg="bg-emerald-50 dark:bg-emerald-950/40"
-            label="Jobs Completed"
-            value={String(boss.completedJobsCount ?? 0)}
-            trend={`${boss.cancelledJobsCount ?? 0} cancelled`}
-          />
-          <StatCard
-            icon={<TrendingUp className="h-4 w-4 text-violet-500" />}
-            iconBg="bg-violet-50 dark:bg-violet-950/40"
-            label="Total Spend"
-            value={boss.totalSpent ? `£${boss.totalSpent.toLocaleString()}` : '£0'}
-            trend="All time"
-          />
-          <StatCard
-            icon={<Building2 className="h-4 w-4 text-amber-500" />}
-            iconBg="bg-amber-50 dark:bg-amber-950/40"
-            label="Account Status"
-            value={boss.status === 'ACTIVE' ? 'Active' : 'Pending'}
-            trend={boss.status === 'ACTIVE' ? 'Approved by Admin' : 'Awaiting approval'}
-          />
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-          {/* Company Profile Card */}
-          <div className="lg:col-span-1">
-            <Card className="overflow-hidden h-fit">
-
-              {/* Card header strip */}
-              <div className="px-4 py-2.5 border-b border-[var(--color-border-primary)] flex items-center justify-between bg-[var(--color-bg-secondary)]">
+        {/* Status & Verification Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+          
+          {/* Main Verification Card */}
+          <Card className={`lg:col-span-2 p-5 overflow-hidden relative ${!isVerified ? 'border-[var(--color-warning)] bg-amber-500/5' : 'border-emerald-500/20'}`}>
+            <div className="flex items-start justify-between relative z-10">
+              <div className="space-y-3 max-w-sm">
                 <div className="flex items-center gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                  <span className="text-[10px] font-semibold tracking-wide uppercase text-[var(--color-text-secondary)]">
-                    Company Profile
-                  </span>
-                </div>
-                <Link
-                  href="/dashboard/boss/profile"
-                  className="text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] flex items-center gap-0.5 transition-colors"
-                >
-                  Edit <ChevronRight className="h-3 w-3" />
-                </Link>
-              </div>
-
-              {/* Avatar block */}
-              <div className="px-4 pt-4 pb-3 flex items-center gap-3 border-b border-[var(--color-border-primary)]">
-                <Avatar
-                  src={boss.profilePhoto ?? undefined}
-                  name={boss.companyName ?? `${boss.firstName} ${boss.lastName}`}
-                  size="lg"
-                />
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm text-[var(--color-text-primary)] truncate leading-snug">
-                    {boss.companyName ?? `${boss.firstName} ${boss.lastName}`}
-                  </p>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <MapPin className="h-3 w-3 text-[var(--color-text-tertiary)] flex-shrink-0" />
-                    <span className="text-xs text-[var(--color-text-secondary)] truncate">
-                      {boss.companyCity ?? boss.city ?? 'Not set'}
-                      {(boss.companyCountry ?? boss.country) ? `, ${boss.companyCountry ?? boss.country}` : ''}
-                    </span>
+                  <div className={`p-1.5 rounded-lg ${isVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                    {isVerified ? <CheckCircle2 className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                   </div>
-                  <div className="mt-1.5">
-                    <Badge
-                      variant={boss.status === 'ACTIVE' ? 'success' : boss.status === 'SUSPENDED' ? 'danger' : 'warning'}
-                      size="sm"
-                      className="py-0 text-[10px] leading-none h-4"
-                    >
-                      {boss.status}
+                  <h3 className="font-bold text-base">Company Status</h3>
+                </div>
+                <div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    <Badge variant={boss.isCompanyVerified ? 'success' : 'warning'} className="text-[10px] font-bold py-0 h-5">
+                      {boss.isCompanyVerified ? 'VERIFIED' : 'PENDING'}
+                    </Badge>
+                    <Badge variant={boss.companyLicenseStatus === LicenseStatus.VALID ? 'success' : 'warning'} className="text-[10px] font-bold py-0 h-5">
+                      LICENSE: {boss.companyLicenseStatus === LicenseStatus.VALID ? 'VALID' : 'REQUIRED'}
                     </Badge>
                   </div>
+                  <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                    {isVerified 
+                      ? "Your account is verified. You have full access to hiring Mates."
+                      : "Verification pending review. Please ensure your documents are current."}
+                  </p>
                 </div>
               </div>
-
-              {/* Info rows */}
-              <div className="divide-y divide-[var(--color-border-primary)]">
-                <ProfileRow
-                  label="Reg. Number"
-                  value={boss.companyRegistrationNumber ?? 'Not set'}
-                />
-                <ProfileRow
-                  label="Email"
-                  value={boss.companyEmail ?? boss.email ?? '—'}
-                />
-                {boss.averageRating && (
-                  <ProfileRow
-                    label="Rating"
-                    value={`${boss.averageRating.toFixed(1)} ★`}
-                    valueClassName="text-amber-500 font-semibold"
-                  />
-                )}
-                {boss.industry && (
-                  <div className="px-4 py-2.5">
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1.5">
-                      Industry
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] text-[var(--color-text-secondary)]">
-                        {boss.industry}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-
-          {/* Dashboard Placeholder */}
-          <Card className="lg:col-span-2 flex flex-col items-center justify-center text-center p-8 border-dashed border-2 min-h-[320px] space-y-4">
-            <div className="space-y-1.5 max-w-sm">
-              <h2 className="text-base font-bold text-[var(--color-text-primary)]">
-                Your Business Dashboard is Ready
-              </h2>
-              <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                The full Boss platform is launching soon. Streamline security procurement
-                with automated scheduling, verified background checks, and seamless payments.
-              </p>
+              
+              <Building2 className="hidden sm:block opacity-5 absolute -right-6 -bottom-6 h-32 w-32" />
             </div>
           </Card>
+
+          {/* Quick Stats Grid */}
+          <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+            <StatCard 
+              label="Active Jobs" 
+              value={boss.activeJobsCount || 0} 
+              icon={<Briefcase />} 
+              trend={{ value: 12, isPositive: true }}
+              variant="blue"
+            />
+            <StatCard 
+              label="Total Spent" 
+              value={`£${(boss.totalSpent || 0).toLocaleString()}`} 
+              icon={<TrendingUp />} 
+              variant="emerald"
+            />
+          </div>
+        </div>
+
+        {/* Secondary Insight Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          
+          {/* Recent Jobs Table Card */}
+          <Card className="lg:col-span-2 p-0 overflow-hidden">
+            <div className="px-5 py-4 border-b border-[var(--color-border-primary)] flex items-center justify-between">
+              <h3 className="font-bold text-sm">Recent Activity</h3>
+              <Link href="/dashboard/boss/jobs" className="text-[10px] font-bold text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)] flex items-center gap-0.5 transition-colors">
+                VIEW ALL <ChevronRight className="h-3 w-3" />
+              </Link>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-[var(--color-bg-secondary)]/50 text-[var(--color-text-tertiary)] uppercase text-[9px] font-bold tracking-widest">
+                  <tr>
+                    <th className="px-5 py-3">Position</th>
+                    <th className="px-5 py-3 text-center">Status</th>
+                    <th className="px-5 py-3 text-center">Applicants</th>
+                    <th className="px-5 py-3">Budget</th>
+                    <th className="px-5 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border-primary)]">
+                  {/* Mock data for visualization */}
+                  <tr className="hover:bg-[var(--color-bg-secondary)]/50 transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-xs">Retail Guard</span>
+                        <span className="text-[9px] text-[var(--color-text-tertiary)] flex items-center gap-1">
+                          <MapPin className="h-2 w-2" /> London, Central
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <Badge variant="success" className="text-[9px] h-4">ACTIVE</Badge>
+                    </td>
+                    <td className="px-5 py-3 text-center text-xs font-medium">12</td>
+                    <td className="px-5 py-3 text-xs font-bold whitespace-nowrap">£18.50/hr</td>
+                    <td className="px-5 py-3 text-right">
+                      <button className="p-1.5 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors">
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                  <tr className="opacity-40 grayscale select-none">
+                    <td colSpan={5} className="px-5 py-8 text-center text-[11px] text-[var(--color-text-tertiary)] italic">
+                      More job data will appear here
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* Ratings & Activity Column */}
+          <div className="space-y-5">
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-sm">Employer Status</h3>
+                <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+              </div>
+              <div className="flex flex-col items-center justify-center py-2">
+                <span className="text-4xl font-black text-[var(--color-text-primary)]">
+                  {boss.averageRating ? boss.averageRating.toFixed(1) : '—'}
+                </span>
+                <div className="mt-1">
+                  <StarRating rating={boss.averageRating || 0} size="md" />
+                </div>
+                <p className="text-[10px] text-[var(--color-text-tertiary)] mt-2 font-bold uppercase tracking-wider">
+                  {boss.completedJobsCount || 0} Completions
+                </p>
+              </div>
+              <div className="mt-4 space-y-2.5 pt-4 border-t border-[var(--color-border-primary)]">
+                <div className="flex items-center justify-between text-[10px] font-bold">
+                  <span className="text-[var(--color-text-tertiary)] uppercase">Reliability</span>
+                  <span className="text-emerald-500 text-[11px]">95%</span>
+                </div>
+                <div className="w-full h-1 bg-[var(--color-bg-tertiary)] rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500" style={{ width: '95%' }} />
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-bold mt-1">
+                  <span className="text-[var(--color-text-tertiary)] uppercase">Communication</span>
+                  <span className="text-blue-500 text-[11px]">88%</span>
+                </div>
+                <div className="w-full h-1 bg-[var(--color-bg-tertiary)] rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500" style={{ width: '88%' }} />
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-gradient-to-br from-[var(--color-primary)] to-indigo-600 text-white border-none relative overflow-hidden group">
+              <div className="relative z-10">
+                <h3 className="font-bold text-sm mb-1">Support</h3>
+                <p className="text-[10px] opacity-80 leading-relaxed mb-4">
+                  Available 24/7 for you.
+                </p>
+                <Button variant="secondary" size="sm" className="w-full bg-white text-black hover:bg-white/90 font-bold h-9">
+                  Get Help
+                </Button>
+              </div>
+              <AlertCircle className="absolute -right-4 -bottom-4 h-20 w-20 opacity-10" />
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ─── Sub-components ─────────────────────────────────────── */
-
-function StatCard({
-  icon,
-  iconBg,
-  label,
-  value,
-  trend,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  label: string;
-  value: string;
-  trend: string;
-}) {
-  return (
-    <Card className=" hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-      <div className="flex items-start justify-between mb-2.5">
-        <div className={`p-1.5 rounded-lg ${iconBg}`}>
-          {icon}
-        </div>
-      </div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)] mb-0.5">
-        {label}
-      </p>
-      <h2 className="text-xl font-bold text-[var(--color-text-primary)] capitalize leading-tight">
-        {value}
-      </h2>
-      <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1 leading-snug">{trend}</p>
-    </Card>
-  );
-}
-
-function ProfileRow({
-  label,
-  value,
-  valueClassName = '',
-}: {
-  label: string;
-  value: string;
-  valueClassName?: string;
-}) {
-  return (
-    <div className="px-4 py-2.5 flex items-center justify-between gap-3">
-      <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] flex-shrink-0">
-        {label}
-      </span>
-      <span className={`text-xs text-right truncate text-[var(--color-text-primary)] ${valueClassName}`}>
-        {value}
-      </span>
     </div>
   );
 }

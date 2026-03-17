@@ -151,8 +151,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const isBoss  = user?.role === UserRole.BOSS;
   const isMate  = user?.role === UserRole.MATE;
   const isAdmin = user?.role === UserRole.ADMIN;
-  const isProfileComplete   = user?.isProfileComplete   ?? false;
-  const isOnboardingComplete = user?.isOnboardingComplete ?? false;
+  const isProfileComplete    = user?.isProfileComplete ?? false;
+  const isOnboardingComplete = isAdmin ? true : (user?.isOnboardingComplete ?? false);
 
   return (
     <UserContext.Provider

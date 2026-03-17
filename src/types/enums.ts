@@ -35,6 +35,13 @@ export enum LicenseStatus {
   PENDING_REVIEW = 'PENDING_REVIEW',
 }
 
+export enum CertificateStatus {
+  PENDING_REVIEW = 'PENDING_REVIEW',
+  VALID          = 'VALID',
+  REJECTED       = 'REJECTED',
+  EXPIRED        = 'EXPIRED',
+}
+
 export enum NotificationType {
   JOB_ALERT        = 'JOB_ALERT',
   BID_RECEIVED     = 'BID_RECEIVED',

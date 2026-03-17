@@ -42,7 +42,7 @@ export async function uploadProfilePhoto(file: File): Promise<ApiResponse<{ url:
  */
 export async function uploadDocument(
   file: File,
-  type: 'license' | 'id' | 'companyLicense'
+  type: 'license' | 'id' | 'companyLicense' | 'firstAid' | 'whiteCard' | 'childrenCheck'
 ): Promise<ApiResponse<{ url: string; field: string }>> {
   const formData = new FormData();
   formData.append('file', file);

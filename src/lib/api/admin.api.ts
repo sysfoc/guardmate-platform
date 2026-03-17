@@ -86,3 +86,25 @@ export async function getAdminActivity(
     `/api/admin/activity?${query.toString()}`
   );
 }
+
+// ─── Certificate Status ───────────────────────────────────────────────────────
+
+const CERTIFICATE_FIELD_MAP: Record<string, string> = {
+  FIRST_AID: 'firstAidCertificateStatus',
+  WHITE_CARD: 'constructionWhiteCardStatus',
+  CHILDREN_CHECK: 'workingWithChildrenCheckStatus',
+  LICENSE: 'licenseStatus',
+  ID: 'idVerificationStatus',
+};
+
+export async function updateCertificateStatus(
+  uid: string,
+  certificateType: string,
+  status: string,
+  notes?: string
+): Promise<ApiResponse<UserProfile>> {
+  const field = CERTIFICATE_FIELD_MAP[certificateType];
+  if (!field) throw new Error(`Unknown certificate type: ${certificateType}`);
+  return updateVerificationStatus(uid, field, status, notes);
+}
+

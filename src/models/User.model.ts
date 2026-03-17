@@ -9,7 +9,8 @@ import {
   BaseUser,
   BossProfile,
   MateProfile,
-  AdminProfile
+  AdminProfile,
+  CertificateStatus
 } from '@/types/user.types';
 
 // Export an all-encompassing union interface for Mongoose interactions
@@ -74,6 +75,8 @@ const UserSchema = new Schema<UserDocument>({
   country: { type: String, default: null },
   city: { type: String, default: null },
   state: { type: String, default: null },
+  address: { type: String, default: null },
+  postalCode: { type: String, default: null },
   timezone: { type: String, default: null },
 
   // ── Security Tracking ────────────────────────────────────────────────────
@@ -137,18 +140,19 @@ const UserSchema = new Schema<UserDocument>({
   idType: { type: String, default: null },
   idNumber: { type: String, default: null },
   idDocument: { type: String, default: null },
+  idExpiry: { type: Date, default: null },
   idVerificationStatus: { type: String, enum: Object.values(VerificationStatus), default: VerificationStatus.UNVERIFIED },
   idVerifiedAt: { type: Date, default: null },
-  skills: [{ type: String }],
+  skills: { type: [String], default: [] },
   certifications: { type: [CertificationSchema], default: [] },
   hourlyRate: { type: Number, default: null },
   minimumHours: { type: Number, default: null },
   experience: { type: Number, default: null },
-  languages: [{ type: String }],
+  languages: { type: [String], default: [] },
   isAvailable: { type: Boolean, default: false },
   availabilityCalendar: { type: [AvailabilitySlotSchema], default: [] },
   preferredWorkRadius: { type: Number, default: null },
-  preferredLocations: [{ type: String }],
+  preferredLocations: { type: [String], default: [] },
   totalJobsCompleted: { type: Number, default: 0 },
   totalJobsApplied: { type: Number, default: 0 },
   totalEarnings: { type: Number, default: 0 },
@@ -158,6 +162,23 @@ const UserSchema = new Schema<UserDocument>({
   featuredUntil: { type: Date, default: null },
   backgroundCheckStatus: { type: String, enum: Object.values(VerificationStatus), default: VerificationStatus.UNVERIFIED },
   backgroundCheckDate: { type: Date, default: null },
+
+  // ── Certificates & Licences ──────────────────────────────────────────────────
+  firstAidCertificate: { type: String, default: null },
+  firstAidCertificateExpiry: { type: Date, default: null },
+  firstAidCertificateStatus: { type: String, enum: Object.values(CertificateStatus), default: null },
+  firstAidVerifiedAt: { type: Date, default: null },
+  firstAidVerifiedBy: { type: String, default: null },
+  worksOnConstructionSite: { type: Boolean, default: false },
+  constructionWhiteCard: { type: String, default: null },
+  constructionWhiteCardExpiry: { type: Date, default: null },
+  constructionWhiteCardStatus: { type: String, enum: Object.values(CertificateStatus), default: null },
+  constructionWhiteCardVerifiedAt: { type: Date, default: null },
+  worksWithChildren: { type: Boolean, default: false },
+  workingWithChildrenCheck: { type: String, default: null },
+  workingWithChildrenCheckExpiry: { type: Date, default: null },
+  workingWithChildrenCheckStatus: { type: String, enum: Object.values(CertificateStatus), default: null },
+  workingWithChildrenCheckVerifiedAt: { type: Date, default: null },
 
   // ── Admin Fields (Optional) ───────────────────────────────────────────────
   adminLevel: { type: String, enum: Object.values(AdminLevel), default: null },
@@ -183,7 +204,12 @@ UserSchema.index({ licenseExpiry: 1 });
 UserSchema.index({ companyLicenseExpiry: 1 });
 UserSchema.index({ isFeatured: 1, role: 1 });
 
-// Caching to prevent recompilation issues in Next.js development
+// Next.js HMR support: clear the model cache in dev to ensure new schema fields
+// (e.g., address, postalCode, idExpiry) aren't silently dropped by Mongoose's strict mode.
+if (process.env.NODE_ENV !== 'production' && mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
 const User: Model<UserDocument> = mongoose.models.User || mongoose.model<UserDocument>('User', UserSchema);
 
 export default User;

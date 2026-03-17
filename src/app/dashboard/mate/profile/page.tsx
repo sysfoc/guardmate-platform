@@ -12,13 +12,17 @@ import { Avatar } from '@/components/ui/Avatar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Toggle } from '@/components/ui/Toggle';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { CertificateBadges } from '@/components/ui/CertificateBadges';
 import { updateUserProfile, uploadProfilePhoto, uploadDocument } from '@/lib/api/user.api';
-import type { MateProfile } from '@/types/user.types';
+import type { MateProfile, MateProfileUpdatePayload } from '@/types/user.types';
+import { VerificationStatus, LicenseStatus, CertificateStatus } from '@/types/enums';
 import toast from 'react-hot-toast';
 import {
-  Camera, Save, ArrowLeft, Loader2, Upload, FileText, AlertCircle,
-  User, Shield, Briefcase, MapPin, Phone, Mail, Star, Clock,
+  Camera, Save, Loader2, Upload, FileText, AlertCircle, Heart,
+  User, Shield, Briefcase, MapPin, Mail, Star, Clock, Plus, X, Globe, Calendar, Trash2, ChevronLeft, HardHat
 } from 'lucide-react';
+
 export default function MateProfileEdit() {
   const router = useRouter();
   const { user, fetchUser } = useUser();
@@ -26,6 +30,11 @@ export default function MateProfileEdit() {
 
   const mate = user as MateProfile | null;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const licenseFileRef = useRef<HTMLInputElement>(null);
+  const idFileRef = useRef<HTMLInputElement>(null);
+  const firstAidFileRef = useRef<HTMLInputElement>(null);
+  const whiteCardFileRef = useRef<HTMLInputElement>(null);
+  const childrenCheckFileRef = useRef<HTMLInputElement>(null);
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -33,12 +42,23 @@ export default function MateProfileEdit() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isUploadingLicense, setIsUploadingLicense] = useState(false);
   const [isUploadingId, setIsUploadingId] = useState(false);
+  const [isUploadingFirstAid, setIsUploadingFirstAid] = useState(false);
+  const [isUploadingWhiteCard, setIsUploadingWhiteCard] = useState(false);
+  const [isUploadingChildrenCheck, setIsUploadingChildrenCheck] = useState(false);
+  const [showClearWhiteCardDialog, setShowClearWhiteCardDialog] = useState(false);
+  const [showClearChildrenCheckDialog, setShowClearChildrenCheckDialog] = useState(false);
+
   const [localLicenseDoc, setLocalLicenseDoc] = useState<string | undefined>(undefined);
   const [localIdDoc, setLocalIdDoc] = useState<string | undefined>(undefined);
-  const [localLicenseStatus, setLocalLicenseStatus] = useState<string | undefined>(undefined);
-  const [localIdStatus, setLocalIdStatus] = useState<string | undefined>(undefined);
-  const licenseFileRef = useRef<HTMLInputElement>(null);
-  const idFileRef = useRef<HTMLInputElement>(null);
+  const [localFirstAidDoc, setLocalFirstAidDoc] = useState<string | undefined>(undefined);
+  const [localWhiteCardDoc, setLocalWhiteCardDoc] = useState<string | undefined>(undefined);
+  const [localChildrenCheckDoc, setLocalChildrenCheckDoc] = useState<string | undefined>(undefined);
+
+  const [worksOnConstructionSite, setWorksOnConstructionSite] = useState(false);
+  const [worksWithChildren, setWorksWithChildren] = useState(false);
+  const [firstAidExpiry, setFirstAidExpiry] = useState('');
+  const [whiteCardExpiry, setWhiteCardExpiry] = useState('');
+  const [childrenCheckExpiry, setChildrenCheckExpiry] = useState('');
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -46,19 +66,25 @@ export default function MateProfileEdit() {
     phone: '',
     phoneCountryCode: 'GB',
     bio: '',
-    skills: '',
-    hourlyRate: '',
-    experience: '',
     city: '',
+    state: '',
     country: '',
-    isAvailable: false,
+    postalCode: '',
+    address: '',
+    experience: 0,
+    hourlyRate: 0,
+    preferredWorkRadius: 0,
+    minimumHours: 0,
+    skills: [] as string[],
+    languages: [] as string[],
+    isAvailable: true,
     licenseNumber: '',
     licenseType: '',
-    licenseIssuingAuthority: '',
     licenseExpiry: '',
-    languages: '',
-    preferredWorkRadius: '',
+    idExpiry: '',
   });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (mate) {
@@ -68,46 +94,32 @@ export default function MateProfileEdit() {
         phone: mate.phone || '',
         phoneCountryCode: mate.phoneCountryCode || 'GB',
         bio: mate.bio || '',
-        skills: mate.skills?.join(', ') || '',
-        hourlyRate: mate.hourlyRate?.toString() || '',
-        experience: mate.experience?.toString() || '',
+        address: mate.address || '',
         city: mate.city || '',
+        state: mate.state || '',
         country: mate.country || '',
-        isAvailable: mate.isAvailable ?? false,
+        postalCode: mate.postalCode || '',
+        experience: mate.experience || 0,
+        hourlyRate: mate.hourlyRate || 0,
+        preferredWorkRadius: mate.preferredWorkRadius || 0,
+        minimumHours: mate.minimumHours || 0,
+        skills: mate.skills || [],
+        languages: mate.languages || [],
+        isAvailable: mate.isAvailable ?? true,
         licenseNumber: mate.licenseNumber || '',
         licenseType: mate.licenseType || '',
-        licenseIssuingAuthority: mate.licenseIssuingAuthority || '',
         licenseExpiry: mate.licenseExpiry ? new Date(mate.licenseExpiry).toISOString().split('T')[0] : '',
-        languages: mate.languages?.join(', ') || '',
-        preferredWorkRadius: mate.preferredWorkRadius?.toString() || '',
+        idExpiry: mate.idExpiry ? new Date(mate.idExpiry).toISOString().split('T')[0] : '',
       });
+      setWorksOnConstructionSite(mate.worksOnConstructionSite ?? false);
+      setWorksWithChildren(mate.worksWithChildren ?? false);
+      setFirstAidExpiry(mate.firstAidCertificateExpiry ? new Date(mate.firstAidCertificateExpiry).toISOString().split('T')[0] : '');
+      setWhiteCardExpiry(mate.constructionWhiteCardExpiry ? new Date(mate.constructionWhiteCardExpiry).toISOString().split('T')[0] : '');
+      setChildrenCheckExpiry(mate.workingWithChildrenCheckExpiry ? new Date(mate.workingWithChildrenCheckExpiry).toISOString().split('T')[0] : '');
     }
   }, [mate]);
 
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges]);
-
   if (!mate) return null;
-
-  const lockedCountry = React.useMemo(() => platformCountry ? {
-    name: platformCountry.countryName,
-    code: platformCountry.countryCode,
-    dialCode: platformCountry.dialCode,
-    flag: platformCountry.flag,
-  } : null, [platformCountry]);
-
-  const handleChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setHasUnsavedChanges(true);
-  };
 
   const handleGoBack = () => {
     if (hasUnsavedChanges) {
@@ -117,591 +129,577 @@ export default function MateProfileEdit() {
     }
   };
 
-  const confirmDiscardChanges = () => {
-    setShowConfirmDialog(false);
-    setHasUnsavedChanges(false);
-    router.push('/dashboard/mate');
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload a valid image file.');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB.');
-      return;
-    }
-
     setIsUploadingPhoto(true);
     try {
       const resp = await uploadProfilePhoto(file);
       if (resp.success && resp.data?.url) {
         await updateUserProfile({ profilePhoto: resp.data.url });
         await fetchUser();
-        toast.success('Profile photo updated successfully!');
-      } else {
-        throw new Error(resp.message || 'Upload failed');
+        toast.success('Photo updated!');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to upload photo.');
+    } catch (err) {
+      toast.error('Upload failed');
     } finally {
       setIsUploadingPhoto(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleDocumentUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    docType: 'license' | 'id',
-    setLoading: (v: boolean) => void,
-    inputRef: React.RefObject<HTMLInputElement | null>
-  ) => {
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'license' | 'id' | 'bgCheck' | 'firstAid' | 'whiteCard' | 'childrenCheck') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Please upload a PDF or image file (PNG, JPG, WEBP).');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File must be less than 10MB.');
-      return;
-    }
+    const loadingMap: Record<string, (v: boolean) => void> = {
+      license: setIsUploadingLicense,
+      id: setIsUploadingId,
+      firstAid: setIsUploadingFirstAid,
+      whiteCard: setIsUploadingWhiteCard,
+      childrenCheck: setIsUploadingChildrenCheck,
+    };
 
-    setLoading(true);
+    const apiTypeMap: Record<string, 'license' | 'id' | 'companyLicense' | 'firstAid' | 'whiteCard' | 'childrenCheck'> = {
+      license: 'license',
+      id: 'id',
+      bgCheck: 'id',
+      firstAid: 'firstAid',
+      whiteCard: 'whiteCard',
+      childrenCheck: 'childrenCheck',
+    };
+
+    const setterMap: Record<string, (v: string) => void> = {
+      license: setLocalLicenseDoc,
+      id: setLocalIdDoc,
+      firstAid: setLocalFirstAidDoc,
+      whiteCard: setLocalWhiteCardDoc,
+      childrenCheck: setLocalChildrenCheckDoc,
+    };
+
+    loadingMap[type]?.(true);
     try {
-      const resp = await uploadDocument(file, docType);
+      const resp = await uploadDocument(file, apiTypeMap[type]);
       if (resp.success && resp.data?.url) {
-        // Update local state instead of fetchUser() to preserve form data
-        if (docType === 'license') {
-          setLocalLicenseDoc(resp.data.url);
-          setLocalLicenseStatus('PENDING_REVIEW');
-        } else {
-          setLocalIdDoc(resp.data.url);
-          setLocalIdStatus('PENDING');
-        }
-        toast.success(`${docType === 'license' ? 'License' : 'ID'} document uploaded successfully!`);
-      } else {
-        throw new Error(resp.message || 'Upload failed');
+        setterMap[type]?.(resp.data.url);
+        toast.success('Document uploaded!');
+        setHasUnsavedChanges(true);
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to upload document.');
+    } catch (err) {
+      toast.error('Upload failed');
     } finally {
-      setLoading(false);
-      if (inputRef.current) inputRef.current.value = '';
+      loadingMap[type]?.(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error('First and last name are required.');
+    // Validate: if checkbox is checked but no document uploaded
+    if (worksOnConstructionSite && !localWhiteCardDoc && !mate.constructionWhiteCard) {
+      toast.error('Please upload your Construction White Card document.');
       return;
     }
-    if (formData.bio && formData.bio.length > 1000) {
-      toast.error('Bio cannot exceed 1000 characters.');
-      return;
-    }
-    if (platformCountry && formData.phoneCountryCode !== platformCountry.countryCode) {
-      toast.error(`Only ${platformCountry.countryName} phone numbers are accepted on this platform.`);
-      return;
-    }
-
-    const requiredFields = [
-      'firstName', 'lastName', 'phone', 'country', 'city', 'bio',
-      'licenseNumber', 'licenseType', 'licenseIssuingAuthority',
-      'licenseExpiry', 'skills', 'hourlyRate', 'experience',
-      'languages', 'preferredWorkRadius',
-    ];
-
-    const isProfileComplete = requiredFields.every((field) => {
-      const val = (formData as any)[field];
-      return val !== undefined && val !== null && String(val).trim() !== '';
-    });
-
-    if (!isProfileComplete) {
-      toast.error('Please fill in all required fields to complete your profile.');
+    if (worksWithChildren && !localChildrenCheckDoc && !mate.workingWithChildrenCheck) {
+      toast.error('Please upload your Working With Children Check document.');
       return;
     }
 
     setIsSaving(true);
     try {
-      await updateUserProfile({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        phone: formData.phone.trim(),
-        phoneCountryCode: formData.phoneCountryCode,
-        bio: formData.bio.trim(),
-        city: formData.city.trim(),
-        country: formData.country.trim(),
-        hourlyRate: formData.hourlyRate ? Number(formData.hourlyRate) : undefined,
-        experience: formData.experience ? Number(formData.experience) : undefined,
-        skills: formData.skills.split(',').map((s) => s.trim()).filter(Boolean),
-        isAvailable: formData.isAvailable,
-        licenseNumber: formData.licenseNumber.trim(),
-        licenseType: formData.licenseType.trim(),
-        licenseIssuingAuthority: formData.licenseIssuingAuthority.trim(),
-        licenseExpiry: formData.licenseExpiry ? new Date(formData.licenseExpiry).toISOString() : '',
-        languages: formData.languages.split(',').map((s) => s.trim()).filter(Boolean),
-        preferredWorkRadius: formData.preferredWorkRadius ? Number(formData.preferredWorkRadius) : undefined,
-        isProfileComplete: true,
+      const payload: Partial<MateProfileUpdatePayload> = {
+        ...formData,
+        idExpiry: formData.idExpiry ? new Date(formData.idExpiry).toISOString() : null,
+        licenseExpiry: formData.licenseExpiry ? new Date(formData.licenseExpiry).toISOString() : null,
+        licenseDocument: localLicenseDoc || mate.licenseDocument || undefined,
+        idDocument: localIdDoc || mate.idDocument || undefined,
+        firstAidCertificate: localFirstAidDoc || mate.firstAidCertificate || undefined,
+        firstAidCertificateExpiry: firstAidExpiry ? new Date(firstAidExpiry).toISOString() : undefined,
+        worksOnConstructionSite,
+        constructionWhiteCard: worksOnConstructionSite ? (localWhiteCardDoc || mate.constructionWhiteCard || undefined) : undefined,
+        constructionWhiteCardExpiry: worksOnConstructionSite && whiteCardExpiry ? new Date(whiteCardExpiry).toISOString() : undefined,
+        worksWithChildren,
+        workingWithChildrenCheck: worksWithChildren ? (localChildrenCheckDoc || mate.workingWithChildrenCheck || undefined) : undefined,
+        workingWithChildrenCheckExpiry: worksWithChildren && childrenCheckExpiry ? new Date(childrenCheckExpiry).toISOString() : undefined,
+        certifications: mate.certifications,
         isOnboardingComplete: true,
-      });
-
+        isProfileComplete: !!(formData.firstName && formData.lastName && formData.bio && formData.phone && formData.address),
+      };
+      await updateUserProfile(payload);
       await fetchUser();
       setHasUnsavedChanges(false);
-      toast.success('Profile updated successfully!');
+      toast.success('Profile saved!');
       router.push('/dashboard/mate');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update profile.');
+    } catch (err) {
+      toast.error('Save failed');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const displayName = `${mate.firstName} ${mate.lastName}`;
-  const skillsList = formData.skills.split(',').map((s) => s.trim()).filter(Boolean);
+  const displayName = `${formData.firstName} ${formData.lastName}`;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+      {/* Professional Profile Header */}
+      <div className="h-32 w-full bg-gradient-to-r from-[var(--color-primary)] to-indigo-700 opacity-90" />
 
-        <div className="flex flex-col lg:flex-row gap-4 items-start">
-
-          {/* ── Sticky Sidebar ───────────────────────────────── */}
-          <div className="w-full lg:w-64 flex-shrink-0 lg:sticky lg:top-20">
-            <Card className="overflow-hidden">
-
-              {/* Top accent bar */}
-              <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-500" />
-
-              {/* Avatar & Identity */}
-              <div className="px-4 pt-5 pb-4 flex flex-col items-center text-center border-b border-[var(--color-border-primary)]">
-                <div
-                  className="relative group cursor-pointer mb-3"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 pb-12">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Header Card */}
+          <Card className="p-5 border-none shadow-xl ring-1 ring-[var(--color-border-primary)]">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="relative group">
                   <Avatar
-                    src={mate.profilePhoto ?? undefined}
+                    src={mate?.profilePhoto}
                     name={displayName}
                     size="xl"
-                    className={isUploadingPhoto ? 'opacity-50' : 'group-hover:opacity-75 transition-opacity'}
+                    className="ring-4 ring-[var(--color-bg-primary)] shadow-2xl"
                   />
-                  {isUploadingPhoto ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Loader2 className="h-5 w-5 animate-spin text-[var(--color-primary)]" />
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 rounded-full transition-all">
-                      <Camera className="h-4 w-4 text-white" />
-                      <span className="text-[9px] text-white font-semibold uppercase tracking-wider mt-0.5">Change</span>
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/png, image/jpeg, image/jpg, image/webp"
-                    onChange={handlePhotoUpload}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 p-2 bg-[var(--color-primary)] text-white rounded-full shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
+                    disabled={isUploadingPhoto}
+                  >
+                    {isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                  </button>
+                  <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
                 </div>
-
-                <h2 className="text-sm font-bold text-[var(--color-text-primary)] leading-tight truncate w-full px-1">
-                  {displayName}
-                </h2>
-                <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5 uppercase tracking-wider">Security Professional</p>
-              </div>
-
-              {/* Quick Info */}
-              <div className="px-4 py-3 space-y-2.5 border-b border-[var(--color-border-primary)]">
-                <SidebarInfoRow icon={<MapPin className="h-3 w-3" />} label={formData.city && formData.country ? `${formData.city}, ${formData.country}` : 'Location not set'} />
-                <SidebarInfoRow icon={<Mail className="h-3 w-3" />} label={mate.email || '—'} />
-                <SidebarInfoRow icon={<Phone className="h-3 w-3" />} label={formData.phone || 'Phone not set'} />
-                <SidebarInfoRow icon={<Star className="h-3 w-3" />} label={formData.hourlyRate ? `£${formData.hourlyRate}/hr` : 'Rate not set'} />
-                <SidebarInfoRow icon={<Clock className="h-3 w-3" />} label={formData.experience ? `${formData.experience} yrs experience` : 'Experience not set'} />
-              </div>
-
-              {/* Availability Toggle */}
-              <div className="px-4 py-3 border-b border-[var(--color-border-primary)]">
-                <Toggle
-                  label="Available for Work"
-                  description="Show up in search results"
-                  checked={formData.isAvailable}
-                  onCheckedChange={(checked) => handleChange('isAvailable', checked)}
-                />
-              </div>
-            </Card>
-          </div>
-
-          {/* ── Form Panel ───────────────────────────────────── */}
-          <div className="flex-1 min-w-0 space-y-4">
-            <form id="profile-edit-form" onSubmit={handleSubmit}>
-
-              {/* Personal Details */}
-              <Card className="overflow-visible mb-4">
-                <SectionHeader icon={<User className="h-3.5 w-3.5" />} title="Personal Details" />
-                <div className="px-4 py-4 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                      label="First Name"
-                      required
-                      value={formData.firstName}
-                      onChange={(e) => handleChange('firstName', e.target.value)}
-                    />
-                    <Input
-                      label="Last Name"
-                      required
-                      value={formData.lastName}
-                      onChange={(e) => handleChange('lastName', e.target.value)}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <PhoneInput
-                      label="Phone"
-                      value={formData.phone}
-                      onChange={(val) => handleChange('phone', val)}
-                      onCountryChange={(c) => handleChange('phoneCountryCode', c.code)}
-                      lockedCountry={lockedCountry}
-                    />
-                    <Input
-                      label="Email Address"
-                      value={mate.email}
-                      disabled
-                      helperText="Email cannot be changed."
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                      label="City"
-                      required
-                      placeholder="e.g. London"
-                      value={formData.city}
-                      onChange={(e) => handleChange('city', e.target.value)}
-                    />
-                    <Input
-                      label="Country"
-                      required
-                      placeholder="e.g. UK"
-                      value={formData.country}
-                      onChange={(e) => handleChange('country', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </Card>
-
-              {/* Licenses & Credentials */}
-              <Card className="overflow-visible mb-4">
-                <SectionHeader icon={<Shield className="h-3.5 w-3.5" />} title="Licenses & Credentials" />
-                <div className="px-4 py-4 space-y-3">
-
-                  {/* License verification status banner */}
-                  {(localLicenseStatus || mate.licenseStatus) && (
-                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
-                      (localLicenseStatus || mate.licenseStatus) === 'VALID'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                        : (localLicenseStatus || mate.licenseStatus) === 'PENDING_REVIEW'
-                          ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
-                          : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
-                    }`}>
-                      {(localLicenseStatus || mate.licenseStatus) === 'VALID' ? '✓ License Verified' : (localLicenseStatus || mate.licenseStatus) === 'PENDING_REVIEW' ? ' License Pending Admin Review' : `⚠ License Status: ${localLicenseStatus || mate.licenseStatus}`}
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                      label="SIA License Number"
-                      required
-                      placeholder="e.g. 1234567890"
-                      value={formData.licenseNumber}
-                      onChange={(e) => handleChange('licenseNumber', e.target.value)}
-                    />
-                    <Input
-                      label="License Type"
-                      required
-                      placeholder="e.g. Door Supervisor"
-                      value={formData.licenseType}
-                      onChange={(e) => handleChange('licenseType', e.target.value)}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                      label="Issuing Authority"
-                      required
-                      placeholder="e.g. SIA"
-                      value={formData.licenseIssuingAuthority}
-                      onChange={(e) => handleChange('licenseIssuingAuthority', e.target.value)}
-                    />
-                    <Input
-                      label="Expiry Date"
-                      type="date"
-                      required
-                      value={formData.licenseExpiry}
-                      onChange={(e) => handleChange('licenseExpiry', e.target.value)}
-                    />
-                  </div>
-
-                  {/* License Document Upload */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-[var(--color-input-label)]">
-                      License Document (PDF or Image) <span className="text-[var(--color-danger)]">*</span>
-                    </label>
-                    {(localLicenseDoc || mate.licenseDocument) ? (
-                      <div className="flex items-center gap-3 p-2.5 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
-                        <FileText className="h-4 w-4 text-[var(--color-text-tertiary)] flex-shrink-0" />
-                        <a
-                          href={localLicenseDoc || mate.licenseDocument || undefined}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-[var(--color-primary)] hover:underline truncate flex-1"
-                        >
-                          View Current Document
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => licenseFileRef.current?.click()}
-                          disabled={isUploadingLicense}
-                          className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] underline underline-offset-2"
-                        >
-                          {isUploadingLicense ? 'Uploading...' : 'Replace'}
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => licenseFileRef.current?.click()}
-                        disabled={isUploadingLicense}
-                        className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-[var(--color-border-primary)] hover:border-[var(--color-primary)] bg-[var(--color-bg-secondary)] hover:bg-[var(--color-primary-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-all text-xs"
-                      >
-                        {isUploadingLicense ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Upload className="h-4 w-4" />
-                        )}
-                        {isUploadingLicense ? 'Uploading...' : 'Upload License Document'}
-                      </button>
-                    )}
-                    <input
-                      type="file"
-                      ref={licenseFileRef}
-                      className="hidden"
-                      accept=".pdf,.png,.jpg,.jpeg,.webp"
-                      onChange={(e) => handleDocumentUpload(e, 'license', setIsUploadingLicense, licenseFileRef)}
-                    />
-                    <p className="text-[10px] text-[var(--color-text-tertiary)]">Max 10MB. Accepted: PDF, PNG, JPG, WEBP</p>
-                  </div>
-
-                  {/* ID Document Upload */}
-                  <div className="border-t border-[var(--color-border-primary)] pt-3 mt-3 space-y-3">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--color-text-tertiary)]">ID Verification</p>
-
-                    {(localIdStatus || mate.idVerificationStatus) && (
-                      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
-                        (localIdStatus || mate.idVerificationStatus) === 'VERIFIED'
-                          ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                          : (localIdStatus || mate.idVerificationStatus) === 'PENDING'
-                            ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
-                            : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
-                      }`}>
-                        {(localIdStatus || mate.idVerificationStatus) === 'VERIFIED' ? '✓ ID Verified' : (localIdStatus || mate.idVerificationStatus) === 'PENDING' ? ' ID Pending Review' : `⚠ ID: ${localIdStatus || mate.idVerificationStatus}`}
-                      </div>
-                    )}
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-[var(--color-input-label)]">
-                        ID Document (PDF or Image) <span className="text-[var(--color-danger)]">*</span>
-                      </label>
-                      {(localIdDoc || mate.idDocument) ? (
-                        <div className="flex items-center gap-3 p-2.5 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
-                          <FileText className="h-4 w-4 text-[var(--color-text-tertiary)] flex-shrink-0" />
-                          <a
-                            href={localIdDoc || mate.idDocument || undefined}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-[var(--color-primary)] hover:underline truncate flex-1"
-                          >
-                            View Current ID Document
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => idFileRef.current?.click()}
-                            disabled={isUploadingId}
-                            className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] underline underline-offset-2"
-                          >
-                            {isUploadingId ? 'Uploading...' : 'Replace'}
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => idFileRef.current?.click()}
-                          disabled={isUploadingId}
-                          className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-[var(--color-border-primary)] hover:border-[var(--color-primary)] bg-[var(--color-bg-secondary)] hover:bg-[var(--color-primary-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-all text-xs"
-                        >
-                          {isUploadingId ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Upload className="h-4 w-4" />
-                          )}
-                          {isUploadingId ? 'Uploading...' : 'Upload ID Document'}
-                        </button>
-                      )}
-                      <input
-                        type="file"
-                        ref={idFileRef}
-                        className="hidden"
-                        accept=".pdf,.png,.jpg,.jpeg,.webp"
-                        onChange={(e) => handleDocumentUpload(e, 'id', setIsUploadingId, idFileRef)}
+                <div className="text-center md:text-left">
+                  <h1 className="text-2xl font-black text-[var(--color-text-primary)] leading-tight">{displayName}</h1>
+                  <p className="text-xs font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest flex items-center justify-center md:justify-start gap-1.5 mt-1">
+                    <Shield className="h-3.5 w-3.5 text-[var(--color-primary)]" />
+                    Professional Security Mate
+                  </p>
+                  <div className="mt-3 flex items-center justify-center md:justify-start gap-4">
+                    <CertificateBadges user={mate} size="sm" />
+                    <div className="h-4 w-px bg-[var(--color-border-primary)]" />
+                    <div className="flex items-center gap-2">
+                       <Toggle 
+                        size="sm"
+                        label="Available" 
+                        checked={formData.isAvailable} 
+                        onCheckedChange={(v) => handleChange('isAvailable', v)} 
                       />
-                      <p className="text-[10px] text-[var(--color-text-tertiary)]">Max 10MB. Accepted: PDF, PNG, JPG, WEBP</p>
                     </div>
                   </div>
                 </div>
-              </Card>
-
-              {/* Professional Info */}
-              <Card className="overflow-visible">
-                <SectionHeader icon={<Briefcase className="h-3.5 w-3.5" />} title="Professional Info" />
-                <div className="px-4 py-4 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                      label="Hourly Rate (£)"
-                      required
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      placeholder="e.g. 15.00"
-                      value={formData.hourlyRate}
-                      onChange={(e) => handleChange('hourlyRate', e.target.value)}
-                    />
-                    <Input
-                      label="Experience (Years)"
-                      required
-                      type="number"
-                      min="0"
-                      placeholder="e.g. 3"
-                      value={formData.experience}
-                      onChange={(e) => handleChange('experience', e.target.value)}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                      label="Work Radius (miles)"
-                      required
-                      type="number"
-                      min="1"
-                      placeholder="e.g. 25"
-                      value={formData.preferredWorkRadius}
-                      onChange={(e) => handleChange('preferredWorkRadius', e.target.value)}
-                    />
-                    <Input
-                      label="Languages Spoken"
-                      required
-                      placeholder="e.g. English"
-                      value={formData.languages}
-                      onChange={(e) => handleChange('languages', e.target.value)}
-                    />
-                  </div>
-
-                  <Input
-                    label="Skills (Comma separated)"
-                    required
-                    placeholder="e.g. Crowd Control, First Aid"
-                    value={formData.skills}
-                    onChange={(e) => handleChange('skills', e.target.value)}
-                  />
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-[var(--color-input-label)]">
-                      Bio <span className="text-[var(--color-danger)]">*</span>
-                    </label>
-                    <textarea
-                      className="flex w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] min-h-[90px] resize-y"
-                      placeholder="Tell clients a bit about your professional background..."
-                      value={formData.bio}
-                      onChange={(e) => handleChange('bio', e.target.value)}
-                      maxLength={1000}
-                    />
-                    <p className="text-[10px] text-right text-[var(--color-text-tertiary)]">
-                      {formData.bio.length} / 1000
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Save Button — bottom */}
-              <div className="mt-4 flex items-center justify-end gap-3">
-                <button
-                  type="button"
+              </div>
+              <div className="flex flex-wrap items-center justify-center md:justify-end gap-3">
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="md" 
                   onClick={handleGoBack}
-                  className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] underline underline-offset-2 transition-colors"
+                  leftIcon={<ChevronLeft className="h-4 w-4" />}
+                  className="w-full sm:w-auto"
                 >
-                  Cancel
-                </button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  loading={isSaving}
-                  leftIcon={<Save className="h-3.5 w-3.5" />}
+                  Back
+                </Button>
+                <Button 
+                  type="submit" 
+                  variant="primary" 
+                  size="md" 
+                  loading={isSaving} 
+                  leftIcon={<Save className="h-4 w-4" />}
+                  className="w-full sm:w-auto"
                 >
                   Save Changes
                 </Button>
               </div>
+            </div>
+          </Card>
 
-            </form>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Left Column: Personal & Professional Basic */}
+            <div className="space-y-4">
+              <Card padding="md">
+                <SectionHeader icon={<User className="h-4 w-4" />} title="Personal Information" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                  <Input label="First Name" value={formData.firstName} onChange={(e) => handleChange('firstName', e.target.value)} />
+                  <Input label="Last Name" value={formData.lastName} onChange={(e) => handleChange('lastName', e.target.value)} />
+                </div>
+                <div className="mt-3">
+                  <Input label="Street Address" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} placeholder="House #, Street" />
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <Input label="City" value={formData.city} onChange={(e) => handleChange('city', e.target.value)} />
+                  <Input label="State/Region" value={formData.state} onChange={(e) => handleChange('state', e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <Input label="Postal Code" value={formData.postalCode} onChange={(e) => handleChange('postalCode', e.target.value)} />
+                  <Input label="Country" value={formData.country} onChange={(e) => handleChange('country', e.target.value)} />
+                </div>
+                <div className="mt-3">
+                  <PhoneInput
+                    label="Phone Number"
+                    value={formData.phone}
+                    defaultCountry={formData.phoneCountryCode as any}
+                    onChange={(v: string) => { setFormData(prev => ({ ...prev, phone: v })); setHasUnsavedChanges(true); }}
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Short Bio</label>
+                  <textarea
+                    value={formData.bio}
+                    onChange={(e) => handleChange('bio', e.target.value)}
+                    placeholder="Tell us about yourself..."
+                    rows={3}
+                    className="w-full min-h-[80px] p-2.5 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none resize-none"
+                  />
+                </div>
+              </Card>
+
+              <Card padding="md">
+                <SectionHeader icon={<Briefcase className="h-4 w-4" />} title="Professional Basics" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <Input label="Experience (Years)" type="number" value={formData.experience} onChange={(e) => handleChange('experience', parseInt(e.target.value) || 0)} />
+                  <Input label="Hourly Rate ($)" type="number" value={formData.hourlyRate} onChange={(e) => handleChange('hourlyRate', parseInt(e.target.value) || 0)} />
+                  <Input label="Work Radius (km)" type="number" value={formData.preferredWorkRadius} onChange={(e) => handleChange('preferredWorkRadius', parseInt(e.target.value) || 0)} />
+                  <Input label="Min Hours Per Shift" type="number" value={formData.minimumHours} onChange={(e) => handleChange('minimumHours', parseInt(e.target.value) || 0)} />
+                </div>
+              </Card>
+
+              {/* Skills & Languages — Combined for better vertical balance */}
+              <Card padding="md">
+                <SectionHeader icon={<Star className="h-4 w-4" />} title="Skills & Languages" />
+                
+                <div className="mt-5 space-y-6">
+                  {/* Skills Tag Input */}
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-2">My Skills</label>
+                    <div className="flex flex-wrap gap-2 p-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 min-h-[46px]">
+                      {formData.skills.map(skill => (
+                        <Badge key={skill} variant="neutral" className="pl-2 pr-1.5 py-1 flex items-center gap-1.5 text-xs bg-[var(--color-bg-secondary)] border-[var(--color-border-primary)]">
+                          {skill}
+                          <button type="button" onClick={() => handleChange('skills', formData.skills.filter(s => s !== skill))} className="p-0.5 hover:bg-black/10 rounded-full transition-colors">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </Badge>
+                      ))}
+                      <input
+                        type="text"
+                        placeholder="Type skill & press Enter..."
+                        className="flex-1 text-sm bg-transparent border-none outline-none min-w-[140px] px-1 py-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const val = e.currentTarget.value.trim();
+                            if (val && !formData.skills.includes(val)) {
+                              handleChange('skills', [...formData.skills, val]);
+                              e.currentTarget.value = '';
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Languages Tag Input */}
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-2">Languages Spoken</label>
+                    <div className="flex flex-wrap gap-2 p-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 min-h-[46px]">
+                      {(formData.languages || []).map(lang => (
+                        <Badge key={lang} variant="neutral" className="pl-2 pr-1.5 py-1 flex items-center gap-1.5 text-xs bg-[var(--color-bg-secondary)] border-[var(--color-border-primary)]">
+                          {lang}
+                          <button type="button" onClick={() => handleChange('languages', formData.languages.filter(l => l !== lang))} className="p-0.5 hover:bg-black/10 rounded-full transition-colors">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </Badge>
+                      ))}
+                      <input
+                        type="text"
+                        placeholder="Type language & press Enter..."
+                        className="flex-1 text-sm bg-transparent border-none outline-none min-w-[140px] px-1 py-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const val = e.currentTarget.value.trim();
+                            if (val && !formData.languages.includes(val)) {
+                              handleChange('languages', [...(formData.languages || []), val]);
+                              e.currentTarget.value = '';
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Right Column: Skills, Availability & Verification */}
+            <div className="space-y-4">
+              <Card padding="md">
+                <SectionHeader icon={<FileText className="h-4 w-4" />} title="Verification Documents" />
+                <div className="mt-4 space-y-4">
+                  {/* Security License Section */}
+                  <div className="p-3 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                    <DocUploadRow label="Security License" url={localLicenseDoc || mate.licenseDocument} isUploading={isUploadingLicense} onUpload={() => licenseFileRef.current?.click()} status={mate.licenseStatus} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Input label="License #" value={formData.licenseNumber} onChange={(e) => handleChange('licenseNumber', e.target.value)} />
+                      <Input label="License Type" value={formData.licenseType} onChange={(e) => handleChange('licenseType', e.target.value)} placeholder="e.g. SIA Door Supervisor" />
+                      <div className="sm:col-span-2">
+                        <Input label="License Expiry" type="date" value={formData.licenseExpiry} onChange={(e) => handleChange('licenseExpiry', e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Government ID Section */}
+                  <div className="p-3 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                    <DocUploadRow label="Government ID" url={localIdDoc || mate.idDocument} isUploading={isUploadingId} onUpload={() => idFileRef.current?.click()} status={mate.idVerificationStatus} />
+                    <Input label="ID Expiry Date" type="date" value={formData.idExpiry} onChange={(e) => handleChange('idExpiry', e.target.value)} />
+                  </div>
+                </div>
+                <input type="file" ref={licenseFileRef} className="hidden" onChange={(e) => handleDocUpload(e, 'license')} />
+                <input type="file" ref={idFileRef} className="hidden" onChange={(e) => handleDocUpload(e, 'id')} />
+              </Card>
+
+              {/* ── Certifications & Licences ──────────────────────────── */}
+              <Card padding="md">
+                <SectionHeader icon={<Heart className="h-4 w-4" />} title="Certifications & Licences" />
+
+                {/* First Aid — Always Visible, Mandatory */}
+                <div className="mt-4 p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-red-500/10 text-red-500">
+                        <Heart className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold">First Aid Certificate</p>
+                        <p className="text-[9px] text-[var(--color-text-tertiary)] font-medium">Mandatory for all guards</p>
+                      </div>
+                    </div>
+                    {mate.firstAidCertificateStatus && (
+                      <CertStatusBadge status={mate.firstAidCertificateStatus} />
+                    )}
+                  </div>
+
+                  {!(localFirstAidDoc || mate.firstAidCertificate) && (
+                    <div className="flex items-center gap-2 p-2.5 rounded-lg bg-red-500/5 border border-red-500/20">
+                      <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                      <p className="text-[10px] font-bold text-red-500">First Aid Certificate is mandatory for all guards</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <DocUploadRow label="Certificate Document" url={localFirstAidDoc || mate.firstAidCertificate} isUploading={isUploadingFirstAid} onUpload={() => firstAidFileRef.current?.click()} status={mate.firstAidCertificateStatus} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Expiry Date</label>
+                      <input
+                        type="date"
+                        value={firstAidExpiry}
+                        onChange={(e) => { setFirstAidExpiry(e.target.value); setHasUnsavedChanges(true); }}
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {(localFirstAidDoc || mate.firstAidCertificate) && (
+                    <a href={localFirstAidDoc || mate.firstAidCertificate || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1">
+                      <FileText className="h-3 w-3" /> View Document
+                    </a>
+                  )}
+                </div>
+                <input type="file" ref={firstAidFileRef} className="hidden" accept=".pdf,image/*" onChange={(e) => handleDocUpload(e, 'firstAid')} />
+
+                {/* Construction White Card Checkbox */}
+                <div className="mt-4">
+                  <Checkbox
+                    label="I work on Construction Sites"
+                    checked={worksOnConstructionSite}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      if (!checked && (localWhiteCardDoc || mate.constructionWhiteCard)) {
+                        setShowClearWhiteCardDialog(true);
+                      } else {
+                        setWorksOnConstructionSite(checked);
+                        setHasUnsavedChanges(true);
+                      }
+                    }}
+                  />
+                </div>
+
+                {worksOnConstructionSite && (
+                  <div className="mt-3 p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
+                        <HardHat className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold">Construction White Card (CSCS)</p>
+                      </div>
+                      {mate.constructionWhiteCardStatus && (
+                        <CertStatusBadge status={mate.constructionWhiteCardStatus} />
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <DocUploadRow label="White Card Document" url={localWhiteCardDoc || mate.constructionWhiteCard} isUploading={isUploadingWhiteCard} onUpload={() => whiteCardFileRef.current?.click()} status={mate.constructionWhiteCardStatus} />
+                      <div>
+                        <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Expiry Date</label>
+                        <input type="date" value={whiteCardExpiry} onChange={(e) => { setWhiteCardExpiry(e.target.value); setHasUnsavedChanges(true); }} className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none" />
+                      </div>
+                    </div>
+                    {(localWhiteCardDoc || mate.constructionWhiteCard) && (
+                      <a href={localWhiteCardDoc || mate.constructionWhiteCard || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1">
+                        <FileText className="h-3 w-3" /> View Document
+                      </a>
+                    )}
+                  </div>
+                )}
+                <input type="file" ref={whiteCardFileRef} className="hidden" accept=".pdf,image/*" onChange={(e) => handleDocUpload(e, 'whiteCard')} />
+
+                {/* Working With Children Checkbox */}
+                <div className="mt-4">
+                  <Checkbox
+                    label="I work in Schools or Hospitals (with children)"
+                    checked={worksWithChildren}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      if (!checked && (localChildrenCheckDoc || mate.workingWithChildrenCheck)) {
+                        setShowClearChildrenCheckDialog(true);
+                      } else {
+                        setWorksWithChildren(checked);
+                        setHasUnsavedChanges(true);
+                      }
+                    }}
+                  />
+                </div>
+
+                {worksWithChildren && (
+                  <div className="mt-3 p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500">
+                        <Star className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold">Working With Children Check (DBS Enhanced)</p>
+                      </div>
+                      {mate.workingWithChildrenCheckStatus && (
+                        <CertStatusBadge status={mate.workingWithChildrenCheckStatus} />
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <DocUploadRow label="DBS Certificate" url={localChildrenCheckDoc || mate.workingWithChildrenCheck} isUploading={isUploadingChildrenCheck} onUpload={() => childrenCheckFileRef.current?.click()} status={mate.workingWithChildrenCheckStatus} />
+                      <div>
+                        <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Expiry Date</label>
+                        <input type="date" value={childrenCheckExpiry} onChange={(e) => { setChildrenCheckExpiry(e.target.value); setHasUnsavedChanges(true); }} className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none" />
+                      </div>
+                    </div>
+                    {(localChildrenCheckDoc || mate.workingWithChildrenCheck) && (
+                      <a href={localChildrenCheckDoc || mate.workingWithChildrenCheck || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1">
+                        <FileText className="h-3 w-3" /> View Document
+                      </a>
+                    )}
+                  </div>
+                )}
+                <input type="file" ref={childrenCheckFileRef} className="hidden" accept=".pdf,image/*" onChange={(e) => handleDocUpload(e, 'childrenCheck')} />
+              </Card>
+            </div>
           </div>
-        </div>
+        </form>
       </div>
 
       <ConfirmDialog
         isOpen={showConfirmDialog}
-        onConfirm={confirmDiscardChanges}
         onCancel={() => setShowConfirmDialog(false)}
-        title="Discard Unsaved Changes?"
-        message="You have unsaved changes to your profile. Are you sure you want to leave without saving?"
-        confirmLabel="Discard Changes"
-        cancelLabel="Keep Editing"
+        onConfirm={() => {
+          setHasUnsavedChanges(false);
+          router.push('/dashboard/mate');
+        }}
+        title="Unsaved Changes"
+        message="You have unsaved changes. Are you sure you want to leave?"
+        confirmLabel="Leave"
+        variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={showClearWhiteCardDialog}
+        onCancel={() => setShowClearWhiteCardDialog(false)}
+        onConfirm={() => {
+          setWorksOnConstructionSite(false);
+          setLocalWhiteCardDoc(undefined);
+          setWhiteCardExpiry('');
+          setHasUnsavedChanges(true);
+          setShowClearWhiteCardDialog(false);
+        }}
+        title="Remove White Card"
+        message="This will remove your White Card information. Are you sure?"
+        confirmLabel="Remove"
+        variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={showClearChildrenCheckDialog}
+        onCancel={() => setShowClearChildrenCheckDialog(false)}
+        onConfirm={() => {
+          setWorksWithChildren(false);
+          setLocalChildrenCheckDoc(undefined);
+          setChildrenCheckExpiry('');
+          setHasUnsavedChanges(true);
+          setShowClearChildrenCheckDialog(false);
+        }}
+        title="Remove Children Check"
+        message="This will remove your Working With Children Check information. Are you sure?"
+        confirmLabel="Remove"
+        variant="danger"
       />
     </div>
   );
 }
 
-/* ─── Tiny sub-components ──────────────────────────────────── */
-
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]">
-      <span className="text-[var(--color-text-tertiary)]">{icon}</span>
-      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-secondary)]">
-        {title}
-      </span>
+    <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-border-primary)]">
+      <div className="text-[var(--color-primary)]">{icon}</div>
+      <h3 className="font-bold text-sm uppercase tracking-wider">{title}</h3>
     </div>
   );
 }
 
-function SidebarInfoRow({ icon, label }: { icon: React.ReactNode; label: string }) {
+function DocUploadRow({ label, url, isUploading, onUpload, status }: { label: string; url: string | null | undefined; isUploading: boolean; onUpload: () => void; status: string | null | undefined }) {
   return (
-    <div className="flex items-start gap-2 text-[var(--color-text-secondary)]">
-      <span className="mt-0.5 flex-shrink-0 text-[var(--color-text-tertiary)]">{icon}</span>
-      <span className="text-[11px] leading-snug truncate">{label}</span>
+    <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded-lg ${url ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]'}`}>
+          <FileText className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="text-[11px] font-bold leading-none">{label}</p>
+          <div className="mt-1">
+            {url ? (
+              <Badge variant={status === 'VERIFIED' || status === 'VALID' ? 'success' : 'warning'} className="text-[9px] h-4 py-0 font-bold uppercase">
+                {status || 'PENDING'}
+              </Badge>
+            ) : (
+              <span className="text-[9px] text-[var(--color-text-tertiary)] font-bold uppercase opacity-60">Missing</span>
+            )}
+          </div>
+        </div>
+      </div>
+      <Button type="button" variant="outline" size="sm" className="h-8 px-2 border-dashed" loading={isUploading} onClick={onUpload}>
+        {url ? 'Replace' : 'Upload'}
+      </Button>
     </div>
   );
 }
 
-function FieldStatus({ label, filled }: { label: string; filled: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-[10px] text-[var(--color-text-tertiary)] truncate">{label}</span>
-      <span className={`flex-shrink-0 h-1.5 w-1.5 rounded-full ${filled ? 'bg-emerald-400' : 'bg-[var(--color-border-primary)]'}`} />
-    </div>
-  );
+function CertStatusBadge({ status }: { status: string }) {
+  const map: Record<string, { variant: 'success' | 'warning' | 'danger'; label: string }> = {
+    VALID: { variant: 'success', label: 'Valid' },
+    PENDING_REVIEW: { variant: 'warning', label: 'Pending Review' },
+    REJECTED: { variant: 'danger', label: 'Rejected' },
+    EXPIRED: { variant: 'danger', label: 'Expired' },
+  };
+  const d = map[status] || { variant: 'warning' as const, label: status };
+  return <Badge variant={d.variant} className="text-[9px] h-4 py-0 font-bold uppercase ml-auto">{d.label}</Badge>;
 }

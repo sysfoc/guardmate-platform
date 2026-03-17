@@ -23,11 +23,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <div className={cn('flex flex-col gap-1.5', fullWidth ? 'w-full' : 'w-auto')}>
+      <div className={cn('flex flex-col gap-1', fullWidth ? 'w-full' : 'w-auto')}>
         {label && (
           <label 
             className={cn(
-              'text-sm font-medium transition-colors',
+              'text-[11px] font-bold uppercase tracking-wider transition-colors',
               error ? 'text-[var(--color-danger)]' : 'text-[var(--color-input-label)]',
               disabled ? 'text-[var(--color-input-disabled-text)] opacity-50' : ''
             )}
@@ -49,9 +49,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={isPassword ? (showPassword ? 'text' : 'password') : type}
             disabled={disabled}
             className={cn(
-              'flex h-11 w-full rounded-lg border bg-[var(--color-input-bg)] px-4 py-2 text-base transition-all file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[var(--color-input-placeholder)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:bg-[var(--color-input-disabled-bg)] disabled:text-[var(--color-input-disabled-text)]',
-              leftIcon ? 'pl-10' : '',
-              (rightIcon || isPassword) ? 'pr-10' : '',
+              'flex h-10 w-full rounded-lg border bg-[var(--color-input-bg)] px-3.5 py-2 text-sm transition-all file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[var(--color-input-placeholder)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:bg-[var(--color-input-disabled-bg)] disabled:text-[var(--color-input-disabled-text)]',
+              leftIcon ? 'pl-9' : '',
+              (rightIcon || isPassword) ? 'pr-9' : '',
               error 
                 ? 'border-[var(--color-input-border-error)] focus-visible:ring-[var(--color-input-border-error)]' 
                 : 'border-[var(--color-input-border)] focus-visible:ring-[var(--color-input-border-focus)]',

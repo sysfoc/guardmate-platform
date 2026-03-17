@@ -13,8 +13,9 @@ import {
   CheckCircle2,
   Clock
 } from 'lucide-react';
-import type { UserProfile } from '@/types/user.types';
+import type { UserProfile, MateProfile } from '@/types/user.types';
 import { UserRole, UserStatus } from '@/types/enums';
+import { CertificateBadges } from '@/components/ui/CertificateBadges';
 
 interface UserTableProps {
   users: UserProfile[];
@@ -48,6 +49,7 @@ export function UserTable({ users, onAction, isLoading }: UserTableProps) {
           <tr className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
             <th className="px-4 py-3">User</th>
             <th className="px-4 py-3">Role / Status</th>
+            <th className="px-4 py-3">Certificates</th>
             <th className="px-4 py-3">Joined</th>
             <th className="px-4 py-3 text-right">Actions</th>
           </tr>
@@ -83,7 +85,14 @@ export function UserTable({ users, onAction, isLoading }: UserTableProps) {
                   </Badge>
                 </div>
               </td>
-              <td className="px-4 py-4">
+              <td className="px-4 py-4 align-top pt-5">
+                {user.role === UserRole.MATE ? (
+                  <CertificateBadges user={user as MateProfile} size="sm" />
+                ) : (
+                  <span className="text-[10px] text-[var(--color-text-muted)]">-</span>
+                )}
+              </td>
+              <td className="px-4 py-4 align-top pt-5">
                 <p className="text-sm text-[var(--color-text-primary)]">{new Date(user.createdAt).toLocaleDateString()}</p>
                 <div className="flex items-center gap-1 text-[10px] text-[var(--color-text-muted)]">
                   <Clock className="h-3 w-3" />

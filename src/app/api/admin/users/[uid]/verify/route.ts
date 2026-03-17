@@ -3,7 +3,7 @@ import { verifyAndGetUser, createApiResponse, getClientIp, getDeviceInfo } from 
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User.model';
 import AdminActivity from '@/models/AdminActivity.model';
-import { UserRole, LicenseStatus, VerificationStatus } from '@/types/enums';
+import { UserRole, LicenseStatus, VerificationStatus, CertificateStatus } from '@/types/enums';
 import { AdminActionType } from '@/types/admin.types';
 import { sendLicenseApproved, sendLicenseRejected } from '@/lib/email/emailTriggers';
 
@@ -12,6 +12,9 @@ const VALID_FIELDS: Record<string, string[]> = {
   licenseStatus: Object.values(LicenseStatus),
   companyLicenseStatus: Object.values(LicenseStatus),
   idVerificationStatus: Object.values(VerificationStatus),
+  firstAidCertificateStatus: Object.values(CertificateStatus),
+  constructionWhiteCardStatus: Object.values(CertificateStatus),
+  workingWithChildrenCheckStatus: Object.values(CertificateStatus),
 };
 
 /**
@@ -85,9 +88,17 @@ export async function PATCH(
       updateData.idVerifiedAt = now;
     }
 
-    // Store verification notes
-    if (notes) {
-      updateData.verificationNotes = notes;
+    if (field === 'firstAidCertificateStatus' && value === CertificateStatus.VALID) {
+      updateData.firstAidVerifiedAt = now;
+      updateData.firstAidVerifiedBy = auth.user.uid;
+    }
+
+    if (field === 'constructionWhiteCardStatus' && value === CertificateStatus.VALID) {
+      updateData.constructionWhiteCardVerifiedAt = now;
+    }
+
+    if (field === 'workingWithChildrenCheckStatus' && value === CertificateStatus.VALID) {
+      updateData.workingWithChildrenCheckVerifiedAt = now;
     }
 
     // Apply update
@@ -97,12 +108,22 @@ export async function PATCH(
       { new: true, runValidators: true }
     );
 
+    // Determine the correct action type
+    const actionTypeMap: Record<string, AdminActionType> = {
+      licenseStatus: AdminActionType.VERIFY_LICENSE,
+      companyLicenseStatus: AdminActionType.VERIFY_LICENSE,
+      idVerificationStatus: AdminActionType.VERIFY_LICENSE,
+      firstAidCertificateStatus: AdminActionType.VERIFY_FIRST_AID,
+      constructionWhiteCardStatus: AdminActionType.VERIFY_WHITE_CARD,
+      workingWithChildrenCheckStatus: AdminActionType.VERIFY_CHILDREN_CHECK,
+    };
+
     // Log admin activity
     const deviceInfo = getDeviceInfo(request);
     await AdminActivity.create({
       adminUid: auth.user.uid,
       adminName: `${auth.user.firstName} ${auth.user.lastName}`,
-      actionType: AdminActionType.VERIFY_LICENSE,
+      actionType: actionTypeMap[field] || AdminActionType.VERIFY_LICENSE,
       targetType: 'USER',
       targetId: targetUser.uid,
       targetName: `${targetUser.firstName} ${targetUser.lastName}`,

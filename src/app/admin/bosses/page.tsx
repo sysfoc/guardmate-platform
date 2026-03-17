@@ -31,21 +31,7 @@ const ITEMS_PER_PAGE = 10;
 
 // ─── License Badge ────────────────────────────────────────────────────────────
 
-function CompanyLicenseExpiryBadge({ expiry }: { expiry: string | null }) {
-  if (!expiry) return <span className="text-xs text-[var(--color-text-muted)]">N/A</span>;
-
-  const expiryDate = new Date(expiry);
-  const now = new Date();
-  const daysUntil = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (daysUntil < 0) {
-    return <Badge variant="danger" size="sm" dot>Expired</Badge>;
-  }
-  if (daysUntil <= 30) {
-    return <Badge variant="warning" size="sm" dot>Expiring ({daysUntil}d)</Badge>;
-  }
-  return <span className="text-xs text-[var(--color-text-primary)]">{expiryDate.toLocaleDateString()}</span>;
-}
+import { ExpiryBadge } from '@/components/ui/ExpiryBadge';
 
 // ─── License Status Badge ─────────────────────────────────────────────────────
 
@@ -361,17 +347,12 @@ function BossesPageInner() {
                       className="h-4 w-4 rounded accent-[var(--color-primary)]"
                     />
                   </th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden md:table-cell">Email</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Phone</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Company</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Company License #</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">License Expiry</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden 2xl:table-cell">Doc</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">License Status</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden 2xl:table-cell">Industry</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Boss / Contact</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Business Info</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">License Info</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Expiry</th>
+                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Verification</th>
                   <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden md:table-cell">Registered</th>
                   <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
@@ -391,51 +372,70 @@ function BossesPageInner() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <Avatar src={user.profilePhoto || undefined} name={user.fullName} size="sm" />
-                          <span className="font-semibold text-sm text-[var(--color-text-primary)] truncate max-w-[120px]">
-                            {user.fullName}
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-semibold text-xs text-[var(--color-text-primary)] truncate max-w-[140px]">
+                              {user.fullName}
+                            </span>
+                            <span className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[140px]">
+                              {user.email}
+                            </span>
+                            <span className="text-[10px] text-[var(--color-text-muted)] font-medium">
+                              {formatPhoneNumber(user.phone, user.phoneCountryCode)}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <div className="flex flex-col min-w-0 max-w-[160px]">
+                          <span className="text-xs font-bold text-[var(--color-text-primary)] truncate">
+                            {boss.companyName || '—'}
+                          </span>
+                          <span className="text-[10px] text-[var(--color-text-muted)] truncate">
+                            Reg: {boss.companyRegistrationNumber || '—'}
+                          </span>
+                          <span className="text-[10px] text-[var(--color-text-muted)] italic">
+                            {boss.industry || '—'}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)] hidden md:table-cell truncate max-w-[180px]">
-                        {user.email}
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-mono font-semibold text-[var(--color-text-primary)] uppercase">
+                            {boss.companyLicenseNumber || '—'}
+                          </span>
+                          <span className="text-[10px] text-[var(--color-text-tertiary)] font-medium">
+                            License Doc: {boss.companyLicenseDocument ? 'Yes' : 'No'}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)] hidden lg:table-cell">
-                        {formatPhoneNumber(user.phone, user.phoneCountryCode)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-primary)] font-semibold hidden lg:table-cell truncate max-w-[140px]">
-                        {boss.companyName || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-primary)] font-mono hidden xl:table-cell">
-                        {boss.companyLicenseNumber || '—'}
-                      </td>
-                      <td className="px-4 py-3 hidden xl:table-cell">
-                        <CompanyLicenseExpiryBadge expiry={boss.companyLicenseExpiry} />
-                      </td>
-                      <td className="px-4 py-3 hidden 2xl:table-cell">
-                        {boss.companyLicenseDocument ? (
-                          <a
-                            href={boss.companyLicenseDocument}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[var(--color-link)] hover:text-[var(--color-link-hover)] inline-flex items-center gap-1 text-xs font-medium"
-                          >
-                            <FileText className="h-3.5 w-3.5" /> View
-                          </a>
-                        ) : (
-                          <span className="text-xs text-[var(--color-text-muted)]">None</span>
-                        )}
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <ExpiryBadge expiry={boss.companyLicenseExpiry} />
                       </td>
                       <td className="px-4 py-3 hidden xl:table-cell">
-                        <CompanyLicenseStatusBadge status={boss.companyLicenseStatus} />
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)] hidden 2xl:table-cell">
-                        {boss.industry || '—'}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                             <span className="text-[9px] font-bold text-[var(--color-text-muted)] uppercase">Status:</span>
+                             <CompanyLicenseStatusBadge status={boss.companyLicenseStatus} />
+                          </div>
+                          {boss.companyLicenseDocument && (
+                            <a
+                              href={boss.companyLicenseDocument}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[var(--color-link)] hover:text-[var(--color-link-hover)] inline-flex items-center gap-1 text-[10px] font-bold mt-0.5"
+                            >
+                              <FileText className="h-3 w-3" /> View License
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={user.status} />
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[var(--color-text-muted)] hidden md:table-cell">
-                        {new Date(user.createdAt).toLocaleDateString()}
+                        <div className="flex flex-col gap-1">
+                           <StatusBadge status={user.status} />
+                           <span className="text-[9px] text-[var(--color-text-muted)]">
+                             Joined: {new Date(user.createdAt).toLocaleDateString()}
+                           </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">

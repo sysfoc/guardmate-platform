@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     const filter: Record<string, unknown> = {};
 
-    if (role) filter.role = role;
+    if (role) filter.role = { $regex: new RegExp(`^${role}$`, 'i') };
     if (status) filter.status = status;
     if (country) filter.country = { $regex: country, $options: 'i' };
 

@@ -31,31 +31,29 @@ const ITEMS_PER_PAGE = 10;
 
 // ─── License Badge ────────────────────────────────────────────────────────────
 
-function LicenseExpiryBadge({ expiry }: { expiry: string | null }) {
-  if (!expiry) return <span className="text-xs text-[var(--color-text-muted)]">N/A</span>;
-
-  const expiryDate = new Date(expiry);
-  const now = new Date();
-  const daysUntil = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (daysUntil < 0) {
-    return <Badge variant="danger" size="sm" dot>Expired</Badge>;
-  }
-  if (daysUntil <= 30) {
-    return <Badge variant="warning" size="sm" dot>Expiring ({daysUntil}d)</Badge>;
-  }
-  return <span className="text-xs text-[var(--color-text-primary)]">{expiryDate.toLocaleDateString()}</span>;
-}
+import { ExpiryBadge } from '@/components/ui/ExpiryBadge';
 
 // ─── License Status Badge ─────────────────────────────────────────────────────
 
 function LicenseStatusBadge({ status }: { status: string | undefined }) {
-  if (!status) return <span className="text-xs text-[var(--color-text-muted)]">N/A</span>;
+  if (!status) return <span className="text-xs text-[var(--color-text-muted)]">—</span>;
   const map: Record<string, { variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral'; label: string }> = {
     VALID: { variant: 'success', label: 'Valid' },
     PENDING_REVIEW: { variant: 'warning', label: 'Pending' },
     EXPIRING_SOON: { variant: 'warning', label: 'Expiring' },
     EXPIRED: { variant: 'danger', label: 'Expired' },
+  };
+  const d = map[status] || { variant: 'neutral' as const, label: status };
+  return <Badge variant={d.variant} size="sm">{d.label}</Badge>;
+}
+
+function VerificationBadge({ status }: { status: string | undefined }) {
+  if (!status) return <span className="text-xs text-[var(--color-text-muted)]">—</span>;
+  const map: Record<string, { variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral'; label: string }> = {
+    VERIFIED: { variant: 'success', label: 'Verified' },
+    PENDING: { variant: 'warning', label: 'Pending' },
+    UNVERIFIED: { variant: 'info', label: 'Unverified' },
+    REJECTED: { variant: 'danger', label: 'Rejected' },
   };
   const d = map[status] || { variant: 'neutral' as const, label: status };
   return <Badge variant={d.variant} size="sm">{d.label}</Badge>;
@@ -282,7 +280,7 @@ function GuardsPageInner() {
             <input
               type="text"
               placeholder="Search name, email, license..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] outline-none transition-all text-[var(--color-input-text)] placeholder:text-[var(--color-input-placeholder)]"
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] outline-none transition-all text-[var(--color-input-text)] placeholder:text-[var(--color-input-placeholder)]"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
@@ -291,7 +289,7 @@ function GuardsPageInner() {
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)] pointer-events-none" />
             <select
-              className="pl-10 pr-8 py-2.5 rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] text-sm appearance-none cursor-pointer focus:ring-2 focus:ring-[var(--color-focus-ring)] outline-none text-[var(--color-input-text)]"
+              className="pl-9 pr-7 py-2 rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] text-sm appearance-none cursor-pointer focus:ring-2 focus:ring-[var(--color-focus-ring)] outline-none text-[var(--color-input-text)]"
               value={currentStatus}
               onChange={(e) => updateUrl({ status: e.target.value, page: '1' })}
             >
@@ -361,18 +359,13 @@ function GuardsPageInner() {
                       className="h-4 w-4 rounded accent-[var(--color-primary)]"
                     />
                   </th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden md:table-cell">Email</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Phone</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">License #</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Type</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Expiry</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden 2xl:table-cell">Doc</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">License Status</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden 2xl:table-cell">Skills</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden md:table-cell">Registered</th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-right">Actions</th>
+                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Guard / Contact</th>
+                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Location / Address</th>
+                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">License Info</th>
+                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Expiry</th>
+                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Verification</th>
+                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-table-border)]">
@@ -380,7 +373,7 @@ function GuardsPageInner() {
                   const mate = user as MateProfile;
                   return (
                     <tr key={user._id} className="hover:bg-[var(--color-table-row-hover)] transition-colors">
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <input
                           type="checkbox"
                           checked={selectedUids.includes(user.uid)}
@@ -388,67 +381,85 @@ function GuardsPageInner() {
                           className="h-4 w-4 rounded accent-[var(--color-primary)]"
                         />
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2.5">
                           <Avatar src={user.profilePhoto || undefined} name={user.fullName} size="sm" />
-                          <span className="font-semibold text-sm text-[var(--color-text-primary)] truncate max-w-[120px]">
-                            {user.fullName}
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-semibold text-xs text-[var(--color-text-primary)] truncate max-w-[140px]">
+                              {user.fullName}
+                            </span>
+                            <span className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[140px]">
+                              {user.email}
+                            </span>
+                            <span className="text-[10px] text-[var(--color-text-muted)] font-medium">
+                              {formatPhoneNumber(user.phone, user.phoneCountryCode)}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 hidden lg:table-cell">
+                        <div className="flex flex-col min-w-0 max-w-[160px]">
+                          <span className="text-xs font-medium text-[var(--color-text-secondary)] truncate">
+                            {[(user.city || user.state), user.country].filter(Boolean).join(', ') || '—'}
+                          </span>
+                          <span className="text-[10px] text-[var(--color-text-muted)] truncate italic">
+                            {user.address || 'No address'}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)] hidden md:table-cell truncate max-w-[180px]">
-                        {user.email}
+                      <td className="px-3 py-2 hidden lg:table-cell">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-mono font-semibold text-[var(--color-text-primary)] uppercase">
+                            {mate.licenseNumber || '—'}
+                          </span>
+                          <span className="text-[10px] text-[var(--color-text-tertiary)] font-medium">
+                            {mate.licenseType || '—'}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)] hidden lg:table-cell">
-                        {formatPhoneNumber(user.phone, user.phoneCountryCode)}
+                      <td className="px-3 py-2 hidden lg:table-cell">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-[var(--color-text-muted)]">LIC:</span>
+                            <ExpiryBadge expiry={mate.licenseExpiry} />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-[var(--color-text-muted)]">ID:</span>
+                            <ExpiryBadge expiry={mate.idExpiry} />
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-primary)] font-mono hidden xl:table-cell">
-                        {mate.licenseNumber || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-secondary)] hidden xl:table-cell">
-                        {mate.licenseType || '—'}
-                      </td>
-                      <td className="px-4 py-3 hidden xl:table-cell">
-                        <LicenseExpiryBadge expiry={mate.licenseExpiry} />
-                      </td>
-                      <td className="px-4 py-3 hidden 2xl:table-cell">
-                        {mate.licenseDocument ? (
-                          <a
-                            href={mate.licenseDocument}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[var(--color-link)] hover:text-[var(--color-link-hover)] inline-flex items-center gap-1 text-xs font-medium"
-                          >
-                            <FileText className="h-3.5 w-3.5" /> View
-                          </a>
-                        ) : (
-                          <span className="text-xs text-[var(--color-text-muted)]">None</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 hidden xl:table-cell">
-                        <LicenseStatusBadge status={mate.licenseStatus} />
-                      </td>
-                      <td className="px-4 py-3 hidden 2xl:table-cell">
-                        <div className="flex flex-wrap gap-1 max-w-[150px]">
-                          {(mate.skills || []).slice(0, 2).map((s) => (
-                            <span key={s} className="px-1.5 py-0.5 rounded-md bg-[var(--color-bg-subtle)] text-[10px] text-[var(--color-text-secondary)] border border-[var(--color-surface-border)]">
-                              {s}
-                            </span>
-                          ))}
-                          {(mate.skills?.length || 0) > 2 && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-[var(--color-bg-subtle)] text-[10px] text-[var(--color-text-muted)] border border-[var(--color-surface-border)]">
-                              +{(mate.skills?.length || 0) - 2}
-                            </span>
+                      <td className="px-3 py-2 hidden xl:table-cell">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-bold text-[var(--color-text-muted)] uppercase">License:</span>
+                            <LicenseStatusBadge status={mate.licenseStatus} />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-bold text-[var(--color-text-muted)] uppercase">ID:</span>
+                            <VerificationBadge status={mate.idVerificationStatus} />
+                          </div>
+                          {mate.licenseDocument && (
+                            <a
+                              href={mate.licenseDocument}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[var(--color-link)] hover:text-[var(--color-link-hover)] inline-flex items-center gap-1 text-[10px] font-bold mt-0.5"
+                            >
+                              <FileText className="h-3 w-3" /> View Document
+                            </a>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={user.status} />
+                      <td className="px-3 py-2">
+                        <div className="flex flex-col gap-1">
+                          <StatusBadge status={user.status} />
+                          <span className="text-[9px] text-[var(--color-text-muted)]">
+                            Reg: {new Date(user.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-[var(--color-text-muted)] hidden md:table-cell">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-3 py-2 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => setProfileUid(user.uid)}

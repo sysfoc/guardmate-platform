@@ -92,7 +92,15 @@ export function middleware(request: NextRequest) {
 
   // ── 5. Incomplete Profile → Onboarding guard ──────────────────────────────────
   // If hitting a protected subpage but onboarding is not complete, redirect there
-  if (session && role && !onboardingComplete && isProtectedPath && !pathname.startsWith(ONBOARDING_PATH)) {
+  // EXCEPTION: Admins do not have an onboarding flow, so they bypass this guard
+  if (
+    session && 
+    role && 
+    role !== UserRole.ADMIN && 
+    !onboardingComplete && 
+    isProtectedPath && 
+    !pathname.startsWith(ONBOARDING_PATH)
+  ) {
     return NextResponse.redirect(new URL(ONBOARDING_PATH, request.url));
   }
 

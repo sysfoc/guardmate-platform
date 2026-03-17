@@ -9,6 +9,7 @@ import {
   LicenseStatus,
   VerificationStatus,
   AdminLevel,
+  CertificateStatus,
 } from './enums';
 
 export {
@@ -18,6 +19,7 @@ export {
   LicenseStatus,
   VerificationStatus,
   AdminLevel,
+  CertificateStatus,
 };
 
 // ─── Sub-models ───────────────────────────────────────────────────────────────
@@ -93,6 +95,8 @@ export interface BaseUser {
   country: string | null;
   city: string | null;
   state: string | null;
+  address: string | null;
+  postalCode: string | null;
   timezone: string | null;
 
   // ── Security & Session Tracking ─────────────────────────────────────────────
@@ -181,8 +185,28 @@ export interface MateProfile extends BaseUser {
   idType: string | null;
   idNumber: string | null;
   idDocument: string | null;
+  idExpiry: string | null;
   idVerificationStatus: VerificationStatus;
   idVerifiedAt: string | null;
+
+  // ── Certificates & Licences ────────────────────────────────────────────────
+  firstAidCertificate: string | null;
+  firstAidCertificateExpiry: string | null;
+  firstAidCertificateStatus: CertificateStatus | null;
+  firstAidVerifiedAt: string | null;
+  firstAidVerifiedBy: string | null;
+  worksOnConstructionSite: boolean;
+  constructionWhiteCard: string | null;
+  constructionWhiteCardExpiry: string | null;
+  constructionWhiteCardStatus: CertificateStatus | null;
+  constructionWhiteCardVerifiedAt: string | null;
+  worksWithChildren: boolean;
+  workingWithChildrenCheck: string | null;
+  workingWithChildrenCheckExpiry: string | null;
+  workingWithChildrenCheckStatus: CertificateStatus | null;
+  workingWithChildrenCheckVerifiedAt: string | null;
+
+  // -- Background Check is moved to bottom to avoid duplication
 
   // ── Professional ──────────────────────────────────────────────────────────
   skills: string[];
@@ -216,6 +240,7 @@ export interface MateProfile extends BaseUser {
   // ── Background Check ──────────────────────────────────────────────────────
   backgroundCheckStatus: VerificationStatus;
   backgroundCheckDate: string | null;
+  backgroundCheckDocument: string | null;
 }
 
 // ─── Admin Profile ────────────────────────────────────────────────────────────
@@ -238,50 +263,68 @@ export type UserProfile = BossProfile | MateProfile | AdminProfile;
 export interface BaseProfileUpdatePayload {
   firstName?: string;
   lastName?: string;
-  profilePhoto?: string;
-  phone?: string;
-  phoneCountryCode?: string;
-  bio?: string;
-  country?: string;
-  city?: string;
-  state?: string;
-  timezone?: string;
-  notificationPreferences?: Partial<NotificationPreferences>;
+  profilePhoto?: string | null;
+  phone?: string | null;
+  phoneCountryCode?: string | null;
+  bio?: string | null;
+  country?: string | null;
+  city?: string | null;
+  state?: string | null;
+  address?: string | null;
+  postalCode?: string | null;
+  timezone?: string | null;
+  notificationPreferences?: Partial<NotificationPreferences> | null;
   isOnboardingComplete?: boolean;
   isProfileComplete?: boolean;
 }
 
 export interface BossProfileUpdatePayload extends BaseProfileUpdatePayload {
-  companyName?: string;
-  companyRegistrationNumber?: string;
-  companyLicenseNumber?: string;
+  companyName?: string | null;
+  companyRegistrationNumber?: string | null;
+  companyLicenseNumber?: string | null;
   companyLicenseExpiry?: string | null;
-  companyAddress?: string;
-  companyCity?: string;
-  companyState?: string;
-  companyCountry?: string;
-  companyPostalCode?: string;
-  companyPhone?: string;
-  companyEmail?: string;
-  companyWebsite?: string;
-  companyDescription?: string;
-  industry?: string;
+  companyAddress?: string | null;
+  companyCity?: string | null;
+  companyState?: string | null;
+  companyCountry?: string | null;
+  companyPostalCode?: string | null;
+  companyPhone?: string | null;
+  companyEmail?: string | null;
+  companyWebsite?: string | null;
+  companyDescription?: string | null;
+  industry?: string | null;
+  companyLicenseDocument?: string | null;
 }
 
 export interface MateProfileUpdatePayload extends BaseProfileUpdatePayload {
-  skills?: string[];
-  hourlyRate?: number;
-  minimumHours?: number;
-  experience?: number;
-  languages?: string[];
+  skills?: string[] | null;
+  hourlyRate?: number | null;
+  minimumHours?: number | null;
+  experience?: number | null;
+  languages?: string[] | null;
   isAvailable?: boolean;
-  preferredWorkRadius?: number;
-  preferredLocations?: string[];
-  availabilityCalendar?: AvailabilitySlot[];
-  licenseNumber?: string;
-  licenseType?: string;
-  licenseIssuingAuthority?: string;
-  licenseExpiry?: string;
+  preferredWorkRadius?: number | null;
+  preferredLocations?: string[] | null;
+  availabilityCalendar?: AvailabilitySlot[] | null;
+  licenseNumber?: string | null;
+  licenseType?: string | null;
+  licenseIssuingAuthority?: string | null;
+  licenseExpiry?: string | null;
+  licenseDocument?: string | null;
+  idType?: string | null;
+  idNumber?: string | null;
+  idDocument?: string | null;
+  idExpiry?: string | null;
+  certifications?: Certification[] | null;
+  backgroundCheckDocument?: string | null;
+  firstAidCertificate?: string | null;
+  firstAidCertificateExpiry?: string | null;
+  worksOnConstructionSite?: boolean;
+  constructionWhiteCard?: string | null;
+  constructionWhiteCardExpiry?: string | null;
+  worksWithChildren?: boolean;
+  workingWithChildrenCheck?: string | null;
+  workingWithChildrenCheckExpiry?: string | null;
 }
 
 export type ProfileUpdatePayload = BossProfileUpdatePayload | MateProfileUpdatePayload;
