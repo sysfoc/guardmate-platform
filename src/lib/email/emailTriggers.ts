@@ -160,3 +160,60 @@ export const sendLicenseExpiry30Days = async (userEmail: string, firstName: stri
     variables: { firstName, licenseNumber, expiryDate },
   });
 };
+
+export const sendJobCancelledByBoss = async (
+  guardEmail: string,
+  guardName: string,
+  jobTitle: string,
+  startDate: string,
+  cancelReason: string
+) => {
+  await sendEmail({
+    to: guardEmail,
+    notificationType: NotificationEventType.JOB_CANCELLED_BY_BOSS,
+    variables: {
+      guardName,
+      jobTitle,
+      startDate,
+      cancelReason,
+      browseJobsUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/mate/jobs`,
+    },
+  });
+};
+
+export const sendGuardWithdrewBid = async (
+  bossEmail: string,
+  bossName: string,
+  guardName: string,
+  jobTitle: string,
+  startDate: string
+) => {
+  await sendEmail({
+    to: bossEmail,
+    notificationType: NotificationEventType.GUARD_WITHDREW_BID,
+    variables: {
+      bossName,
+      guardName,
+      jobTitle,
+      startDate,
+      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/boss/jobs`,
+    },
+  });
+};
+
+export const sendJobReopenedToBidders = async (
+  guardEmail: string,
+  guardName: string,
+  jobTitle: string,
+  jobId: string
+) => {
+  await sendEmail({
+    to: guardEmail,
+    notificationType: NotificationEventType.JOB_REOPENED_TO_BIDDERS,
+    variables: {
+      guardName,
+      jobTitle,
+      jobUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/mate/jobs/${jobId}`,
+    },
+  });
+};

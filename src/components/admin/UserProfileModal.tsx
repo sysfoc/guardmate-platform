@@ -486,6 +486,27 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
                 {user.deletedAt && <Field label="Deleted At" value={new Date(user.deletedAt).toLocaleString()} />}
               </div>
             </div>
+
+            {/* Reliability & Strikes */}
+            {(user.role === UserRole.MATE || user.role === UserRole.BOSS) && (
+              <div className="border-t border-[var(--color-card-border)] pt-4">
+                <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">Reliability Metrics</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                  {user.role === UserRole.MATE && (
+                    <Field label="Reliability Score" value={
+                      <span className={`text-sm font-bold ${((user as MateProfile).reliabilityScore ?? 100) >= 80 ? 'text-[var(--color-success)]' : ((user as MateProfile).reliabilityScore ?? 100) >= 50 ? 'text-[var(--color-warning)]' : 'text-[var(--color-danger)]'}`}>
+                        {(user as MateProfile).reliabilityScore ?? 100}%
+                      </span>
+                    } />
+                  )}
+                  <Field label="Cancellation Strikes" value={
+                    <span className={`text-sm font-bold ${((user as any).cancellationStrikes || 0) >= 3 ? 'text-[var(--color-danger)]' : ((user as any).cancellationStrikes || 0) >= 1 ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
+                      {(user as any).cancellationStrikes || 0}
+                    </span>
+                  } />
+                </div>
+              </div>
+            )}
           </div>
         );
 

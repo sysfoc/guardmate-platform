@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
 import { 
   TrendingUp, FileText, ChevronRight, AlertTriangle, 
   Building2, MapPin, Star, Users, Briefcase, Plus, AlertCircle,
-  CheckCircle2, Clock, Calendar, Search, ArrowUpRight, MoreHorizontal, Shield
+  CheckCircle2, Clock, Calendar, Search, ArrowUpRight, MoreHorizontal, Shield, X
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -16,11 +16,33 @@ import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import { ProfileCompletionBanner } from '@/components/ui/ProfileCompletionBanner';
 import { StatCard } from '@/components/ui/StatCard';
 import { StarRating } from '@/components/ui/StarRating';
+import { getBossActivity } from '@/lib/api/job.api';
+import { getMyPendingReviews } from '@/lib/api/review.api';
+import type { BossActivityItem } from '@/lib/api/job.api';
 import type { BossProfile } from '@/types/user.types';
 import { VerificationStatus, LicenseStatus } from '@/types/enums';
 
 export default function BossDashboard() {
   const { user, isLoading } = useUser();
+  const [activity, setActivity] = useState<BossActivityItem[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [hideReviewBanner, setHideReviewBanner] = useState(false);
+
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        const [resp, pendingResp] = await Promise.all([
+          getBossActivity(),
+          getMyPendingReviews()
+        ]);
+        if (resp.success && resp.data) setActivity(resp.data);
+        if (pendingResp.success && pendingResp.data) setPendingCount(pendingResp.data.length);
+      } catch { /* silent */ }
+      finally { setActivityLoading(false); }
+    };
+    fetchActivity();
+  }, []);
 
   if (isLoading) return <DashboardSkeleton />;
   if (!user) return null;
@@ -28,11 +50,50 @@ export default function BossDashboard() {
   const boss = user as BossProfile;
   const isVerified = boss.isCompanyVerified && boss.companyLicenseStatus === LicenseStatus.VALID;
 
+  const jobStatusVariant = (status: string) => {
+    switch (status) {
+      case 'OPEN': return 'success';
+      case 'FILLED': case 'IN_PROGRESS': return 'info';
+      case 'COMPLETED': return 'neutral';
+      case 'CANCELLED': case 'EXPIRED': return 'danger';
+      case 'DRAFT': return 'warning';
+      default: return 'neutral';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
         <ProfileCompletionBanner />
+
+        {pendingCount > 0 && !hideReviewBanner && (
+          <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)] text-[var(--color-primary-dark)] px-4 py-3 rounded-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[var(--color-primary)]/10 rounded-full">
+                <Star className="h-5 w-5 text-[var(--color-primary)]" fill="var(--color-primary)" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold">Action Required: Rate your Mates</h3>
+                <p className="text-xs font-medium opacity-90 mt-0.5">
+                  You have {pendingCount} completed job{pendingCount !== 1 ? 's' : ''} awaiting your review. Reviews help build trust on the platform.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link href="/dashboard/boss/jobs?status=COMPLETED">
+                <Button size="sm" variant="primary">Leave Reviews</Button>
+              </Link>
+              <button 
+                onClick={() => setHideReviewBanner(true)}
+                className="p-1.5 hover:bg-[var(--color-primary)]/10 rounded-full transition-colors"
+                aria-label="Dismiss"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Welcome & Action Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -103,7 +164,6 @@ export default function BossDashboard() {
               label="Active Jobs" 
               value={boss.activeJobsCount || 0} 
               icon={<Briefcase />} 
-              trend={{ value: 12, isPositive: true }}
               variant="blue"
             />
             <StatCard 
@@ -115,10 +175,21 @@ export default function BossDashboard() {
           </div>
         </div>
 
+        {/* Cancellation Strikes Warning */}
+        {(boss.cancellationStrikes || 0) > 0 && (
+          <div className="bg-[var(--color-danger-light)] text-[var(--color-danger)] px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <div>
+              <p>You have {boss.cancellationStrikes} cancellation strike{(boss.cancellationStrikes || 0) > 1 ? 's' : ''}.</p>
+              <p className="text-[10px] font-medium opacity-80 mt-0.5">Frequent cancellations negatively affect your employer reputation.</p>
+            </div>
+          </div>
+        )}
+
         {/* Secondary Insight Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           
-          {/* Recent Jobs Table Card */}
+          {/* Recent Jobs Table Card — Real Data */}
           <Card className="lg:col-span-2 p-0 overflow-hidden">
             <div className="px-5 py-4 border-b border-[var(--color-border-primary)] flex items-center justify-between">
               <h3 className="font-bold text-sm">Recent Activity</h3>
@@ -139,32 +210,59 @@ export default function BossDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border-primary)]">
-                  {/* Mock data for visualization */}
-                  <tr className="hover:bg-[var(--color-bg-secondary)]/50 transition-colors">
-                    <td className="px-5 py-3">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-xs">Retail Guard</span>
-                        <span className="text-[9px] text-[var(--color-text-tertiary)] flex items-center gap-1">
-                          <MapPin className="h-2 w-2" /> London, Central
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      <Badge variant="success" className="text-[9px] h-4">ACTIVE</Badge>
-                    </td>
-                    <td className="px-5 py-3 text-center text-xs font-medium">12</td>
-                    <td className="px-5 py-3 text-xs font-bold whitespace-nowrap">£18.50/hr</td>
-                    <td className="px-5 py-3 text-right">
-                      <button className="p-1.5 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors">
-                        <MoreHorizontal className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                  <tr className="opacity-40 grayscale select-none">
-                    <td colSpan={5} className="px-5 py-8 text-center text-[11px] text-[var(--color-text-tertiary)] italic">
-                      More job data will appear here
-                    </td>
-                  </tr>
+                  {activityLoading ? (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-8 text-center">
+                        <div className="flex items-center justify-center gap-2 text-[11px] text-[var(--color-text-tertiary)]">
+                          <div className="h-3 w-3 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+                          Loading activity...
+                        </div>
+                      </td>
+                    </tr>
+                  ) : activity.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-10 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <Briefcase className="h-6 w-6 text-[var(--color-text-muted)] opacity-40" />
+                          <p className="text-[11px] text-[var(--color-text-tertiary)]">No jobs posted yet. Create your first listing!</p>
+                          {isVerified && (
+                            <Link href="/dashboard/boss/jobs/new">
+                              <Button size="sm" variant="ghost" className="text-[10px] border border-[var(--color-border-primary)] mt-1">
+                                Post a Job
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    activity.map((item) => (
+                      <tr key={item.jobId} className="hover:bg-[var(--color-bg-secondary)]/50 transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="flex flex-col">
+                            <Link href={`/dashboard/boss/jobs/${item.jobId}`} className="font-bold text-xs hover:text-[var(--color-primary)] transition-colors">{item.title}</Link>
+                            <span className="text-[9px] text-[var(--color-text-tertiary)] flex items-center gap-1">
+                              <MapPin className="h-2 w-2" /> {item.locationCity}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <Badge variant={jobStatusVariant(item.status)} className="text-[9px] h-4">{item.status}</Badge>
+                        </td>
+                        <td className="px-5 py-3 text-center text-xs font-medium">{item.totalBids}</td>
+                        <td className="px-5 py-3 text-xs font-bold whitespace-nowrap">
+                          £{item.budgetAmount}{item.budgetType === 'HOURLY' ? '/hr' : ''}
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <Link href={`/dashboard/boss/jobs/${item.jobId}`}>
+                            <button className="p-1.5 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors">
+                              <MoreHorizontal className="h-3.5 w-3.5" />
+                            </button>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

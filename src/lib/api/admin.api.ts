@@ -8,7 +8,8 @@
 import { apiGet, apiPatch, apiPost } from '@/lib/apiClient';
 import type { ApiResponse } from '@/types/api.types';
 import type { UserProfile } from '@/types/user.types';
-import type { AdminDashboardStats, AdminActivity, AdminUserFilters, AdminActivityFilters } from '@/types/admin.types';
+import type { AdminDashboardStats, AdminActivity, AdminUserFilters, AdminActivityFilters, AdminJobFilters } from '@/types/admin.types';
+import type { IJob } from '@/types/job.types';
 
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
@@ -106,5 +107,21 @@ export async function updateCertificateStatus(
   const field = CERTIFICATE_FIELD_MAP[certificateType];
   if (!field) throw new Error(`Unknown certificate type: ${certificateType}`);
   return updateVerificationStatus(uid, field, status, notes);
+}
+
+// ─── Admin Jobs ───────────────────────────────────────────────────────────────
+
+export async function getAdminJobs(
+  params: AdminJobFilters = {}
+): Promise<
+  ApiResponse<{ data: IJob[]; total: number; page: number; limit: number; totalPages: number }>
+> {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') query.append(key, String(value));
+  });
+  return apiGet<{ data: IJob[]; total: number; page: number; limit: number; totalPages: number }>(
+    `/api/admin/jobs?${query.toString()}`
+  );
 }
 

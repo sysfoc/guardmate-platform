@@ -194,4 +194,28 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
     variables: ['firstName', 'licenseNumber', 'expiryDate'],
     isActive: true,
   },
+  [NotificationEventType.JOB_CANCELLED_BY_BOSS]: {
+    notificationType: NotificationEventType.JOB_CANCELLED_BY_BOSS,
+    subject: 'Job Cancelled: {{jobTitle}}',
+    htmlBody: BASE_HTML('Job Cancelled', '<p>Hi {{guardName}},</p><p>Unfortunately, the job <strong>{{jobTitle}}</strong> scheduled for <strong>{{startDate}}</strong> has been cancelled by the employer.</p><p><strong>Reason:</strong> {{cancelReason}}</p><p>We understand this may be inconvenient. Please browse other available opportunities on GuardMate.</p><a href="{{browseJobsUrl}}" class="btn">Browse Jobs</a>'),
+    textBody: 'Hi {{guardName}}, Job "{{jobTitle}}" on {{startDate}} has been cancelled. Reason: {{cancelReason}}. Browse new jobs at {{browseJobsUrl}}',
+    variables: ['guardName', 'jobTitle', 'startDate', 'cancelReason', 'browseJobsUrl'],
+    isActive: true,
+  },
+  [NotificationEventType.GUARD_WITHDREW_BID]: {
+    notificationType: NotificationEventType.GUARD_WITHDREW_BID,
+    subject: 'Guard Withdrawal: {{jobTitle}}',
+    htmlBody: BASE_HTML('Guard Withdrawn', '<p>Hi {{bossName}},</p><p>We regret to inform you that <strong>{{guardName}}</strong> has withdrawn from your job <strong>{{jobTitle}}</strong> scheduled for <strong>{{startDate}}</strong>.</p><p>Your job is now open again for new applications. You can review existing bids or wait for new ones.</p><a href="{{dashboardUrl}}" class="btn">View Your Jobs</a>'),
+    textBody: 'Hi {{bossName}}, {{guardName}} has withdrawn from "{{jobTitle}}" on {{startDate}}. Your job is now open for new bids.',
+    variables: ['bossName', 'guardName', 'jobTitle', 'startDate', 'dashboardUrl'],
+    isActive: true,
+  },
+  [NotificationEventType.JOB_REOPENED_TO_BIDDERS]: {
+    notificationType: NotificationEventType.JOB_REOPENED_TO_BIDDERS,
+    subject: 'Good News — {{jobTitle}} is Open Again!',
+    htmlBody: BASE_HTML('Position Reopened', '<p>Hi {{guardName}},</p><p>Good news — the position for <strong>{{jobTitle}}</strong> is open again. Your previous application has been reconsidered.</p><p>Log in to check your bid status and reapply.</p><a href="{{jobUrl}}" class="btn">View Job</a>'),
+    textBody: 'Hi {{guardName}}, The position for "{{jobTitle}}" is open again. Your application has been reconsidered. Check your bid status at {{jobUrl}}',
+    variables: ['guardName', 'jobTitle', 'jobUrl'],
+    isActive: true,
+  },
 };

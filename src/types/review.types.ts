@@ -35,3 +35,18 @@ export interface PaginatedReviews {
   page: number;
   pages: number;
 }
+
+export interface SubmitReviewPayload {
+  jobId: string;
+  rating: number;
+  comment: string;
+}
+
+export interface PendingReview {
+  jobId: string;
+  jobTitle: string;
+  receiverUid: string;
+  receiverName: string;
+  receiverRole: UserRole;
+  receiverPhoto: string | null;
+}

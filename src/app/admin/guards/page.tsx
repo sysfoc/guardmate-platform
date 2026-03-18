@@ -23,6 +23,7 @@ import {
   FileText,
   Filter,
   RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatPhoneNumber } from '@/lib/utils/phone';
@@ -365,6 +366,7 @@ function GuardsPageInner() {
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Expiry</th>
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Verification</th>
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Strikes</th>
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
@@ -458,6 +460,16 @@ function GuardsPageInner() {
                             Reg: {new Date(user.createdAt).toLocaleDateString()}
                           </span>
                         </div>
+                      </td>
+                      <td className="px-3 py-2 hidden xl:table-cell">
+                        {(mate.cancellationStrikes || 0) > 0 ? (
+                          <Badge variant={(mate.cancellationStrikes || 0) >= 3 ? 'danger' : 'warning'} size="sm" className="text-[9px]">
+                            <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+                            {mate.cancellationStrikes}
+                          </Badge>
+                        ) : (
+                          <span className="text-[10px] text-[var(--color-text-muted)]">0</span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div className="flex items-center justify-end gap-1">

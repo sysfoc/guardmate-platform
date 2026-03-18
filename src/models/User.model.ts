@@ -119,6 +119,7 @@ const UserSchema = new Schema<UserDocument>({
   activeJobsCount: { type: Number, default: 0 },
   completedJobsCount: { type: Number, default: 0 },
   cancelledJobsCount: { type: Number, default: 0 },
+  cancellationStrikes: { type: Number, default: 0 },
   totalSpent: { type: Number, default: 0 },
   averageRating: { type: Number, default: 0 },
   totalReviews: { type: Number, default: 0 },
@@ -160,6 +161,7 @@ const UserSchema = new Schema<UserDocument>({
   onTimeRate: { type: Number, default: 0 },
   isFeatured: { type: Boolean, default: false },
   featuredUntil: { type: Date, default: null },
+  reliabilityScore: { type: Number, default: 100 },
   backgroundCheckStatus: { type: String, enum: Object.values(VerificationStatus), default: VerificationStatus.UNVERIFIED },
   backgroundCheckDate: { type: Date, default: null },
 

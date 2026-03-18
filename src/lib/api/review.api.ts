@@ -1,6 +1,6 @@
-import { apiGet } from '@/lib/apiClient';
+import { apiGet, apiPost } from '@/lib/apiClient';
 import type { ApiResponse } from '@/types/api.types';
-import type { Review, ReviewStats, PaginatedReviews } from '@/types/review.types';
+import type { Review, ReviewStats, PaginatedReviews, SubmitReviewPayload, PendingReview } from '@/types/review.types';
 
 /**
  * Fetches reviews for a specific user (the receiver).
@@ -29,4 +29,18 @@ export async function getReviewStats(uid: string): Promise<ApiResponse<ReviewSta
  */
 export async function getMyReviews(page = 1, limit = 10): Promise<ApiResponse<PaginatedReviews>> {
   return apiGet<PaginatedReviews>(`/api/reviews/me?page=${page}&limit=${limit}`);
+}
+
+/**
+ * Submits a new review for a completed job.
+ */
+export async function submitReview(payload: SubmitReviewPayload): Promise<ApiResponse<Review>> {
+  return apiPost<Review>('/api/reviews', payload);
+}
+
+/**
+ * Fetches the current authenticated user's pending reviews.
+ */
+export async function getMyPendingReviews(): Promise<ApiResponse<PendingReview[]>> {
+  return apiGet<PendingReview[]>('/api/reviews/my-pending');
 }

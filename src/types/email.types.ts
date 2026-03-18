@@ -19,6 +19,9 @@ export enum NotificationEventType {
   DISPUTE_RESOLVED = 'disputeResolved',
   PASSWORD_RESET = 'passwordReset',
   LICENSE_EXPIRY_30_DAYS = 'licenseExpiry30Days',
+  JOB_CANCELLED_BY_BOSS = 'jobCancelledByBoss',
+  GUARD_WITHDREW_BID = 'guardWithdrewBid',
+  JOB_REOPENED_TO_BIDDERS = 'jobReopened',
 }
 
 export interface IEmailSettings {

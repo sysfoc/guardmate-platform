@@ -61,7 +61,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
             positions[position]
           )}
         >
-          <div className="px-3 py-1.5 text-xs font-medium text-white bg-[var(--color-bg-elevated)] dark:text-[var(--color-text-primary)] rounded-md shadow-lg whitespace-nowrap">
+          <div className="px-3 py-1.5 text-xs font-medium text-white bg-[var(--color-bg-elevated)] dark:text-[var(--color-text-primary)] rounded-md shadow-lg w-max max-w-xs text-center">
             {content}
             {/* Arrow */}
             <div className={cn(

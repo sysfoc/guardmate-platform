@@ -151,6 +151,7 @@ export interface BossProfile extends BaseUser {
   activeJobsCount: number;
   completedJobsCount: number;
   cancelledJobsCount: number;
+  cancellationStrikes: number;
   totalSpent: number;
   averageRating: number;
   totalReviews: number;
@@ -232,6 +233,8 @@ export interface MateProfile extends BaseUser {
   totalReviews: number;
   completionRate: number;
   onTimeRate: number;
+  cancellationStrikes: number;
+  reliabilityScore: number;
 
   // ── Boost / Feature ───────────────────────────────────────────────────────
   isFeatured: boolean;

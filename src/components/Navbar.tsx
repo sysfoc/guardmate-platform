@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Shield, LogOut, LayoutDashboard } from 'lucide-react';
+import { Shield, LogOut, LayoutDashboard, Briefcase, Send } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
 import { Button } from '@/components/ui/Button';
@@ -89,6 +89,25 @@ export function Navbar() {
                     My Profile
                   </DropdownItem>
                   
+                  {user.role === 'BOSS' && (
+                    <DropdownItem onClick={() => router.push('/dashboard/boss/jobs')}>
+                      <Briefcase className="h-4 w-4 mr-2" />
+                      My Jobs
+                    </DropdownItem>
+                  )}
+                  {user.role === 'MATE' && (
+                    <>
+                      <DropdownItem onClick={() => router.push('/dashboard/mate/jobs')}>
+                        <Briefcase className="h-4 w-4 mr-2" />
+                        Browse Jobs
+                      </DropdownItem>
+                      <DropdownItem onClick={() => router.push('/dashboard/mate/bids')}>
+                        <Send className="h-4 w-4 mr-2" />
+                        My Bids
+                      </DropdownItem>
+                    </>
+                  )}
+
                   <DropdownItem onClick={() => router.push('/dashboard/settings')}>
                     <Settings className="h-4 w-4 mr-2" />
                     Account Settings

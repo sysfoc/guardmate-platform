@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   ChevronRight,
   Activity,
+  Briefcase,
 } from 'lucide-react';
 import { getAdminStats } from '@/lib/api/admin.api';
 import type { AdminDashboardStats, AdminActivity } from '@/types/admin.types';
@@ -106,6 +107,20 @@ export default function AdminDashboardPage() {
       iconBg: 'bg-[var(--color-secondary-light)]',
       iconColor: 'text-[var(--color-secondary)]',
       isCurrency: true,
+    },
+    {
+      label: 'Total Jobs Posted',
+      value: stats.totalJobsPosted,
+      icon: Briefcase,
+      iconBg: 'bg-[var(--color-info-light)]',
+      iconColor: 'text-[var(--color-info)]',
+    },
+    {
+      label: 'Active Jobs',
+      value: stats.activeJobs,
+      icon: Briefcase,
+      iconBg: 'bg-[var(--color-success-light)]',
+      iconColor: 'text-[var(--color-success)]',
     },
   ];
 

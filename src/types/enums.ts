@@ -55,15 +55,25 @@ export enum NotificationType {
   SYSTEM           = 'SYSTEM',
 }
 
+export enum JobType {
+  ONE_TIME   = 'ONE_TIME',
+  RECURRING  = 'RECURRING',
+  CONTRACT   = 'CONTRACT',
+}
+
+export enum BudgetType {
+  FIXED  = 'FIXED',
+  HOURLY = 'HOURLY',
+}
+
 export enum JobStatus {
-  DRAFT      = 'DRAFT',
-  OPEN       = 'OPEN',
-  IN_REVIEW  = 'IN_REVIEW',
-  ASSIGNED   = 'ASSIGNED',
+  DRAFT       = 'DRAFT',
+  OPEN        = 'OPEN',
+  FILLED      = 'FILLED',
   IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED  = 'COMPLETED',
-  CANCELLED  = 'CANCELLED',
-  DISPUTED   = 'DISPUTED',
+  COMPLETED   = 'COMPLETED',
+  CANCELLED   = 'CANCELLED',
+  EXPIRED     = 'EXPIRED',
 }
 
 export enum BidStatus {

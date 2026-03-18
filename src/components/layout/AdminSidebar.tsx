@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   Shield,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
@@ -28,6 +29,7 @@ const adminNavItems = [
   { label: 'Guard Approvals', icon: ShieldCheck, href: '/admin/guards' },
   { label: 'Boss Approvals', icon: Building2, href: '/admin/bosses' },
   { label: 'All Users', icon: Users, href: '/admin/users' },
+  { label: 'Jobs', icon: Briefcase, href: '/admin/jobs' },
   { label: 'Activity Log', icon: History, href: '/admin/activity' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];

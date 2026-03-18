@@ -175,6 +175,9 @@ export default function AdminSettingsPage() {
       { id: NotificationEventType.BID_RECEIVED, label: 'Bid Received', desc: 'Alerts Boss when a guard bids on their job.' },
       { id: NotificationEventType.BID_ACCEPTED, label: 'Bid Accepted', desc: 'Alerts Guard that their bid won.' },
       { id: NotificationEventType.BID_REJECTED, label: 'Bid Rejected', desc: 'Alerts Guard that their bid was declined.' },
+      { id: NotificationEventType.JOB_CANCELLED_BY_BOSS, label: 'Job Cancelled by Boss', desc: 'Alerts Guard when boss cancels a job they were hired for.' },
+      { id: NotificationEventType.GUARD_WITHDREW_BID, label: 'Guard Withdrew Bid', desc: 'Alerts Boss when a hired guard withdraws.' },
+      { id: NotificationEventType.JOB_REOPENED_TO_BIDDERS, label: 'Job Reopened', desc: 'Alerts Guards when a job they bid on is reopened.' },
     ],
     'Shift Notifications': [
       { id: NotificationEventType.SHIFT_REMINDER, label: 'Shift Reminder 24h', desc: 'Reminds Boss and Guard 24h before shift.' },

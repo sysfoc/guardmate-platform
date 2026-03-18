@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { verifyAndGetUser, createApiResponse, getClientIp, getDeviceInfo } from '@/lib/serverAuth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User.model';
-import { UserRole, UserStatus } from '@/types/enums';
+import Job from '@/models/Job.model';
+import { UserRole, UserStatus, JobStatus } from '@/types/enums';
 
 // ─── GET /api/admin/stats ─────────────────────────────────────────────────────
 
@@ -15,13 +16,15 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const [totalGuards, totalBosses, pendingApprovals, activeUsers, suspendedUsers] =
+    const [totalGuards, totalBosses, pendingApprovals, activeUsers, suspendedUsers, totalJobsPosted, activeJobs] =
       await Promise.all([
         User.countDocuments({ role: UserRole.MATE }),
         User.countDocuments({ role: UserRole.BOSS }),
         User.countDocuments({ status: UserStatus.PENDING }),
         User.countDocuments({ status: UserStatus.ACTIVE }),
         User.countDocuments({ status: UserStatus.SUSPENDED }),
+        Job.countDocuments(),
+        Job.countDocuments({ status: { $in: [JobStatus.OPEN, JobStatus.FILLED, JobStatus.IN_PROGRESS] } }),
       ]);
 
     // Recent 5 pending users
@@ -45,6 +48,8 @@ export async function GET(request: NextRequest) {
       activeUsers,
       suspendedUsers,
       totalRevenue: 0, // placeholder
+      totalJobsPosted,
+      activeJobs,
       recentPending: recentPending.map((u) => ({
         _id: String(u._id),
         uid: u.uid,

@@ -65,6 +65,8 @@ export interface AdminDashboardStats {
   activeUsers: number;
   suspendedUsers: number;
   totalRevenue: number;
+  totalJobsPosted: number;
+  activeJobs: number;
   recentPending: AdminPendingUser[];
   recentActivity: AdminActivity[];
 }
@@ -113,4 +115,15 @@ export interface BulkActionPayload {
   uids: string[];
   status: UserStatus;
   reason?: string;
+}
+
+export interface AdminJobFilters {
+  status?: string;
+  bossUid?: string;
+  locationCity?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
 }
