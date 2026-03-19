@@ -53,16 +53,15 @@ export default function RootLayout({
                 <Toaster
                   position="top-right"
                   gutter={8}
+                  containerStyle={{ zIndex: 99999 }}
                   toastOptions={{
                     duration: 4000,
+                    className: '!bg-white dark:!bg-slate-900 !text-slate-900 dark:!text-slate-100 !border !border-slate-200 dark:!border-slate-800 !shadow-2xl !rounded-xl text-sm font-medium',
                     style: {
-                      background: 'var(--color-bg-secondary)',
-                      color: 'var(--color-text-primary)',
-                      border: '1px solid var(--color-surface-border)',
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+                      background: 'transparent', // Let Tailwind classes handle it
+                      boxShadow: 'none',         // Let Tailwind classes handle it
+                      border: 'none',            // Let Tailwind classes handle it
+                      color: 'inherit',          // Let Tailwind classes handle it
                     },
                     success: {
                       iconTheme: {

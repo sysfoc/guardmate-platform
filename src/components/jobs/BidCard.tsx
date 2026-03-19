@@ -10,7 +10,7 @@ import { BidStatus } from '@/types/enums';
 import type { IBid } from '@/types/job.types';
 import {
   Clock, PoundSterling, Shield, Calendar,
-  CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronUp,
+  CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronUp, MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +28,7 @@ interface BidCardProps {
   onAccept?: (bidId: string) => void;
   onReject?: (bidId: string) => void;
   onWithdraw?: (bidId: string) => void;
+  onMessage?: (bidId: string, guardId: string) => void;
   isAccepting?: boolean;
   isRejecting?: boolean;
   isWithdrawing?: boolean;
@@ -40,6 +41,7 @@ export function BidCard({
   onAccept,
   onReject,
   onWithdraw,
+  onMessage,
   isAccepting = false,
   isRejecting = false,
   isWithdrawing = false,
@@ -130,9 +132,21 @@ export function BidCard({
           )}
 
           {/* Actions */}
-          {showActions && bid.status === BidStatus.PENDING && (
-            <div className="flex items-center gap-2 mt-3">
-              {onAccept && (
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            {onMessage && isAccepted && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onMessage(bid.bidId, bid.guardUid)}
+                className="text-[10px] h-7 px-3 font-bold border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
+                leftIcon={<MessageSquare className="h-3 w-3" />}
+              >
+                Message Guard
+              </Button>
+            )}
+            {showActions && bid.status === BidStatus.PENDING && (
+              <>
+                {onAccept && (
                 <Button
                   size="sm"
                   variant="primary"
@@ -165,8 +179,9 @@ export function BidCard({
                   {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
                 </Button>
               )}
-            </div>
+            </>
           )}
+          </div>
         </div>
       </div>
     </Card>

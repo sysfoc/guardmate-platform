@@ -19,8 +19,10 @@ import { Avatar } from '@/components/ui/Avatar';
 import toast from 'react-hot-toast';
 import type { IJob } from '@/types/job.types';
 import type { PendingReview } from '@/types/review.types';
-import { JobStatus } from '@/types/enums';
-import { Edit, Trash2, Users, ChevronLeft, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { JobStatus, BidStatus } from '@/types/enums';
+import { Edit, Trash2, Users, ChevronLeft, Loader2, CheckCircle2, XCircle, Clock, MessageSquare } from 'lucide-react';
+import { getJobBids } from '@/lib/api/job.api';
+import { createOrGetConversation } from '@/lib/api/chat.api';
 
 export default function BossJobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -43,6 +45,10 @@ export default function BossJobDetailPage() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [submittedReview, setSubmittedReview] = useState<{ rating: number; comment: string } | null>(null);
 
+  // Message guard state
+  const [acceptedGuardUid, setAcceptedGuardUid] = useState<string | null>(null);
+  const [messagingGuard, setMessagingGuard] = useState(false);
+
   useEffect(() => {
     if (!jobId) return;
     const fetch = async () => {
@@ -57,14 +63,26 @@ export default function BossJobDetailPage() {
               const pending = pendingResp.data.find(pr => pr.jobId === resp.data!.jobId);
               if (pending) setPendingReview(pending);
             }
-          }
+           }
         }
       } catch (err) {
         console.error(err);
         toast.error('Failed to load job');
       } finally { setLoading(false); }
     };
+
+    const fetchAcceptedGuard = async () => {
+      try {
+        const bidsResp = await getJobBids(jobId);
+        if (bidsResp.success && bidsResp.data) {
+          const accepted = bidsResp.data.bids.find(b => b.status === BidStatus.ACCEPTED);
+          if (accepted) setAcceptedGuardUid(accepted.guardUid);
+        }
+      } catch {}
+    };
+
     fetch();
+    fetchAcceptedGuard();
   }, [jobId]);
 
   const handleComplete = async () => {
@@ -137,6 +155,32 @@ export default function BossJobDetailPage() {
         <button onClick={() => router.push('/dashboard/boss/jobs')} className="flex items-center gap-1 text-xs font-bold text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)] mb-4 transition-colors">
           <ChevronLeft className="h-3.5 w-3.5" /> Back to My Jobs
         </button>
+
+        {/* Message Guard button in header */}
+        {job && acceptedGuardUid && (job.status === JobStatus.FILLED || job.status === JobStatus.IN_PROGRESS || job.status === JobStatus.COMPLETED) && (
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={async () => {
+                if (!job || messagingGuard) return;
+                setMessagingGuard(true);
+                try {
+                  const resp = await createOrGetConversation(job.jobId, acceptedGuardUid);
+                  if (resp.success && resp.data) {
+                    router.push(`/dashboard/boss/messages?conversation=${resp.data._id}`);
+                  } else {
+                    toast.error('Could not start conversation.');
+                  }
+                } catch { toast.error('Error starting conversation.'); }
+                finally { setMessagingGuard(false); }
+              }}
+              disabled={messagingGuard}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {messagingGuard ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
+              Message Guard
+            </button>
+          </div>
+        )}
 
         {/* Timeline indicator */}
         {job.status !== JobStatus.CANCELLED && job.status !== JobStatus.EXPIRED && (

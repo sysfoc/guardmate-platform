@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
 import { getMyBids, withdrawBid } from '@/lib/api/job.api';
+import { createOrGetConversation } from '@/lib/api/chat.api';
 import { getMyPendingReviews } from '@/lib/api/review.api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -24,7 +25,7 @@ import type { PendingReview } from '@/types/review.types';
 import { BidStatus, JobStatus } from '@/types/enums';
 import {
   Inbox, Loader2, Clock, CheckCircle2, XCircle,
-  MinusCircle, PoundSterling, Calendar, MapPin, ExternalLink, AlertTriangle,
+  MinusCircle, PoundSterling, Calendar, MapPin, ExternalLink, AlertTriangle, MessageSquare
 } from 'lucide-react';
 
 const TABS = [
@@ -59,6 +60,7 @@ export default function MateBidsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [withdrawing, setWithdrawing] = useState<string | null>(null);
+  const [messagingId, setMessagingId] = useState<string | null>(null);
 
   // Free withdraw dialog (PENDING)
   const [confirmWithdraw, setConfirmWithdraw] = useState<{ bidId: string; jobId: string } | null>(null);
@@ -124,6 +126,22 @@ export default function MateBidsPage() {
       }
     } catch { toast.error('Failed to withdraw bid'); }
     finally { setWithdrawing(null); setConfirmWithdraw(null); setConfirmHiredWithdraw(null); }
+  };
+
+  const handleMessageBoss = async (jobId: string, bossId: string) => {
+    setMessagingId(jobId);
+    try {
+      const resp = await createOrGetConversation(jobId, bossId);
+      if (resp.success && resp.data) {
+        router.push(`/dashboard/mate/messages?conversation=${resp.data._id}`);
+      } else {
+        toast.error('Could not start conversation.');
+      }
+    } catch {
+      toast.error('Failed to open messages');
+    } finally {
+      setMessagingId(null);
+    }
   };
 
   if (userLoading) return <DashboardSkeleton />;
@@ -263,6 +281,19 @@ export default function MateBidsPage() {
                         <Badge variant="success" className="h-7 text-[10px] gap-1 px-2.5">
                           <CheckCircle2 className="h-3 w-3" /> Reviewed
                         </Badge>
+                      )}
+                      {/* isAcceptedInProgress implies accepted + in progress or completed */}
+                      {(isAcceptedFilled || isAcceptedInProgress) && bid.job && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-[10px] h-7 border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
+                          onClick={() => handleMessageBoss(bid.jobId, bid.job!.postedBy)}
+                          disabled={messagingId === bid.jobId}
+                          leftIcon={messagingId === bid.jobId ? <Loader2 className="h-3 w-3 animate-spin"/> : <MessageSquare className="h-3 w-3" />}
+                        >
+                          {messagingId === bid.jobId ? 'Opening...' : 'Message Boss'}
+                        </Button>
                       )}
 
                       <Link href={`/dashboard/mate/jobs/${bid.jobId}`}>

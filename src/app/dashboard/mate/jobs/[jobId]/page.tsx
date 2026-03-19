@@ -15,7 +15,8 @@ import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import toast from 'react-hot-toast';
 import type { IJob, SubmitBidPayload } from '@/types/job.types';
 import { JobStatus, UserStatus, LicenseStatus } from '@/types/enums';
-import { ChevronLeft, Send, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Send, CheckCircle2, Loader2, AlertCircle, MessageSquare } from 'lucide-react';
+import { createOrGetConversation } from '@/lib/api/chat.api';
 
 export default function MateJobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -27,6 +28,7 @@ export default function MateJobDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [messagingBoss, setMessagingBoss] = useState(false);
 
   useEffect(() => {
     if (!jobId) return;
@@ -85,6 +87,32 @@ export default function MateJobDetailPage() {
         <button onClick={() => router.push('/dashboard/mate/jobs')} className="flex items-center gap-1 text-xs font-bold text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)] mb-4 transition-colors">
           <ChevronLeft className="h-3.5 w-3.5" /> Back to Marketplace
         </button>
+
+        {/* Header with Message Boss button */}
+        {job && user && (job.status === JobStatus.FILLED || job.status === JobStatus.IN_PROGRESS || job.status === JobStatus.COMPLETED) && (
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={async () => {
+                if (!job || messagingBoss) return;
+                setMessagingBoss(true);
+                try {
+                  const resp = await createOrGetConversation(job.jobId, job.postedBy);
+                  if (resp.success && resp.data) {
+                    router.push(`/dashboard/mate/messages?conversation=${resp.data._id}`);
+                  } else {
+                    toast.error('Could not start conversation.');
+                  }
+                } catch { toast.error('Error starting conversation.'); }
+                finally { setMessagingBoss(false); }
+              }}
+              disabled={messagingBoss}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {messagingBoss ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
+              Message Boss
+            </button>
+          </div>
+        )}
 
         <JobDetailView job={job}>
           {/* Apply section in sidebar */}

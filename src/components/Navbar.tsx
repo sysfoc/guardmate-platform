@@ -12,6 +12,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui/Dropdown';
 import { User, Settings, LogOut as LogOutIcon, ChevronDown } from 'lucide-react';
+import { GlobalChatListener } from '@/components/chat/GlobalChatListener';
 
 export function Navbar() {
   const router = useRouter();
@@ -56,6 +57,7 @@ export function Navbar() {
                 </Button>
               </Link>
               <div className="flex items-center gap-2 pl-2 border-l border-[var(--color-surface-border)]">
+                <GlobalChatListener userId={user.uid} role={user.role} />
                 <DarkModeToggle />
                 
                 <Dropdown

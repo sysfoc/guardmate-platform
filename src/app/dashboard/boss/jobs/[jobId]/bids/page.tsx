@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
 import { getJobBids, acceptBid, rejectBid } from '@/lib/api/job.api';
+import { createOrGetConversation } from '@/lib/api/chat.api';
 import { BidCard } from '@/components/jobs/BidCard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -29,6 +30,7 @@ export default function BossJobBidsPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [accepting, setAccepting] = useState(false);
   const [rejecting, setRejecting] = useState(false);
+  const [messagingGuard, setMessagingGuard] = useState<string | null>(null);
 
   useEffect(() => {
     if (!jobId) return;
@@ -79,6 +81,23 @@ export default function BossJobBidsPage() {
     finally { setRejecting(false); setShowRejectModal(null); setRejectReason(''); }
   };
 
+  const handleMessageGuard = async (bidId: string, guardId: string) => {
+    if (!jobId) return;
+    setMessagingGuard(guardId);
+    try {
+      const resp = await createOrGetConversation(jobId, guardId);
+      if (resp.success && resp.data) {
+        router.push(`/dashboard/boss/messages?conversation=${resp.data._id}`);
+      } else {
+        toast.error('Failed to start chat.');
+      }
+    } catch {
+      toast.error('Error starting conversation.');
+    } finally {
+      setMessagingGuard(null);
+    }
+  };
+
   if (userLoading || loading) return <DashboardSkeleton />;
 
   const acceptedBid = bids.find((b) => b.status === BidStatus.ACCEPTED);
@@ -115,7 +134,10 @@ export default function BossJobBidsPage() {
             {acceptedBid && (
               <div>
                 <h2 className="text-xs font-bold text-[var(--color-success)] uppercase tracking-wider mb-2">✓ Accepted Bid</h2>
-                <BidCard bid={acceptedBid} />
+                <BidCard 
+                  bid={acceptedBid} 
+                  onMessage={(bidId, guardId) => handleMessageGuard(bidId, guardId)}
+                />
               </div>
             )}
 
