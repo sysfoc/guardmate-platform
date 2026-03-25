@@ -124,67 +124,74 @@ export default function BossDashboard() {
           </div>
         </div>
 
-        {/* Status & Verification Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+        {/* Top Stats Row — Compact 3-Column Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           
-          {/* Main Verification Card */}
-          <Card className={`lg:col-span-2 p-5 overflow-hidden relative ${!isVerified ? 'border-[var(--color-warning)] bg-amber-500/5' : 'border-emerald-500/20'}`}>
-            <div className="flex items-start justify-between relative z-10">
-              <div className="space-y-3 max-w-sm">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-lg ${isVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                    {isVerified ? <CheckCircle2 className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
-                  </div>
-                  <h3 className="font-bold text-base">Company Status</h3>
-                </div>
-                <div>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
+          {/* Company Status Card */}
+          <Card className={`p-4 flex items-center justify-between ${!isVerified ? 'border-[var(--color-warning)] bg-[var(--color-warning-light)]/20' : ''}`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl ${isVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-[var(--color-warning-dark)]'}`}>
+                {isVerified ? <CheckCircle2 className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-0.5">Company Status</p>
+                <h3 className={`text-sm font-black ${isVerified ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-warning-dark)]'}`}>
+                  {isVerified ? "VERIFIED" : "ACTION REQUIRED"}
+                </h3>
+              </div>
+            </div>
+          </Card>
+
+          {/* Key Performance Stats */}
+          <StatCard 
+            label="Active Jobs" 
+            value={boss.activeJobsCount || 0} 
+            icon={<Briefcase />} 
+            variant="blue"
+            className="shadow-sm"
+          />
+          <StatCard 
+            label="Total Spent" 
+            value={`£${(boss.totalSpent || 0).toLocaleString()}`} 
+            icon={<TrendingUp />} 
+            variant="emerald"
+            className="md:col-span-2 lg:col-span-1 shadow-sm"
+          />
+        </div>
+
+        {/* Verification & Warnings Row */}
+        <div className="flex flex-col gap-4">
+          <Card className="p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] shadow-sm overflow-hidden relative">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+               <div>
+                  <div className="flex flex-wrap gap-1.5 mb-1">
                     <Badge variant={boss.isCompanyVerified ? 'success' : 'warning'} className="text-[10px] font-bold py-0 h-5">
-                      {boss.isCompanyVerified ? 'VERIFIED' : 'PENDING'}
+                      {boss.isCompanyVerified ? 'BUSINESS VERIFIED' : 'BUSINESS PENDING'}
                     </Badge>
                     <Badge variant={boss.companyLicenseStatus === LicenseStatus.VALID ? 'success' : 'warning'} className="text-[10px] font-bold py-0 h-5">
                       LICENSE: {boss.companyLicenseStatus === LicenseStatus.VALID ? 'VALID' : 'REQUIRED'}
                     </Badge>
                   </div>
-                  <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                  <p className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-1.5">
                     {isVerified 
-                      ? "Your account is verified. You have full access to hiring Mates."
-                      : "Verification pending review. Please ensure your documents are current."}
+                      ? "Your account is fully verified. You have full access to hiring Mates."
+                      : "Verification pending review. Please ensure your business documents are current."}
                   </p>
-                </div>
-              </div>
-              
-              <Building2 className="hidden sm:block opacity-5 absolute -right-6 -bottom-6 h-32 w-32" />
+               </div>
             </div>
+            <Building2 className="hidden sm:block opacity-[0.03] absolute right-4 top-1/2 -translate-y-1/2 h-20 w-20" />
           </Card>
 
-          {/* Quick Stats Grid */}
-          <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-            <StatCard 
-              label="Active Jobs" 
-              value={boss.activeJobsCount || 0} 
-              icon={<Briefcase />} 
-              variant="blue"
-            />
-            <StatCard 
-              label="Total Spent" 
-              value={`£${(boss.totalSpent || 0).toLocaleString()}`} 
-              icon={<TrendingUp />} 
-              variant="emerald"
-            />
-          </div>
-        </div>
-
-        {/* Cancellation Strikes Warning */}
-        {(boss.cancellationStrikes || 0) > 0 && (
-          <div className="bg-[var(--color-danger-light)] text-[var(--color-danger)] px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            <div>
-              <p>You have {boss.cancellationStrikes} cancellation strike{(boss.cancellationStrikes || 0) > 1 ? 's' : ''}.</p>
-              <p className="text-[10px] font-medium opacity-80 mt-0.5">Frequent cancellations negatively affect your employer reputation.</p>
+          {(boss.cancellationStrikes || 0) > 0 && (
+            <div className="bg-[var(--color-danger-light)] border border-[var(--color-danger)]/20 text-[var(--color-danger-dark)] px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <div>
+                <p>You have {boss.cancellationStrikes} cancellation strike{(boss.cancellationStrikes || 0) > 1 ? 's' : ''} recorded.</p>
+                <p className="text-[10px] font-medium opacity-80 mt-0.5">Frequent cancellations negatively affect your employer reputation.</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Secondary Insight Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

@@ -44,3 +44,17 @@ export async function submitReview(payload: SubmitReviewPayload): Promise<ApiRes
 export async function getMyPendingReviews(): Promise<ApiResponse<PendingReview[]>> {
   return apiGet<PendingReview[]>('/api/reviews/my-pending');
 }
+
+/**
+ * Fetches the current user's structured reviews (given or received).
+ * @param type 'received' or 'given'
+ * @param page The page number
+ * @param limit Items per page
+ */
+export async function getMyReviewsPage(
+  type: 'received' | 'given',
+  page = 1,
+  limit = 10
+): Promise<ApiResponse<PaginatedReviews>> {
+  return apiGet<PaginatedReviews>(`/api/reviews/my-reviews?type=${type}&page=${page}&limit=${limit}`);
+}

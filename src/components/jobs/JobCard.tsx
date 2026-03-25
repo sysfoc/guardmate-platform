@@ -21,9 +21,10 @@ interface JobCardProps {
   viewMode?: 'grid' | 'list';
   linkPrefix?: string;
   overlapWarning?: string;
+  distance?: number;
 }
 
-export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefix = '/dashboard/mate/jobs', overlapWarning }: JobCardProps) {
+export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefix = '/dashboard/mate/jobs', overlapWarning, distance }: JobCardProps) {
   const budgetDisplay = job.budgetType === BudgetType.HOURLY
     ? `£${job.budgetAmount}/hr`
     : `£${job.budgetAmount}${job.budgetMax ? ` – £${job.budgetMax}` : ''}`;
@@ -63,9 +64,12 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-3 mt-1 text-[10px] text-[var(--color-text-tertiary)] font-medium">
+            <div className="flex items-center gap-3 mt-1 text-[10px] text-[var(--color-text-tertiary)] font-medium flex-wrap">
               <span>{job.companyName}</span>
               <span className="flex items-center gap-0.5"><MapPin className="h-2.5 w-2.5" />{job.locationCity}</span>
+              {distance !== undefined && (
+                <span className="font-bold text-[var(--color-primary)]">{distance} mi away</span>
+              )}
               <span className="flex items-center gap-0.5"><Calendar className="h-2.5 w-2.5" />{new Date(job.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
               <span className="font-bold text-[var(--color-text-primary)]">{budgetDisplay}</span>
             </div>
@@ -138,9 +142,14 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
 
         {/* Meta row */}
         <div className="space-y-1.5 text-[10px] text-[var(--color-text-secondary)] font-medium">
-          <div className="flex items-center gap-1">
-            <MapPin className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />
-            <span className="truncate">{job.locationCity}{job.locationState ? `, ${job.locationState}` : ''}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1 min-w-0">
+              <MapPin className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />
+              <span className="truncate">{job.locationCity}{job.locationState ? `, ${job.locationState}` : ''}</span>
+            </div>
+            {distance !== undefined && (
+              <span className="font-bold text-[var(--color-primary)] shrink-0">{distance} mi</span>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />

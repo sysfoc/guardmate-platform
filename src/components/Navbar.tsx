@@ -11,7 +11,7 @@ import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui/Dropdown';
-import { User, Settings, LogOut as LogOutIcon, ChevronDown } from 'lucide-react';
+import { User, Settings, LogOut as LogOutIcon, ChevronDown, Star } from 'lucide-react';
 import { GlobalChatListener } from '@/components/chat/GlobalChatListener';
 
 export function Navbar() {
@@ -62,7 +62,7 @@ export function Navbar() {
                 
                 <Dropdown
                   trigger={
-                    <div className="flex items-center gap-2 p-1 pl-2 hover:bg-[var(--color-bg-secondary)] rounded-full transition-colors group">
+                    <div className="flex items-center gap-2 p-1 pl-2 hover:bg-[var(--color-bg-secondary)] rounded-full transition-colors group cursor-pointer">
                       <div className="hidden sm:flex flex-col items-end mr-1">
                         <span className="text-xs font-bold text-[var(--color-text-primary)] leading-tight">
                           {user.firstName}
@@ -89,6 +89,11 @@ export function Navbar() {
                   <DropdownItem onClick={() => router.push(user.role === 'BOSS' ? '/dashboard/boss/profile' : '/dashboard/mate/profile')}>
                     <User className="h-4 w-4 mr-2" />
                     My Profile
+                  </DropdownItem>
+
+                  <DropdownItem onClick={() => router.push(user.role === 'BOSS' ? '/dashboard/boss/reviews' : '/dashboard/mate/reviews')}>
+                    <Star className="h-4 w-4 mr-2" />
+                    My Reviews
                   </DropdownItem>
                   
                   {user.role === 'BOSS' && (

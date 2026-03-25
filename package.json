@@ -7,14 +7,17 @@
     "dev:next": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node -e \"const fs=require('fs');const p=require('path');const s=p.join('node_modules','leaflet','dist','images');const d=p.join('public','leaflet');fs.mkdirSync(d,{recursive:true});['marker-icon.png','marker-icon-2x.png','marker-shadow.png'].forEach(f=>{try{fs.copyFileSync(p.join(s,f),p.join(d,f))}catch(e){}});\""
   },
   "dependencies": {
+    "@types/leaflet": "^1.9.21",
     "@types/nodemailer": "^7.0.11",
     "clsx": "^2.1.1",
     "firebase": "^12.10.0",
     "firebase-admin": "^13.7.0",
     "js-cookie": "^3.0.5",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.577.0",
     "mongoose": "^9.2.4",
     "next": "16.1.6",

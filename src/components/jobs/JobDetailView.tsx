@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { JobStatusBadge } from './JobStatusBadge';
+import { MapDisplay } from '@/components/maps/MapDisplay';
 import type { IJob } from '@/types/job.types';
 import { BudgetType } from '@/types/enums';
 import {
@@ -124,7 +125,29 @@ export function JobDetailView({ job, actions, children }: JobDetailViewProps) {
             <h2 className="font-bold text-sm mb-3 flex items-center gap-2"><MapPin className="h-4 w-4 text-[var(--color-primary)]" /> Location</h2>
             <p className="text-sm text-[var(--color-text-primary)] font-medium">{job.location}</p>
             <p className="text-xs text-[var(--color-text-tertiary)] mt-1">{job.locationCity}{job.locationState ? `, ${job.locationState}` : ''}{job.locationCountry ? `, ${job.locationCountry}` : ''}</p>
-            {job.locationPostalCode && <p className="text-xs text-[var(--color-text-tertiary)]">{job.locationPostalCode}</p>}
+            {job.locationPostalCode && <p className="text-xs text-[var(--color-text-tertiary)] mb-4">{job.locationPostalCode}</p>}
+            
+            {job.coordinates && (
+              <div className="mt-4 rounded-xl overflow-hidden border border-[var(--color-surface-border)]">
+                <MapDisplay
+                  center={job.coordinates}
+                  zoom={15}
+                  height="250px"
+                  interactive={false}
+                  markers={[{
+                    lat: job.coordinates.lat,
+                    lng: job.coordinates.lng,
+                    title: job.title,
+                    jobId: job.jobId,
+                    budget: job.budgetAmount,
+                    budgetType: job.budgetType,
+                    status: job.status,
+                    isUrgent: job.isUrgent,
+                    onClick: () => {}
+                  }]}
+                />
+              </div>
+            )}
           </Card>
 
           {children}

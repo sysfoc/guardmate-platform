@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/Button';
 import { JobStatusBadge } from '@/components/jobs/JobStatusBadge';
 import { Pagination } from '@/components/ui/Pagination';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
+import { Modal } from '@/components/ui/Modal';
+import { MapDisplay } from '@/components/maps/MapDisplay';
 import { getAdminJobs } from '@/lib/api/admin.api';
-import { JobStatus } from '@/types/enums';
+import { JobStatus, BudgetType } from '@/types/enums';
 import type { IJob } from '@/types/job.types';
 import {
-  Briefcase, Search, Loader2, MapPin, Calendar, Users, Filter,
+  Briefcase, Search, Loader2, MapPin, Calendar, Users, Filter, X
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -33,6 +35,7 @@ export default function AdminJobsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
   const limit = 20;
 
   useEffect(() => {
@@ -142,7 +145,11 @@ export default function AdminJobsPage() {
               </thead>
               <tbody>
                 {jobs.map((job) => (
-                  <tr key={job.jobId} className="border-b border-[var(--color-surface-border)] hover:bg-[var(--color-surface-hover)] transition-colors">
+                  <tr 
+                    key={job.jobId} 
+                    onClick={() => setSelectedJob(job)}
+                    className="border-b border-[var(--color-surface-border)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+                  >
                     <td className="px-4 py-3">
                       <p className="font-bold text-[var(--color-text-primary)] truncate max-w-[200px]">{job.title}</p>
                       <p className="text-[9px] text-[var(--color-text-muted)] mt-0.5 font-mono">{job.jobId.slice(0, 8)}...</p>
@@ -190,6 +197,63 @@ export default function AdminJobsPage() {
         showItemCount
         onPageChange={setPage}
       />
+
+      {/* Job Details Modal */}
+      <Modal 
+        isOpen={!!selectedJob} 
+        onClose={() => setSelectedJob(null)} 
+        title="Job Details" 
+        size="md"
+      >
+        {selectedJob && (
+          <div className="space-y-4 text-sm mt-4">
+            <div>
+              <h3 className="font-bold text-lg text-[var(--color-text-primary)]">{selectedJob.title}</h3>
+              <p className="text-[var(--color-text-secondary)]">{selectedJob.companyName}</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 bg-[var(--color-bg-subtle)] p-3 rounded-xl border border-[var(--color-surface-border)]">
+              <div>
+                <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)] flex items-center gap-1"><MapPin className="h-3 w-3"/> Location</p>
+                <p className="font-medium text-[var(--color-text-primary)] mt-0.5">{selectedJob.locationCity}</p>
+                <p className="text-xs text-[var(--color-text-secondary)] truncate">{selectedJob.location}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)]">Budget</p>
+                <p className="font-medium text-[var(--color-text-primary)] mt-0.5">
+                  £{selectedJob.budgetAmount}{selectedJob.budgetType === BudgetType.HOURLY ? '/hr' : ' Fixed'}
+                </p>
+              </div>
+            </div>
+
+            {selectedJob.coordinates && (
+              <div className="rounded-xl overflow-hidden border border-[var(--color-surface-border)]">
+                <MapDisplay
+                  center={selectedJob.coordinates}
+                  zoom={15}
+                  height="200px"
+                  interactive={false}
+                  markers={[{
+                    lat: selectedJob.coordinates.lat,
+                    lng: selectedJob.coordinates.lng,
+                    title: selectedJob.title,
+                    jobId: selectedJob.jobId,
+                    budget: selectedJob.budgetAmount,
+                    budgetType: selectedJob.budgetType,
+                    status: selectedJob.status,
+                    isUrgent: selectedJob.isUrgent,
+                    onClick: () => {}
+                  }]}
+                />
+              </div>
+            )}
+            
+            <div className="flex justify-end pt-2">
+              <Button size="sm" onClick={() => setSelectedJob(null)}>Close</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

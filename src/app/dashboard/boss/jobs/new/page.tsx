@@ -10,8 +10,10 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Toggle } from '@/components/ui/Toggle';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
+import { LocationSearch } from '@/components/maps/LocationSearch';
+import { MapDisplay } from '@/components/maps/MapDisplay';
 import toast from 'react-hot-toast';
-import type { CreateJobPayload } from '@/types/job.types';
+import type { CreateJobPayload, LocationSearchResult, Coordinates } from '@/types/job.types';
 import { JobType, BudgetType, JobStatus } from '@/types/enums';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Briefcase, MapPin,
@@ -34,6 +36,7 @@ export default function NewJobPage() {
     title: '', description: '', jobType: JobType.ONE_TIME,
     isUrgent: false, numberOfGuardsNeeded: 1,
     location: '', locationCity: '', locationState: '', locationCountry: '', locationPostalCode: '',
+    coordinates: null,
     startDate: '', endDate: '', startTime: '08:00', endTime: '18:00',
     isFlexibleTime: false, applicationDeadline: '',
     budgetType: BudgetType.HOURLY, budgetAmount: 0, budgetMax: undefined,
@@ -42,6 +45,7 @@ export default function NewJobPage() {
     minExperience: 0, preferredLanguages: [],
   });
 
+  const [mapCoords, setMapCoords] = useState<Coordinates | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [skillInput, setSkillInput] = useState('');
   const [langInput, setLangInput] = useState('');
@@ -61,6 +65,25 @@ export default function NewJobPage() {
     return Math.max(0, Math.round(days * ((eh + em / 60) - (sh + sm / 60)) * 10) / 10);
   };
 
+  const handleLocationSelect = (result: LocationSearchResult) => {
+    const coords: Coordinates = { lat: result.lat, lng: result.lng };
+    setMapCoords(coords);
+    update({
+      location: result.address,
+      locationCity: result.city,
+      locationState: result.state,
+      locationCountry: result.country,
+      locationPostalCode: result.postalCode,
+      coordinates: coords,
+    });
+    // Clear coordinates error if present
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.coordinates;
+      return next;
+    });
+  };
+
   const validateStep = (): boolean => {
     const e: Record<string, string> = {};
     if (step === 0) {
@@ -70,6 +93,7 @@ export default function NewJobPage() {
     } else if (step === 1) {
       if (!form.location?.trim()) e.location = 'Address is required';
       if (!form.locationCity?.trim()) e.locationCity = 'City is required';
+      if (!mapCoords) e.coordinates = 'Please select a location from the search to set map coordinates';
       if (!form.startDate) e.startDate = 'Start date required';
       if (!form.endDate) e.endDate = 'End date required';
       if (!form.applicationDeadline) e.applicationDeadline = 'Deadline required';
@@ -87,7 +111,7 @@ export default function NewJobPage() {
     if (!asDraft && !validateStep()) return;
     setSubmitting(true);
     try {
-      const resp = await createJob({ ...form, status: asDraft ? JobStatus.DRAFT : JobStatus.OPEN } as CreateJobPayload);
+      const resp = await createJob({ ...form, coordinates: mapCoords, status: asDraft ? JobStatus.DRAFT : JobStatus.OPEN } as CreateJobPayload);
       if (resp.success && resp.data) {
         setCreatedJobId(resp.data.jobId);
         setShowSuccess(true);
@@ -121,6 +145,23 @@ export default function NewJobPage() {
 
   const inputCls = 'w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:outline-none focus:ring-1 focus:ring-[var(--color-input-border-focus)] transition-colors';
   const labelCls = 'text-[11px] font-bold text-[var(--color-input-label)] mb-1.5 block';
+
+  const resetForm = () => {
+    setStep(0);
+    setMapCoords(null);
+    setForm({
+      title: '', description: '', jobType: JobType.ONE_TIME,
+      isUrgent: false, numberOfGuardsNeeded: 1,
+      location: '', locationCity: '', locationState: '', locationCountry: '', locationPostalCode: '',
+      coordinates: null,
+      startDate: '', endDate: '', startTime: '08:00', endTime: '18:00',
+      isFlexibleTime: false, applicationDeadline: '',
+      budgetType: BudgetType.HOURLY, budgetAmount: 0, budgetMax: undefined,
+      requiredSkills: [], requiredLicenseType: undefined,
+      requiresFirstAid: false, requiresWhiteCard: false, requiresChildrenCheck: false,
+      minExperience: 0, preferredLanguages: [],
+    });
+  };
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
@@ -208,9 +249,50 @@ export default function NewJobPage() {
         {/* Step 2 — Location & Schedule */}
         {step === 1 && (
           <Card className="p-6 space-y-5">
+            {/* Location Search */}
+            <LocationSearch
+              label="Job Location *"
+              placeholder="Search for a job location address..."
+              defaultValue={form.location || ''}
+              onLocationSelect={handleLocationSelect}
+              error={errors.coordinates}
+            />
+
+            {/* Map Preview */}
+            {mapCoords && (
+              <div className="rounded-xl overflow-hidden border border-[var(--color-surface-border)]">
+                <MapDisplay
+                  center={mapCoords}
+                  zoom={15}
+                  height="300px"
+                  interactive={true}
+                  markers={[{
+                    lat: mapCoords.lat,
+                    lng: mapCoords.lng,
+                    title: form.title || 'Job Location',
+                    jobId: 'new',
+                    budget: form.budgetAmount || 0,
+                    budgetType: form.budgetType || 'HOURLY',
+                    status: 'OPEN',
+                    isUrgent: form.isUrgent || false,
+                    onClick: () => {},
+                  }]}
+                />
+              </div>
+            )}
+
+            {/* Address fields (auto-populated, editable) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2"><label className={labelCls}>Full Address *</label><input value={form.location || ''} onChange={(e) => update({ location: e.target.value })} placeholder="123 High Street" className={inputCls} />{errors.location && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.location}</p>}</div>
-              <div><label className={labelCls}>City *</label><input value={form.locationCity || ''} onChange={(e) => update({ locationCity: e.target.value })} placeholder="London" className={inputCls} />{errors.locationCity && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.locationCity}</p>}</div>
+              <div className="sm:col-span-2">
+                <label className={labelCls}>Full Address *</label>
+                <input value={form.location || ''} onChange={(e) => update({ location: e.target.value })} placeholder="123 High Street" className={inputCls} />
+                {errors.location && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.location}</p>}
+              </div>
+              <div>
+                <label className={labelCls}>City *</label>
+                <input value={form.locationCity || ''} onChange={(e) => update({ locationCity: e.target.value })} placeholder="London" className={inputCls} />
+                {errors.locationCity && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.locationCity}</p>}
+              </div>
               <div><label className={labelCls}>State / County</label><input value={form.locationState || ''} onChange={(e) => update({ locationState: e.target.value })} placeholder="Greater London" className={inputCls} /></div>
               <div><label className={labelCls}>Country</label><input value={form.locationCountry || ''} onChange={(e) => update({ locationCountry: e.target.value })} placeholder="United Kingdom" className={inputCls} /></div>
               <div><label className={labelCls}>Postal Code</label><input value={form.locationPostalCode || ''} onChange={(e) => update({ locationPostalCode: e.target.value })} placeholder="EC2A 1NT" className={inputCls} /></div>
@@ -337,7 +419,7 @@ export default function NewJobPage() {
           <p className="text-sm text-[var(--color-text-secondary)] mb-6">Your job has been posted and is now visible to guards.</p>
           <div className="flex gap-3">
             <Button variant="ghost" size="sm" className="flex-1 border border-[var(--color-surface-border)]" onClick={() => { setShowSuccess(false); router.push(`/dashboard/boss/jobs/${createdJobId}`); }}>View Job</Button>
-            <Button size="sm" className="flex-1" onClick={() => { setShowSuccess(false); setStep(0); setForm({ title: '', description: '', jobType: JobType.ONE_TIME, isUrgent: false, numberOfGuardsNeeded: 1, location: '', locationCity: '', locationState: '', locationCountry: '', locationPostalCode: '', startDate: '', endDate: '', startTime: '08:00', endTime: '18:00', isFlexibleTime: false, applicationDeadline: '', budgetType: BudgetType.HOURLY, budgetAmount: 0, budgetMax: undefined, requiredSkills: [], requiredLicenseType: undefined, requiresFirstAid: false, requiresWhiteCard: false, requiresChildrenCheck: false, minExperience: 0, preferredLanguages: [] }); }}>Post Another Job</Button>
+            <Button size="sm" className="flex-1" onClick={() => { setShowSuccess(false); resetForm(); }}>Post Another Job</Button>
           </div>
         </div>
       </Modal>

@@ -11,6 +11,33 @@ export interface Coordinates {
   lng: number;
 }
 
+/** Alias for Coordinates — explicit name for job context. */
+export type JobCoordinates = Coordinates;
+
+// ─── Location Search & Map Types ──────────────────────────────────────────────
+
+export interface LocationSearchResult {
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  lat: number;
+  lng: number;
+}
+
+export interface MapMarker {
+  lat: number;
+  lng: number;
+  title: string;
+  jobId: string;
+  budget: number;
+  budgetType: string;
+  status: string;
+  isUrgent: boolean;
+  onClick: () => void;
+}
+
 // ─── Job Interface ────────────────────────────────────────────────────────────
 
 export interface IJob {
@@ -120,9 +147,14 @@ export interface JobFilters {
   budgetMax?: number;
   startDate?: string;
   search?: string;
-  sortBy?: 'newest' | 'budget_high' | 'budget_low' | 'deadline';
+  sortBy?: 'newest' | 'budget_high' | 'budget_low' | 'deadline' | 'distance';
   page?: number;
   limit?: number;
+
+  // Distance filtering
+  userLat?: number;
+  userLng?: number;
+  maxDistance?: number;
 }
 
 export interface BidFilters {

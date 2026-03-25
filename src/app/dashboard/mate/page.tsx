@@ -132,67 +132,73 @@ export default function MateDashboard() {
           </div>
         </div>
 
-        {/* Primary Controls & Status — Fixed equal-height layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-5" style={{ alignItems: 'stretch' }}>
+        {/* Top Stats Row — Compact 3-Column Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           
-          {/* Availability & Verification Card */}
-          <Card className="lg:col-span-2 p-5 flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-500/10 text-blue-500 rounded-lg">
-                    <Activity className="h-4 w-4" />
-                  </div>
-                  <h3 className="font-bold text-base">Duty Status</h3>
-                </div>
-                <Toggle 
-                  checked={mate.isAvailable} 
-                  onCheckedChange={handleAvailabilityToggle}
-                  label={mate.isAvailable ? "ON DUTY" : "OFF DUTY"}
-                />
+          {/* Duty Status Card */}
+          <Card className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-xl">
+                <Activity className="h-5 w-5" />
               </div>
+              <div>
+                <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-0.5">Duty Status</p>
+                <h3 className="text-sm font-black text-[var(--color-text-primary)]">
+                  {mate.isAvailable ? "ON DUTY" : "OFF DUTY"}
+                </h3>
+              </div>
+            </div>
+            <Toggle 
+              checked={mate.isAvailable} 
+              onCheckedChange={handleAvailabilityToggle}
+            />
+          </Card>
 
-              <div className="p-3.5 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider">VERIFICATION</span>
-                  <Badge variant={isVerified ? 'success' : 'warning'} className="text-[9px] h-4 py-0">
-                    {isVerified ? 'VERIFIED' : 'PENDING'}
-                  </Badge>
-                </div>
-                <div className="hidden xl:block mb-3">
-                  <CertificateBadges user={mate} size="sm" />
-                </div>
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+          {/* Key Performance Stats */}
+          <StatCard 
+            label="Jobs Completed" 
+            value={mate.totalJobsCompleted || 0} 
+            icon={<Shield />} 
+            variant="blue"
+            className="shadow-sm"
+          />
+          <StatCard 
+            label="Reliability Score" 
+            value={`${mate.reliabilityScore ?? 100}%`} 
+            icon={<Award />} 
+            variant="amber"
+            className="md:col-span-2 lg:col-span-1 shadow-sm"
+          />
+        </div>
+
+        {/* Verification & Warnings Row */}
+        <div className="flex flex-col gap-4">
+          <Card className="p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+               <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider">Verification Status</span>
+                    <Badge variant={isVerified ? 'success' : 'warning'} className="text-[9px] h-4 py-0">
+                      {isVerified ? 'VERIFIED' : 'ACTION REQUIRED'}
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-[var(--color-text-secondary)] font-medium">Keep your certifications and licenses up to date to maintain access.</p>
+               </div>
+               <div className="flex items-center gap-4 flex-wrap">
                   <StatusMini label="SIA License" active={mate.licenseStatus === LicenseStatus.VALID} />
                   <StatusMini label="Identity ID" active={mate.idVerificationStatus === VerificationStatus.VERIFIED} />
                   <StatusMini label="BG Check" active={mate.backgroundCheckStatus === VerificationStatus.VERIFIED} />
                   <StatusMini label="Certifications" active={!!mate.certifications?.length} />
-                </div>
-              </div>
+               </div>
             </div>
           </Card>
 
-          {/* Key Performance Stats — matches height of left card */}
-          <div className="lg:col-span-2 grid grid-cols-2 gap-4 auto-rows-fr">
-            <StatCard 
-              label="Jobs Completed" 
-              value={mate.totalJobsCompleted || 0} 
-              icon={<Shield />} 
-              variant="blue"
-            />
-            <StatCard 
-              label="Reliability Score" 
-              value={`${mate.reliabilityScore ?? 100}%`} 
-              icon={<Award />} 
-              variant="amber"
-            />
-            {(mate.cancellationStrikes || 0) > 0 && (
-              <div className="col-span-2 bg-[var(--color-warning-light)] text-[var(--color-warning)] px-4 py-2 rounded-xl text-[10px] font-bold flex items-center gap-2">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                You have {mate.cancellationStrikes} cancellation strike{(mate.cancellationStrikes || 0) > 1 ? 's' : ''} — this may impact future job opportunities.
-              </div>
-            )}
-          </div>
+          {(mate.cancellationStrikes || 0) > 0 && (
+            <div className="bg-[var(--color-warning-light)] border border-[var(--color-warning)]/20 text-[var(--color-warning-dark)] px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              You have {mate.cancellationStrikes} cancellation strike{(mate.cancellationStrikes || 0) > 1 ? 's' : ''} recorded. This negatively impacts future job matching.
+            </div>
+          )}
         </div>
 
         {/* Activity & Reputation Row */}

@@ -6,6 +6,7 @@ import User from '@/models/User.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import { JobStatus, UserRole, UserStatus, BudgetType } from '@/types/enums';
 import { processJobLifecycle } from '@/lib/jobs/jobLifecycle';
+import { calculateDistance } from '@/lib/utils/haversine';
 
 /**
  * POST /api/jobs
@@ -145,18 +146,26 @@ export async function GET(request: NextRequest) {
     const search = url.searchParams.get('search');
     const sortBy = url.searchParams.get('sortBy') || 'newest';
 
+    // Distance filter params
+    const userLatParam = url.searchParams.get('userLat');
+    const userLngParam = url.searchParams.get('userLng');
+    const maxDistanceParam = url.searchParams.get('maxDistance');
+
+    const userLat = userLatParam ? parseFloat(userLatParam) : null;
+    const userLng = userLngParam ? parseFloat(userLngParam) : null;
+    const maxDistance = maxDistanceParam ? parseFloat(maxDistanceParam) : null;
+    const hasDistanceFilter = userLat !== null && userLng !== null && maxDistance !== null &&
+      !isNaN(userLat) && !isNaN(userLng) && !isNaN(maxDistance);
+
     // Build query
     const query: Record<string, unknown> = {};
 
     if (user.role === UserRole.MATE) {
-      // Mates only see OPEN jobs
       query.status = JobStatus.OPEN;
     } else if (user.role === UserRole.BOSS) {
-      // Bosses see their own jobs
       query.postedBy = user.uid;
       if (status) query.status = status;
     } else {
-      // Admin or others — see everything
       if (status) query.status = status;
     }
 
@@ -209,15 +218,38 @@ export async function GET(request: NextRequest) {
         sortObj = { createdAt: -1 };
     }
 
-    const [jobs, total] = await Promise.all([
-      Job.find(query).sort(sortObj).skip(skip).limit(limit).lean(),
+    // When distance filtering, fetch more to account for post-filter reduction
+    const fetchLimit = hasDistanceFilter ? limit * 5 : limit;
+    const fetchSkip = hasDistanceFilter ? 0 : skip;
+
+    const [allJobs, totalBeforeDistance] = await Promise.all([
+      Job.find(query).sort(sortObj).skip(fetchSkip).limit(hasDistanceFilter ? 500 : fetchLimit).lean(),
       Job.countDocuments(query),
     ]);
+
+    let filteredJobs = allJobs;
+    let total = totalBeforeDistance;
+
+    // Apply distance filter in-memory
+    if (hasDistanceFilter) {
+      filteredJobs = allJobs.filter((job) => {
+        const coords = job.coordinates as { lat: number; lng: number } | null | undefined;
+        // If a job doesn't have coordinates, it cannot be physically verified to be within the distance limit.
+        if (!coords || typeof coords.lat !== 'number' || typeof coords.lng !== 'number') {
+          return false;
+        }
+        const dist = calculateDistance(userLat!, userLng!, coords.lat, coords.lng);
+        return dist <= maxDistance!;
+      });
+      total = filteredJobs.length;
+      // Apply pagination after distance filter
+      filteredJobs = filteredJobs.slice(skip, skip + limit);
+    }
 
     const totalPages = Math.ceil(total / limit);
 
     return createApiResponse(true, {
-      data: jobs,
+      data: filteredJobs,
       total,
       page,
       limit,

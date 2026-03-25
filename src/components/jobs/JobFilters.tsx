@@ -12,10 +12,14 @@ interface JobFiltersProps {
   onFiltersChange: (filters: Partial<JobFiltersType>) => void;
   onReset: () => void;
   className?: string;
+  geoAvailable?: boolean;
+  distanceInfo?: string;
+  onRetryGeo?: () => void;
 }
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
+  { value: 'distance', label: 'Distance (Closest)' },
   { value: 'budget_high', label: 'Budget: High to Low' },
   { value: 'budget_low', label: 'Budget: Low to High' },
   { value: 'deadline', label: 'Deadline Soonest' },
@@ -33,7 +37,7 @@ const SKILLS_OPTIONS = [
   'Close Protection', 'K9 Handling', 'Reception Security', 'Corporate Security',
 ];
 
-export function JobFilters({ filters, onFiltersChange, onReset, className }: JobFiltersProps) {
+export function JobFilters({ filters, onFiltersChange, onReset, className, geoAvailable = false, distanceInfo, onRetryGeo }: JobFiltersProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>(filters.requiredSkills || []);
 
@@ -48,6 +52,7 @@ export function JobFilters({ filters, onFiltersChange, onReset, className }: Job
   const hasActiveFilters = Boolean(
     filters.search || filters.locationCity || filters.budgetType ||
     filters.budgetMin || filters.budgetMax || filters.startDate ||
+    filters.maxDistance ||
     (filters.requiredSkills && filters.requiredSkills.length > 0)
   );
 
@@ -82,6 +87,38 @@ export function JobFilters({ filters, onFiltersChange, onReset, className }: Job
           onChange={(e) => onFiltersChange({ locationCity: e.target.value })}
           className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:outline-none focus:ring-1 focus:ring-[var(--color-input-border-focus)] transition-colors"
         />
+      </div>
+
+      {/* Distance */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            Max Distance (miles)
+          </label>
+          {!geoAvailable && onRetryGeo && (
+            <button 
+              onClick={onRetryGeo}
+              className="text-[9px] text-[var(--color-primary)] font-bold hover:underline"
+            >
+              Retry Location
+            </button>
+          )}
+        </div>
+        <div className="relative">
+          <input
+            type="number"
+            min={1}
+            disabled={!geoAvailable}
+            value={filters.maxDistance || ''}
+            onChange={(e) => onFiltersChange({ maxDistance: e.target.value ? Number(e.target.value) : undefined })}
+            placeholder={geoAvailable ? "e.g. 50" : "Enable location to use"}
+            title={!geoAvailable ? "Enable location access to use distance filtering" : undefined}
+            className={`w-full px-3 py-2 text-xs rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:outline-none focus:ring-1 focus:ring-[var(--color-input-border-focus)] transition-colors ${!geoAvailable ? 'opacity-50 cursor-not-allowed bg-[var(--color-bg-subtle)]' : ''}`}
+          />
+        </div>
+        {geoAvailable && distanceInfo && (
+          <p className="text-[9px] text-[var(--color-primary)] mt-1.5 font-medium">{distanceInfo}</p>
+        )}
       </div>
 
       {/* Budget Type */}

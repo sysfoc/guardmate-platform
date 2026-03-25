@@ -39,6 +39,10 @@ export async function POST(
       return createApiResponse(false, null, 'You can only complete your own jobs.', 403);
     }
 
+    if (job.status === JobStatus.COMPLETED) {
+      return createApiResponse(true, job, 'Job is already marked as completed.', 200);
+    }
+
     if (job.status !== JobStatus.IN_PROGRESS) {
       return createApiResponse(
         false,

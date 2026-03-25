@@ -10,6 +10,7 @@ interface StatCardProps {
   trendDirection?: 'up' | 'down' | 'neutral';
   description?: string;
   variant?: 'blue' | 'emerald' | 'amber' | 'violet' | 'rose';
+  className?: string;
 }
 
 const colorVariants = {
@@ -43,6 +44,7 @@ export function StatCard({
   trendDirection = 'neutral',
   description,
   variant = 'blue',
+  className = '',
 }: StatCardProps) {
   const colors = colorVariants[variant];
 
@@ -76,7 +78,7 @@ export function StatCard({
   };
 
   return (
-    <Card className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+    <Card className={`hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${className}`}>
       <div className="flex items-start justify-between mb-2.5">
         <div className={`p-1.5 rounded-lg ${colors.bg}`}>
           {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, {

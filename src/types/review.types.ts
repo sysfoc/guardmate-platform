@@ -34,6 +34,7 @@ export interface PaginatedReviews {
   total: number;
   page: number;
   pages: number;
+  averageRating?: number;
 }
 
 export interface SubmitReviewPayload {
