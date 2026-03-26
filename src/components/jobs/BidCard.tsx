@@ -32,6 +32,9 @@ interface BidCardProps {
   isAccepting?: boolean;
   isRejecting?: boolean;
   isWithdrawing?: boolean;
+  onSelectForCompare?: (bidId: string, checked: boolean) => void;
+  isSelectedForCompare?: boolean;
+  isCompareSelectable?: boolean;
   className?: string;
 }
 
@@ -45,6 +48,9 @@ export function BidCard({
   isAccepting = false,
   isRejecting = false,
   isWithdrawing = false,
+  onSelectForCompare,
+  isSelectedForCompare = false,
+  isCompareSelectable = true,
   className,
 }: BidCardProps) {
   const [expanded, setExpanded] = React.useState(false);
@@ -58,67 +64,84 @@ export function BidCard({
       isAccepted && 'border-[var(--color-success)]/30 bg-[var(--color-success-light)]/30',
       className
     )}>
-      <div className="flex items-start gap-3">
-        {/* Guard Avatar */}
-        <Avatar
-          src={bid.guardPhoto ?? undefined}
-          name={bid.guardName}
-          size="md"
-        />
+      <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+        <div className="flex items-start gap-3 sm:gap-4 w-full sm:w-auto">
+          {/* Comparison Checkbox */}
+          {onSelectForCompare && (
+            <div className="pt-2 shrink-0">
+              <input 
+                type="checkbox"
+                checked={isSelectedForCompare}
+                disabled={!isSelectedForCompare && !isCompareSelectable}
+                onChange={(e) => onSelectForCompare(bid.bidId, e.target.checked)}
+                className="h-4 w-4 sm:h-5 sm:w-5 rounded border-[var(--color-input-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Select for comparison"
+              />
+            </div>
+          )}
+
+          {/* Guard Avatar */}
+          <Avatar
+            src={bid.guardPhoto ?? undefined}
+            name={bid.guardName}
+            size="md"
+            className="shrink-0"
+          />
+        </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h4 className="font-bold text-sm text-[var(--color-text-primary)]">
+        <div className="flex-1 min-w-0 w-full">
+          <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-4">
+            <div className="min-w-0 flex-1">
+              <h4 className="font-bold text-sm sm:text-base text-[var(--color-text-primary)] truncate block max-w-full">
                 {bid.guardName}
               </h4>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1">
                 <StarRating rating={bid.guardRating} size="sm" />
                 {bid.guardLicenseType && (
-                  <span className="text-[9px] font-bold text-[var(--color-text-tertiary)] flex items-center gap-0.5">
-                    <Shield className="h-2.5 w-2.5" /> {bid.guardLicenseType}
+                  <span className="text-[9px] sm:text-[10px] font-bold text-[var(--color-text-tertiary)] flex items-center gap-0.5 whitespace-nowrap">
+                    <Shield className="h-2.5 w-2.5 sm:h-3 sm:w-3" /> {bid.guardLicenseType}
                   </span>
                 )}
                 {bid.guardExperience > 0 && (
-                  <span className="text-[9px] font-bold text-[var(--color-text-tertiary)]">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-[var(--color-text-tertiary)] whitespace-nowrap">
                     {bid.guardExperience}yr exp
                   </span>
                 )}
               </div>
             </div>
-            <Badge variant={statusConfig.variant} className="text-[9px] h-5 gap-0.5">
+            <Badge variant={statusConfig.variant} className="text-[9px] sm:text-[10px] h-5 sm:h-6 gap-0.5 shrink-0 whitespace-nowrap">
               {statusConfig.icon} {statusConfig.label}
             </Badge>
           </div>
 
           {/* Rate & Date */}
-          <div className="flex items-center gap-4 mt-2 text-[10px] font-medium text-[var(--color-text-secondary)]">
-            <span className="flex items-center gap-1">
-              <PoundSterling className="h-3 w-3 text-[var(--color-text-muted)]" />
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-[10px] sm:text-xs font-medium text-[var(--color-text-secondary)]">
+            <span className="flex items-center gap-1 whitespace-nowrap">
+              <PoundSterling className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--color-text-muted)]" />
               <span className="font-bold text-[var(--color-text-primary)]">£{bid.proposedRate}</span>
               <span className="text-[var(--color-text-muted)]">/{bid.budgetType === 'HOURLY' ? 'hr' : 'fixed'}</span>
             </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3 text-[var(--color-text-muted)]" />
-              Available {new Date(bid.availableFrom).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+            <span className="flex items-center gap-1 whitespace-nowrap">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--color-text-muted)]" />
+              Avail {new Date(bid.availableFrom).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
             </span>
-            <span className="text-[var(--color-text-muted)]">
+            <span className="text-[var(--color-text-muted)] whitespace-nowrap">
               Bid: {new Date(bid.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
             </span>
           </div>
 
           {/* Cover Message */}
-          <div className="mt-2">
+          <div className="mt-2.5 sm:mt-3">
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-[10px] font-bold text-[var(--color-primary)] hover:underline flex items-center gap-0.5"
+              className="text-[10px] sm:text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1"
             >
-              {expanded ? 'Hide' : 'Show'} cover message
-              {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              {expanded ? 'Hide cover message' : 'Show cover message'}
+              {expanded ? <ChevronUp className="h-3 w-3 sm:h-4 sm:w-4" /> : <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />}
             </button>
             {expanded && (
-              <p className="mt-1.5 text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-subtle)] rounded-lg p-3 leading-relaxed">
+              <p className="mt-2 text-xs sm:text-sm text-[var(--color-text-secondary)] bg-[var(--color-bg-subtle)] rounded-lg p-3 sm:p-4 leading-relaxed whitespace-pre-line">
                 {bid.coverMessage}
               </p>
             )}
@@ -126,20 +149,20 @@ export function BidCard({
 
           {/* Rejection Reason */}
           {bid.rejectionReason && bid.status === BidStatus.REJECTED && (
-            <p className="mt-2 text-[10px] text-[var(--color-danger)] bg-[var(--color-danger-light)] rounded-lg px-3 py-2">
+            <p className="mt-2.5 sm:mt-3 text-[10px] sm:text-xs text-[var(--color-danger)] bg-[var(--color-danger-light)] rounded-lg px-3 py-2.5">
               <strong>Reason:</strong> {bid.rejectionReason}
             </p>
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <div className="flex items-center gap-2 mt-4 flex-wrap sm:flex-nowrap">
             {onMessage && isAccepted && (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => onMessage(bid.bidId, bid.guardUid)}
-                className="text-[10px] h-7 px-3 font-bold border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
-                leftIcon={<MessageSquare className="h-3 w-3" />}
+                className="w-full sm:w-auto text-[10px] sm:text-xs h-8 sm:h-9 px-3 sm:px-4 font-bold border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
+                leftIcon={<MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />}
               >
                 Message Guard
               </Button>
@@ -152,7 +175,7 @@ export function BidCard({
                   variant="primary"
                   onClick={() => onAccept(bid.bidId)}
                   disabled={isAccepting}
-                  className="bg-[var(--color-btn-success-bg)] hover:bg-[var(--color-btn-success-hover-bg)] text-[var(--color-btn-success-text)] text-[10px] h-7 px-3 font-bold"
+                  className="w-full sm:w-auto bg-[var(--color-btn-success-bg)] hover:bg-[var(--color-btn-success-hover-bg)] text-[var(--color-btn-success-text)] text-[10px] sm:text-xs h-8 sm:h-9 px-3 sm:px-4 font-bold"
                 >
                   {isAccepting ? 'Accepting...' : 'Accept Bid'}
                 </Button>
@@ -163,7 +186,7 @@ export function BidCard({
                   variant="danger"
                   onClick={() => onReject(bid.bidId)}
                   disabled={isRejecting}
-                  className="text-[10px] h-7 px-3 font-bold"
+                  className="w-full sm:w-auto text-[10px] sm:text-xs h-8 sm:h-9 px-3 sm:px-4 font-bold"
                 >
                   {isRejecting ? 'Rejecting...' : 'Reject'}
                 </Button>
@@ -174,7 +197,7 @@ export function BidCard({
                   variant="ghost"
                   onClick={() => onWithdraw(bid.bidId)}
                   disabled={isWithdrawing}
-                  className="text-[10px] h-7 px-3 font-bold"
+                  className="w-full sm:w-auto text-[10px] sm:text-xs h-8 sm:h-9 px-3 sm:px-4 font-bold"
                 >
                   {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
                 </Button>

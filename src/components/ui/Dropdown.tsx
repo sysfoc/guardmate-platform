@@ -26,7 +26,7 @@ export function Dropdown({ trigger, children, align = 'right', className }: Drop
       {isOpen && (
         <div 
           className={cn(
-            "absolute z-50 mt-2 min-w-[12rem] overflow-hidden rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-primary)] shadow-xl animate-in fade-in zoom-in-95 duration-100",
+            "absolute z-50 mt-2 min-w-[12rem] overflow-hidden rounded-xl border border-[var(--color-border-primary)] bg-white dark:bg-slate-900 shadow-xl animate-in fade-in zoom-in-95 duration-100",
             align === 'right' ? 'right-0' : 'left-0',
             className
           )}

@@ -7,6 +7,7 @@ import { useUser } from '@/context/UserContext';
 import { getJobBids, acceptBid, rejectBid } from '@/lib/api/job.api';
 import { createOrGetConversation } from '@/lib/api/chat.api';
 import { BidCard } from '@/components/jobs/BidCard';
+import { BidComparisonModal } from '@/components/jobs/BidComparisonModal';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
@@ -31,6 +32,10 @@ export default function BossJobBidsPage() {
   const [accepting, setAccepting] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [messagingGuard, setMessagingGuard] = useState<string | null>(null);
+
+  // Comparison State
+  const [selectedBids, setSelectedBids] = useState<string[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
 
   useEffect(() => {
     if (!jobId) return;
@@ -98,6 +103,16 @@ export default function BossJobBidsPage() {
     }
   };
 
+  const handleSelectForCompare = (bidId: string, checked: boolean) => {
+    setSelectedBids(prev => {
+      if (checked) {
+        if (prev.length < 4) return [...prev, bidId];
+        return prev;
+      }
+      return prev.filter(id => id !== bidId);
+    });
+  };
+
   if (userLoading || loading) return <DashboardSkeleton />;
 
   const acceptedBid = bids.find((b) => b.status === BidStatus.ACCEPTED);
@@ -153,6 +168,9 @@ export default function BossJobBidsPage() {
                       showActions={!acceptedBid}
                       onAccept={(id) => setConfirmAccept(id)}
                       onReject={(id) => setShowRejectModal(id)}
+                      onSelectForCompare={handleSelectForCompare}
+                      isSelectedForCompare={selectedBids.includes(bid.bidId)}
+                      isCompareSelectable={selectedBids.length < 4}
                     />
                   ))}
                 </div>
@@ -196,6 +214,36 @@ export default function BossJobBidsPage() {
           </div>
         </div>
       </Modal>
+      {/* Sticky Compare Button */}
+      {selectedBids.length >= 2 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-200 dark:bg-gray-800 border-t border-[var(--color-border-primary)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 flex justify-between items-center z-40 transition-transform animate-in slide-in-from-bottom-5">
+          <div className="max-w-7xl mx-auto w-full flex flex-col sm:flex-row gap-3 sm:gap-0 sm:items-center justify-between px-4 sm:px-6">
+            <p className="text-sm font-bold text-[var(--color-text-primary)]">
+              <span className="bg-[var(--color-primary)] text-white px-2 py-0.5 rounded-full mr-2">{selectedBids.length} / 4</span>
+              Bids selected to compare
+            </p>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => setSelectedBids([])} className="font-bold">Clear All</Button>
+              <Button variant="primary" size="sm" onClick={() => setShowCompare(true)} className="font-bold shadow-md">
+                Compare {selectedBids.length} Bids
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comparison Modal */}
+      {job && (
+        <BidComparisonModal
+          isOpen={showCompare}
+          onClose={() => setShowCompare(false)}
+          bids={bids.filter(b => selectedBids.includes(b.bidId))}
+          job={job}
+          onAccept={(id) => { setShowCompare(false); setConfirmAccept(id); }}
+          onReject={(id) => { setShowCompare(false); setShowRejectModal(id); }}
+          isAccepting={accepting}
+        />
+      )}
     </div>
   );
 }

@@ -168,7 +168,36 @@ export async function GET(
       return createApiResponse(false, null, 'You can only view bids on your own jobs.', 403);
     }
 
-    const bids = await Bid.find({ jobId }).sort({ createdAt: -1 }).lean();
+    const bids = await Bid.aggregate([
+      { $match: { jobId } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'guardUid',
+          foreignField: 'uid',
+          as: 'guardDetails'
+        }
+      },
+      {
+        $unwind: {
+          path: '$guardDetails',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $addFields: {
+          guardSkills: '$guardDetails.skills',
+          guardCertifications: '$guardDetails.certifications',
+          guardReliabilityScore: '$guardDetails.reliabilityScore',
+        }
+      },
+      {
+        $project: {
+          guardDetails: 0
+        }
+      }
+    ]);
 
     return createApiResponse(true, { bids, job: job.toObject() }, 'Bids fetched successfully.', 200);
   } catch (error: unknown) {

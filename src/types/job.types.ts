@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { JobStatus, BidStatus, JobType, BudgetType } from './enums';
+import type { Certification } from './user.types';
 
 // ─── Coordinates ──────────────────────────────────────────────────────────────
 
@@ -119,7 +120,9 @@ export interface IBid {
   guardRating: number;
   guardExperience: number;
   guardLicenseType: string | null;
-
+  guardSkills?: string[];
+  guardCertifications?: Certification[];
+  guardReliabilityScore?: number;
   status: BidStatus;
   proposedRate: number;
   budgetType: BudgetType;
