@@ -22,6 +22,7 @@ export enum NotificationEventType {
   JOB_CANCELLED_BY_BOSS = 'jobCancelledByBoss',
   GUARD_WITHDREW_BID = 'guardWithdrewBid',
   JOB_REOPENED_TO_BIDDERS = 'jobReopened',
+  INCIDENT_REPORTED = 'incidentReported',
 }
 
 export interface IEmailSettings {

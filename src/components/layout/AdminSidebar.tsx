@@ -30,6 +30,7 @@ const adminNavItems = [
   { label: 'Boss Approvals', icon: Building2, href: '/admin/bosses' },
   { label: 'All Users', icon: Users, href: '/admin/users' },
   { label: 'Jobs', icon: Briefcase, href: '/admin/jobs' },
+  { label: 'Incidents', icon: Shield, href: '/admin/incidents' },
   { label: 'Activity Log', icon: History, href: '/admin/activity' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];

@@ -105,3 +105,20 @@ export enum AdminLevel {
   MANAGER = 'MANAGER',
   SUPPORT = 'SUPPORT',
 }
+
+export enum IncidentType {
+  THEFT               = 'THEFT',
+  ASSAULT             = 'ASSAULT',
+  MEDICAL             = 'MEDICAL',
+  TRESPASSING         = 'TRESPASSING',
+  PROPERTY_DAMAGE     = 'PROPERTY_DAMAGE',
+  SUSPICIOUS_ACTIVITY = 'SUSPICIOUS_ACTIVITY',
+  OTHER               = 'OTHER',
+}
+
+export enum IncidentSeverity {
+  LOW      = 'LOW',
+  MEDIUM   = 'MEDIUM',
+  HIGH     = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}

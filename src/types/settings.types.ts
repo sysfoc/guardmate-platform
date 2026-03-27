@@ -8,6 +8,7 @@ export interface IPlatformCountry {
 export interface IPlatformSettings {
   _id?: string;
   platformCountry: IPlatformCountry | null;
+  checkInRadiusMeters: number;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

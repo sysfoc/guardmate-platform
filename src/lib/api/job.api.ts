@@ -214,3 +214,10 @@ export async function getMateActivity(): Promise<ApiResponse<MateActivityItem[]>
 export async function getBossActivity(): Promise<ApiResponse<BossActivityItem[]>> {
   return apiGet<BossActivityItem[]>('/api/dashboard/boss/activity');
 }
+
+/**
+ * Get the guard's active (IN_PROGRESS) jobs where they have an accepted bid.
+ */
+export async function getMyActiveJobs(): Promise<ApiResponse<IJob[]>> {
+  return apiGet<IJob[]>('/api/jobs?status=IN_PROGRESS&myBids=ACCEPTED');
+}

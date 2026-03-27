@@ -10,6 +10,7 @@ import type { ApiResponse } from '@/types/api.types';
 import type { UserProfile } from '@/types/user.types';
 import type { AdminDashboardStats, AdminActivity, AdminUserFilters, AdminActivityFilters, AdminJobFilters } from '@/types/admin.types';
 import type { IJob } from '@/types/job.types';
+import type { IIncidentReport } from '@/types/shift.types';
 
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
@@ -125,3 +126,38 @@ export async function getAdminJobs(
   );
 }
 
+// ─── Admin Incidents ──────────────────────────────────────────────────────────
+
+interface AdminIncidentFilters {
+  page?: number;
+  severity?: string;
+  incidentType?: string;
+  from?: string;
+  to?: string;
+}
+
+/**
+ * Get all incident reports across the platform (Admin only).
+ * @param params - Filters for severity, type, and date range
+ */
+export async function getAdminIncidents(
+  params: AdminIncidentFilters = {}
+): Promise<
+  ApiResponse<{ incidents: IIncidentReport[]; total: number; page: number; totalPages: number }>
+> {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') query.append(key, String(value));
+  });
+  return apiGet<{ incidents: IIncidentReport[]; total: number; page: number; totalPages: number }>(
+    `/api/admin/incidents?${query.toString()}`
+  );
+}
+
+/**
+ * Mark an incident report as reviewed by admin.
+ * @param incidentId - The incident to mark as reviewed
+ */
+export async function markIncidentReviewed(incidentId: string): Promise<ApiResponse<IIncidentReport>> {
+  return apiPatch<IIncidentReport>('/api/admin/incidents', { incidentId });
+}

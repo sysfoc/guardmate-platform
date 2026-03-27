@@ -145,6 +145,7 @@ export async function GET(request: NextRequest) {
     const startDate = url.searchParams.get('startDate');
     const search = url.searchParams.get('search');
     const sortBy = url.searchParams.get('sortBy') || 'newest';
+    const myBids = url.searchParams.get('myBids'); // e.g., 'ACCEPTED'
 
     // Distance filter params
     const userLatParam = url.searchParams.get('userLat');
@@ -161,7 +162,23 @@ export async function GET(request: NextRequest) {
     const query: Record<string, unknown> = {};
 
     if (user.role === UserRole.MATE) {
-      query.status = JobStatus.OPEN;
+      if (myBids) {
+        // If filtering by myBids, they are fetching specific status (e.g. IN_PROGRESS)
+        if (status) query.status = status;
+        
+        // Fetch valid bids for this mate
+        const Bid = (await import('@/models/Bid.model')).default;
+        const myBidsFilter: Record<string, any> = { guardUid: user.uid };
+        if (myBids !== 'ALL') myBidsFilter.status = myBids;
+        
+        const bids = await Bid.find(myBidsFilter).select('jobId').lean() as { jobId: string }[];
+        const jobIds = bids.map((b) => b.jobId);
+        query.jobId = { $in: jobIds };
+
+      } else {
+        // By default, Mate only sees OPEN jobs for applying
+        query.status = JobStatus.OPEN;
+      }
     } else if (user.role === UserRole.BOSS) {
       query.postedBy = user.uid;
       if (status) query.status = status;

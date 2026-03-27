@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
-import { 
-  Shield, MapPin, Star, Briefcase, ChevronRight, Activity, 
+import {
+  Shield, MapPin, Star, Briefcase, ChevronRight, Activity,
   AlertTriangle, DollarSign, Clock, Calendar, CheckCircle2,
   TrendingUp, Award, MoreHorizontal, Send, X
 } from 'lucide-react';
@@ -18,11 +18,13 @@ import { ProfileCompletionBanner } from '@/components/ui/ProfileCompletionBanner
 import { StatCard } from '@/components/ui/StatCard';
 import { CertificateBadges } from '@/components/ui/CertificateBadges';
 import { StarRating } from '@/components/ui/StarRating';
+import ActiveShiftCard from '@/components/shifts/ActiveShiftCard';
 import { updateUserProfile } from '@/lib/api/user.api';
-import { getMateActivity } from '@/lib/api/job.api';
+import { getMateActivity, getMyActiveJobs } from '@/lib/api/job.api';
 import { getMyPendingReviews } from '@/lib/api/review.api';
 import type { MateActivityItem } from '@/lib/api/job.api';
 import type { MateProfile } from '@/types/user.types';
+import type { IJob } from '@/types/job.types';
 import { VerificationStatus, LicenseStatus } from '@/types/enums';
 import toast from 'react-hot-toast';
 
@@ -30,18 +32,25 @@ export default function MateDashboard() {
   const { user, isLoading, fetchUser } = useUser();
   const [activity, setActivity] = useState<MateActivityItem[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
+  const [activeJobs, setActiveJobs] = useState<IJob[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [hideReviewBanner, setHideReviewBanner] = useState(false);
 
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const [resp, pendingResp] = await Promise.all([
+        const [resp, pendingResp, activeResp] = await Promise.all([
           getMateActivity(),
-          getMyPendingReviews()
+          getMyPendingReviews(),
+          getMyActiveJobs()
         ]);
         if (resp.success && resp.data) setActivity(resp.data);
         if (pendingResp.success && pendingResp.data) setPendingCount(pendingResp.data.length);
+        if (activeResp.success && activeResp.data) {
+          // /api/jobs returns paginated: { data: IJob[], total, ... }
+          const raw = activeResp.data as any;
+          setActiveJobs(Array.isArray(raw) ? raw : (raw.data ?? []));
+        }
       } catch { /* silent */ }
       finally { setActivityLoading(false); }
     };
@@ -76,8 +85,24 @@ export default function MateDashboard() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
+
         <ProfileCompletionBanner />
+
+        {/* Active Shift Section */}
+        {activeJobs.length > 0 && (
+          <div className="space-y-4">
+            {activeJobs.map((job) => (
+              <ActiveShiftCard
+                key={job.jobId}
+                jobId={job.jobId}
+                jobTitle={job.title}
+                companyName={job.companyName}
+                jobCoordinates={job.coordinates}
+                jobLocation={job.location}
+              />
+            ))}
+          </div>
+        )}
 
         {pendingCount > 0 && !hideReviewBanner && (
           <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)] text-[var(--color-primary-dark)] px-4 py-3 rounded-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
@@ -96,7 +121,7 @@ export default function MateDashboard() {
               <Link href="/dashboard/mate/bids?status=ACCEPTED">
                 <Button size="sm" variant="primary">Leave Reviews</Button>
               </Link>
-              <button 
+              <button
                 onClick={() => setHideReviewBanner(true)}
                 className="p-1.5 hover:bg-[var(--color-primary)]/10 rounded-full transition-colors"
                 aria-label="Dismiss"
@@ -118,23 +143,23 @@ export default function MateDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-             <Link href="/dashboard/mate/profile">
+            <Link href="/dashboard/mate/profile">
               <Button variant="ghost" size="sm" className="font-bold border border-[var(--color-border-primary)]">
                 View Profile
               </Button>
             </Link>
             <div className="flex items-center gap-3 bg-[var(--color-bg-secondary)] py-1 pl-1 pr-3 rounded-full border border-[var(--color-border-primary)]">
-               <div className="p-1.5 bg-emerald-500/10 rounded-full text-emerald-500">
-                 <DollarSign className="h-4 w-4" />
-               </div>
-               <span className="text-xs font-black">£{(mate.totalEarnings || 0).toLocaleString()}</span>
+              <div className="p-1.5 bg-emerald-500/10 rounded-full text-emerald-500">
+                <DollarSign className="h-4 w-4" />
+              </div>
+              <span className="text-xs font-black">£{(mate.totalEarnings || 0).toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         {/* Top Stats Row — Compact 3-Column Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          
+
           {/* Duty Status Card */}
           <Card className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -148,24 +173,24 @@ export default function MateDashboard() {
                 </h3>
               </div>
             </div>
-            <Toggle 
-              checked={mate.isAvailable} 
+            <Toggle
+              checked={mate.isAvailable}
               onCheckedChange={handleAvailabilityToggle}
             />
           </Card>
 
           {/* Key Performance Stats */}
-          <StatCard 
-            label="Jobs Completed" 
-            value={mate.totalJobsCompleted || 0} 
-            icon={<Shield />} 
+          <StatCard
+            label="Jobs Completed"
+            value={mate.totalJobsCompleted || 0}
+            icon={<Shield />}
             variant="blue"
             className="shadow-sm"
           />
-          <StatCard 
-            label="Reliability Score" 
-            value={`${mate.reliabilityScore ?? 100}%`} 
-            icon={<Award />} 
+          <StatCard
+            label="Reliability Score"
+            value={`${mate.reliabilityScore ?? 100}%`}
+            icon={<Award />}
             variant="amber"
             className="md:col-span-2 lg:col-span-1 shadow-sm"
           />
@@ -175,21 +200,21 @@ export default function MateDashboard() {
         <div className="flex flex-col gap-4">
           <Card className="p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-               <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider">Verification Status</span>
-                    <Badge variant={isVerified ? 'success' : 'warning'} className="text-[9px] h-4 py-0">
-                      {isVerified ? 'VERIFIED' : 'ACTION REQUIRED'}
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] text-[var(--color-text-secondary)] font-medium">Keep your certifications and licenses up to date to maintain access.</p>
-               </div>
-               <div className="flex items-center gap-4 flex-wrap">
-                  <StatusMini label="SIA License" active={mate.licenseStatus === LicenseStatus.VALID} />
-                  <StatusMini label="Identity ID" active={mate.idVerificationStatus === VerificationStatus.VERIFIED} />
-                  <StatusMini label="BG Check" active={mate.backgroundCheckStatus === VerificationStatus.VERIFIED} />
-                  <StatusMini label="Certifications" active={!!mate.certifications?.length} />
-               </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider">Verification Status</span>
+                  <Badge variant={isVerified ? 'success' : 'warning'} className="text-[9px] h-4 py-0">
+                    {isVerified ? 'VERIFIED' : 'ACTION REQUIRED'}
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-[var(--color-text-secondary)] font-medium">Keep your certifications and licenses up to date to maintain access.</p>
+              </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                <StatusMini label="SIA License" active={mate.licenseStatus === LicenseStatus.VALID} />
+                <StatusMini label="Identity ID" active={mate.idVerificationStatus === VerificationStatus.VERIFIED} />
+                <StatusMini label="BG Check" active={mate.backgroundCheckStatus === VerificationStatus.VERIFIED} />
+                <StatusMini label="Certifications" active={!!mate.certifications?.length} />
+              </div>
             </div>
           </Card>
 
@@ -203,7 +228,7 @@ export default function MateDashboard() {
 
         {/* Activity & Reputation Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          
+
           {/* Activity History Card — Real Data */}
           <Card className="lg:col-span-2 p-0 overflow-hidden">
             <div className="px-5 py-4 border-b border-[var(--color-border-primary)] flex items-center justify-between">
@@ -212,7 +237,7 @@ export default function MateDashboard() {
                 FULL LOG <ChevronRight className="h-3 w-3" />
               </Link>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-[var(--color-bg-secondary)]/50 text-[var(--color-text-tertiary)] uppercase text-[9px] font-bold tracking-widest">
@@ -281,7 +306,7 @@ export default function MateDashboard() {
 
           {/* Reputation Card */}
           <div className="space-y-5">
-             <Card className="p-5">
+            <Card className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-sm">Mate Reputation</h3>
                 <Star className="h-4 w-4 text-amber-500 fill-amber-500" />

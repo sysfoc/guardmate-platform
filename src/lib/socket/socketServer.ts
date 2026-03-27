@@ -172,6 +172,52 @@ export function initSocketServer(io: Server) {
       }
     });
 
+    // ── Shift Tracking Room Events ──────────────────────────────────────────
+    socket.on('join-shift-room', async (jobId: string) => {
+      try {
+        if (!jobId) return;
+
+        // Import models lazily to avoid circular deps
+        const Job = (await import('@/models/Job.model')).default;
+        const Bid = (await import('@/models/Bid.model')).default;
+
+        const job = await Job.findOne({ jobId }).lean();
+        if (!job) {
+          socket.emit('error', { message: 'Job not found' });
+          return;
+        }
+
+        // Verify user is participant (Boss who owns the job or Mate with accepted bid)
+        const isBoss = user.role === 'BOSS' && job.postedBy === user.uid;
+        const isGuard = user.role === 'MATE' && await Bid.exists({
+          jobId,
+          guardUid: user.uid,
+          status: 'ACCEPTED',
+        });
+
+        if (!isBoss && !isGuard) {
+          socket.emit('error', { message: 'Unauthorized access to shift room' });
+          return;
+        }
+
+        const roomName = `shift-${jobId}`;
+        socket.join(roomName);
+        socket.emit('joined-shift', { jobId, room: roomName });
+      } catch (err) {
+        console.error('Join Shift Room Error:', err);
+      }
+    });
+
+    socket.on('leave-shift-room', (jobId: string) => {
+      if (!jobId) return;
+      socket.leave(`shift-${jobId}`);
+    });
+
+    socket.on('guard-location-update', (data: { jobId: string; lat: number; lng: number; timestamp: string; guardName: string }) => {
+      if (!data?.jobId) return;
+      io.to(`shift-${data.jobId}`).emit('guard-location-update', data);
+    });
+
     socket.on('disconnect', () => {
       if (process.env.NODE_ENV === 'development') {
         console.log(`Socket disconnected: ${user.uid}`);

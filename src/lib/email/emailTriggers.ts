@@ -217,3 +217,26 @@ export const sendJobReopenedToBidders = async (
     },
   });
 };
+
+export const sendIncidentReported = async (
+  bossEmail: string,
+  bossName: string,
+  guardName: string,
+  jobTitle: string,
+  incidentType: string,
+  severity: string,
+  jobId: string
+) => {
+  await sendEmail({
+    to: bossEmail,
+    notificationType: NotificationEventType.INCIDENT_REPORTED,
+    variables: {
+      bossName,
+      guardName,
+      jobTitle,
+      incidentType,
+      severity,
+      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/boss/jobs/${jobId}`,
+    },
+  });
+};

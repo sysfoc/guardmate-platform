@@ -20,6 +20,7 @@ export default function AdminSettingsPage() {
   
   const [platformSettings, setPlatformSettings] = useState<IPlatformSettings | null>(null);
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>('none');
+  const [checkInRadiusMeters, setCheckInRadiusMeters] = useState<number>(500);
   const [platformSaving, setPlatformSaving] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -43,6 +44,7 @@ export default function AdminSettingsPage() {
       setSettings(emailData);
       setPlatformSettings(platformData);
       setSelectedCountryCode(platformData.platformCountry?.countryCode || 'none');
+      setCheckInRadiusMeters(platformData.checkInRadiusMeters ?? 500);
     } catch (err: any) {
       setErrorMsg('Failed to load settings');
     } finally {
@@ -98,7 +100,8 @@ export default function AdminSettingsPage() {
           countryCode: targetCountry.code,
           dialCode: targetCountry.dialCode,
           flag: targetCountry.flag
-        } as IPlatformCountry : null
+        } as IPlatformCountry : null,
+        checkInRadiusMeters
       };
 
       const updated = await settingsApi.updatePlatformSettings(payload);
@@ -378,6 +381,32 @@ export default function AdminSettingsPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="pt-6 border-t border-[var(--color-border-primary)]">
+              <h3 className="text-lg font-bold text-[var(--color-text-primary)]">GPS Geofence Settings</h3>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1 mb-4">
+                Define the maximum distance a guard can be from the job location to successfully check in.
+              </p>
+              
+              <div className="space-y-2 max-w-sm">
+                <label className="text-sm font-medium text-[var(--color-input-label)]">
+                  Check-in Radius (meters)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="50"
+                    max="5000"
+                    value={checkInRadiusMeters}
+                    onChange={(e) => setCheckInRadiusMeters(Number(e.target.value))}
+                    className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[var(--color-text-muted)] font-medium pointer-events-none">
+                    meters
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end pt-4 border-t border-[var(--color-border-primary)]">

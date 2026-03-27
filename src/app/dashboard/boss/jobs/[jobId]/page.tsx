@@ -23,6 +23,7 @@ import { JobStatus, BidStatus } from '@/types/enums';
 import { Edit, Trash2, Users, ChevronLeft, Loader2, CheckCircle2, XCircle, Clock, MessageSquare } from 'lucide-react';
 import { getJobBids } from '@/lib/api/job.api';
 import { createOrGetConversation } from '@/lib/api/chat.api';
+import ShiftMonitoringPanel from '@/components/shifts/ShiftMonitoringPanel';
 
 export default function BossJobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -228,11 +229,6 @@ export default function BossJobDetailPage() {
                   Edit
                 </Button>
               )}
-              {canComplete && (
-                <Button size="sm" variant="primary" leftIcon={<CheckCircle2 className="h-4 w-4" />} onClick={() => setShowComplete(true)}>
-                  Mark as Complete
-                </Button>
-              )}
               {canCancel && (
                 <Button size="sm" variant="danger" leftIcon={<Trash2 className="h-4 w-4" />} onClick={() => setShowCancel(true)}>
                   Cancel Job
@@ -241,40 +237,41 @@ export default function BossJobDetailPage() {
             </>
           }
         >
-          {/* Bids or Review CTA in sidebar */}
-          {job.status === JobStatus.COMPLETED ? (
-            <Card className="p-5 flex flex-col items-center text-center">
-              {submittedReview ? (
-                <>
-                  <div className="bg-[var(--color-success-light)] p-3 rounded-full mb-3">
-                    <CheckCircle2 className="h-6 w-6 text-[var(--color-success)]" />
-                  </div>
-                  <h3 className="font-bold text-sm text-[var(--color-text-primary)] mb-1">Review Submitted</h3>
-                  <div className="flex justify-center mb-2">
-                    <StarRating rating={submittedReview.rating} size="md" />
-                  </div>
-                  <p className="text-[10px] text-[var(--color-text-secondary)] italic line-clamp-3">"{submittedReview.comment}"</p>
-                </>
-              ) : pendingReview ? (
-                <>
-                  <h3 className="font-bold text-sm text-[var(--color-text-primary)] mb-3">Rate your Guard</h3>
-                  <Avatar src={pendingReview.receiverPhoto || undefined} name={pendingReview.receiverName} size="xl" className="mb-2 shadow-md" />
-                  <p className="font-bold text-sm text-[var(--color-text-primary)] mb-1">{pendingReview.receiverName}</p>
-                  <p className="text-[10px] text-[var(--color-text-secondary)] mb-4 px-2">How was your experience working with {pendingReview.receiverName.split(' ')[0]}?</p>
-                  <Button size="sm" className="w-full shadow-md" onClick={() => setShowReviewModal(true)}>
-                    Leave a Review
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <div className="bg-[var(--color-bg-subtle)] p-3 rounded-full mb-3">
-                    <CheckCircle2 className="h-6 w-6 text-[var(--color-text-muted)]" />
-                  </div>
-                  <h3 className="font-bold text-sm text-[var(--color-text-primary)] mb-1">Job Completed</h3>
-                  <p className="text-[10px] text-[var(--color-text-secondary)]">This job has been finalised and reviewed.</p>
-                </>
+          {/* Shift Monitoring Panel (when hired) or Bids CTA */}
+          {[JobStatus.FILLED, JobStatus.IN_PROGRESS, JobStatus.COMPLETED].includes(job.status as JobStatus) ? (
+            <div className="space-y-4 flex flex-col items-center">
+              <ShiftMonitoringPanel
+                jobId={job.jobId}
+                jobTitle={job.title}
+                jobCoordinates={job.coordinates}
+              />
+              
+              {job.status === JobStatus.COMPLETED && (
+                <Card className="w-full p-4 flex flex-col items-center text-center mt-4">
+                  {submittedReview ? (
+                    <>
+                      <div className="bg-[var(--color-success-light)] p-2 rounded-full mb-2">
+                        <CheckCircle2 className="h-5 w-5 text-[var(--color-success)]" />
+                      </div>
+                      <h3 className="font-bold text-sm text-[var(--color-text-primary)] mb-1">Review Submitted</h3>
+                      <div className="flex justify-center mb-2">
+                        <StarRating rating={submittedReview.rating} size="sm" />
+                      </div>
+                      <p className="text-[10px] text-[var(--color-text-secondary)] italic line-clamp-2">"{submittedReview.comment}"</p>
+                    </>
+                  ) : pendingReview ? (
+                    <>
+                      <h3 className="font-bold text-sm text-[var(--color-text-primary)] mb-2">Rate your Guard</h3>
+                      <Avatar src={pendingReview.receiverPhoto || undefined} name={pendingReview.receiverName} size="lg" className="mb-2 shadow-sm" />
+                      <p className="font-bold text-sm text-[var(--color-text-primary)] mb-1">{pendingReview.receiverName}</p>
+                      <Button size="sm" className="w-full mt-2" onClick={() => setShowReviewModal(true)}>
+                        Leave a Review
+                      </Button>
+                    </>
+                  ) : null}
+                </Card>
               )}
-            </Card>
+            </div>
           ) : (
             <Card className="p-5 bg-gradient-to-br from-[var(--color-primary)] to-indigo-600 text-white border-none">
               <h3 className="font-bold text-sm mb-1">Bids Received</h3>

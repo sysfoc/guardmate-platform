@@ -218,4 +218,12 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
     variables: ['guardName', 'jobTitle', 'jobUrl'],
     isActive: true,
   },
+  [NotificationEventType.INCIDENT_REPORTED]: {
+    notificationType: NotificationEventType.INCIDENT_REPORTED,
+    subject: '⚠️ Incident Report: {{jobTitle}}',
+    htmlBody: BASE_HTML('Incident Report Filed', '<p>Hi {{bossName}},</p><p>An incident has been reported by <strong>{{guardName}}</strong> on the job <strong>{{jobTitle}}</strong>.</p><p><strong>Type:</strong> {{incidentType}}<br/><strong>Severity:</strong> {{severity}}</p><p>Please log in to review the full details and take any necessary action.</p><a href="{{dashboardUrl}}" class="btn">View Incident</a>'),
+    textBody: 'Hi {{bossName}}, {{guardName}} reported an incident on {{jobTitle}}. Type: {{incidentType}}, Severity: {{severity}}. Review at {{dashboardUrl}}',
+    variables: ['bossName', 'guardName', 'jobTitle', 'incidentType', 'severity', 'dashboardUrl'],
+    isActive: true,
+  },
 };

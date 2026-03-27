@@ -15,6 +15,12 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
     type: PlatformCountrySchema,
     default: null,
   },
+  checkInRadiusMeters: {
+    type: Number,
+    default: 500,
+    min: 50,
+    max: 5000,
+  },
 }, {
   timestamps: true,
 });
