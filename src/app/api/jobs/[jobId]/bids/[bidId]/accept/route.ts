@@ -4,14 +4,13 @@ import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { UserRole, BidStatus, JobStatus } from '@/types/enums';
+import { UserRole, BidStatus, JobStatus, HiringStatus } from '@/types/enums';
 import { sendBidAccepted, sendBidRejected } from '@/lib/email/emailTriggers';
 
 /**
  * PATCH /api/jobs/[jobId]/bids/[bidId]/accept
  * Boss only — accept a bid.
- * Sets bid ACCEPTED, all other bids REJECTED, job FILLED.
- * Triggers sendBidAccepted to winner and sendBidRejected to others.
+ * Multi-guard flow: adds guard to acceptedGuards. Only sets FILLED when all guards hired.
  */
 export async function PATCH(
   request: NextRequest,
@@ -42,7 +41,13 @@ export async function PATCH(
     }
 
     if (job.status === JobStatus.FILLED) {
-      return createApiResponse(false, null, 'This job already has an accepted bid.', 400);
+      return createApiResponse(false, null, 'This job is already fully hired.', 400);
+    }
+
+    // Check if all positions already filled
+    const currentAccepted = job.acceptedGuards || [];
+    if (currentAccepted.length >= job.numberOfGuardsNeeded) {
+      return createApiResponse(false, null, 'All guard positions have been filled.', 400);
     }
 
     const bid = await Bid.findOne({ bidId, jobId });
@@ -54,6 +59,11 @@ export async function PATCH(
       return createApiResponse(false, null, `Cannot accept a bid with status ${bid.status}.`, 400);
     }
 
+    // Check if this guard is already accepted
+    if (currentAccepted.some((g: { guardUid: string }) => g.guardUid === bid.guardUid)) {
+      return createApiResponse(false, null, 'This guard has already been accepted.', 400);
+    }
+
     const now = new Date();
 
     // Accept this bid
@@ -62,28 +72,31 @@ export async function PATCH(
       { $set: { status: BidStatus.ACCEPTED, acceptedAt: now } }
     );
 
-    // Reject all other pending bids
-    const otherBids = await Bid.find({
-      jobId,
-      bidId: { $ne: bidId },
-      status: BidStatus.PENDING,
-    });
+    // Add guard to acceptedGuards
+    const newAcceptedGuard = {
+      guardUid: bid.guardUid,
+      guardName: bid.guardName,
+      guardPhoto: bid.guardPhoto || null,
+      bidId: bid.bidId,
+      acceptedAt: now,
+    };
 
-    await Bid.updateMany(
-      { jobId, bidId: { $ne: bidId }, status: BidStatus.PENDING },
-      { $set: { status: BidStatus.REJECTED, rejectedAt: now } }
-    );
+    const newAcceptedCount = currentAccepted.length + 1;
+    const isFullyHired = newAcceptedCount >= job.numberOfGuardsNeeded;
 
-    // Update job status to FILLED
+    // Update job
+    const updateFields: Record<string, unknown> = {};
+    if (isFullyHired) {
+      updateFields.status = JobStatus.FILLED;
+      updateFields.hiringStatus = HiringStatus.FULLY_HIRED;
+    }
+
     await Job.updateOne(
       { jobId },
-      { $set: { status: JobStatus.FILLED } }
-    );
-
-    // Update boss stats
-    await User.updateOne(
-      { uid: user.uid },
-      { $inc: { activeJobsCount: -1 } }
+      {
+        $push: { acceptedGuards: newAcceptedGuard },
+        $set: updateFields,
+      }
     );
 
     // Send email to accepted guard
@@ -104,26 +117,50 @@ export async function PATCH(
       console.warn('Failed to send bid accepted email:', emailErr);
     }
 
-    // Send rejection emails to other guards
-    for (const otherBid of otherBids) {
-      try {
-        const guard = await User.findOne({ uid: otherBid.guardUid });
-        if (guard?.email) {
-          await sendBidRejected(
-            guard.email,
-            guard.firstName,
-            job.title,
-            `${user.firstName} ${user.lastName}`
-          );
+    // Only reject remaining bids and send rejection emails when fully hired
+    if (isFullyHired) {
+      const otherBids = await Bid.find({
+        jobId,
+        bidId: { $ne: bidId },
+        status: BidStatus.PENDING,
+      });
+
+      await Bid.updateMany(
+        { jobId, status: BidStatus.PENDING },
+        { $set: { status: BidStatus.REJECTED, rejectedAt: now } }
+      );
+
+      // Update boss stats
+      await User.updateOne(
+        { uid: user.uid },
+        { $inc: { activeJobsCount: -1 } }
+      );
+
+      // Send rejection emails to remaining guards
+      for (const otherBid of otherBids) {
+        try {
+          const guard = await User.findOne({ uid: otherBid.guardUid });
+          if (guard?.email) {
+            await sendBidRejected(
+              guard.email,
+              guard.firstName,
+              job.title,
+              `${user.firstName} ${user.lastName}`
+            );
+          }
+        } catch (emailErr) {
+          console.warn('Failed to send bid rejected email:', emailErr);
         }
-      } catch (emailErr) {
-        console.warn('Failed to send bid rejected email:', emailErr);
       }
     }
 
     const updatedBid = await Bid.findOne({ bidId }).lean();
 
-    return createApiResponse(true, updatedBid, 'Bid accepted successfully.', 200);
+    const message = isFullyHired
+      ? 'Bid accepted — all guard positions filled!'
+      : `Bid accepted — ${newAcceptedCount} of ${job.numberOfGuardsNeeded} guards hired.`;
+
+    return createApiResponse(true, updatedBid, message, 200);
   } catch (error: unknown) {
     console.error('PATCH /api/jobs/[jobId]/bids/[bidId]/accept error:', error);
     return createApiResponse(false, null, 'Failed to accept bid.', 500);

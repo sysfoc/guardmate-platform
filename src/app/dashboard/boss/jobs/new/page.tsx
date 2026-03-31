@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
 import { createJob } from '@/lib/api/job.api';
@@ -13,16 +13,38 @@ import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import { LocationSearch } from '@/components/maps/LocationSearch';
 import { MapDisplay } from '@/components/maps/MapDisplay';
 import toast from 'react-hot-toast';
-import type { CreateJobPayload, LocationSearchResult, Coordinates } from '@/types/job.types';
+import type { CreateJobPayload, LocationSearchResult, Coordinates, ShiftScheduleDay, ShiftSlot } from '@/types/job.types';
 import { JobType, BudgetType, JobStatus } from '@/types/enums';
+import {
+  isOvernightShift,
+  calculateShiftDuration,
+  getActualEndDate,
+  calculateTotalScheduledHours,
+  validateShiftSlot,
+  generateDateRange,
+} from '@/lib/utils/shiftCalculations';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Briefcase, MapPin,
   PoundSterling, Plus, Zap, Clock, Calendar, Users, ShieldCheck,
-  FileText, Repeat, HandshakeIcon, X,
+  FileText, Repeat, HandshakeIcon, X, AlertTriangle, Moon,
 } from 'lucide-react';
 
 const STEPS = ['Job Basics', 'Location & Schedule', 'Requirements & Budget'];
 const LICENSE_OPTIONS = ['Door Supervisor', 'Close Protection', 'Security Guard', 'CCTV Operator'];
+
+// ─── Schedule State Types ─────────────────────────────────────────────────────
+
+interface ScheduleInput {
+  startTime: string;
+  endTime: string;
+}
+
+interface DayScheduleInput {
+  date: string;
+  sameForAllGuards: boolean;
+  sharedSlot: ScheduleInput;
+  guardSlots: ScheduleInput[];
+}
 
 export default function NewJobPage() {
   const router = useRouter();
@@ -37,7 +59,7 @@ export default function NewJobPage() {
     isUrgent: false, numberOfGuardsNeeded: 1,
     location: '', locationCity: '', locationState: '', locationCountry: '', locationPostalCode: '',
     coordinates: null,
-    startDate: '', endDate: '', startTime: '08:00', endTime: '18:00',
+    startDate: '', endDate: '',
     isFlexibleTime: false, applicationDeadline: '',
     budgetType: BudgetType.HOURLY, budgetAmount: 0, budgetMax: undefined,
     requiredSkills: [], requiredLicenseType: undefined,
@@ -50,19 +72,68 @@ export default function NewJobPage() {
   const [skillInput, setSkillInput] = useState('');
   const [langInput, setLangInput] = useState('');
 
+  // ─── Schedule Builder State ───────────────────────────────────────────────
+  const [sameEveryDay, setSameEveryDay] = useState(true);
+  const [sharedDayTemplate, setSharedDayTemplate] = useState<ScheduleInput>({ startTime: '08:00', endTime: '18:00' });
+  const [daySchedules, setDaySchedules] = useState<DayScheduleInput[]>([]);
+
+  const guardsNeeded = form.numberOfGuardsNeeded || 1;
+
+  // Generate day schedules when dates or guards change
+  const regenerateSchedule = useCallback(() => {
+    if (!form.startDate || !form.endDate) {
+      setDaySchedules([]);
+      return;
+    }
+    const dates = generateDateRange(form.startDate, form.endDate);
+    setDaySchedules(dates.map((date) => ({
+      date,
+      sameForAllGuards: true,
+      sharedSlot: { startTime: '08:00', endTime: '18:00' },
+      guardSlots: Array.from({ length: guardsNeeded }, () => ({ startTime: '08:00', endTime: '18:00' })),
+    })));
+  }, [form.startDate, form.endDate, guardsNeeded]);
+
+  useEffect(() => {
+    regenerateSchedule();
+  }, [regenerateSchedule]);
+
   if (isLoading) return <DashboardSkeleton />;
   if (!user) return null;
 
   const update = (data: Partial<CreateJobPayload>) => setForm((p) => ({ ...p, ...data }));
 
-  // Calculate hours
-  const calcHours = (): number => {
-    if (!form.startDate || !form.endDate || !form.startTime || !form.endTime) return 0;
-    const s = new Date(form.startDate); const e = new Date(form.endDate);
-    const days = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-    const [sh, sm] = form.startTime.split(':').map(Number);
-    const [eh, em] = form.endTime.split(':').map(Number);
-    return Math.max(0, Math.round(days * ((eh + em / 60) - (sh + sm / 60)) * 10) / 10);
+  // ─── Build shiftSchedule from UI state ──────────────────────────────────
+  const buildShiftSchedule = (): ShiftScheduleDay[] => {
+    return daySchedules.map((day) => {
+      const slots: ShiftSlot[] = [];
+      for (let g = 0; g < guardsNeeded; g++) {
+        const input = sameEveryDay
+          ? sharedDayTemplate
+          : (day.sameForAllGuards ? day.sharedSlot : day.guardSlots[g] || day.sharedSlot);
+        const overnight = isOvernightShift(input.startTime, input.endTime);
+        slots.push({
+          slotNumber: g + 1,
+          startTime: input.startTime,
+          endTime: input.endTime,
+          isOvernight: overnight,
+          actualEndDate: getActualEndDate(day.date, input.startTime, input.endTime),
+          durationHours: calculateShiftDuration(input.startTime, input.endTime),
+          assignedGuardUid: null,
+        });
+      }
+      return { date: day.date, slots };
+    });
+  };
+
+  const currentSchedule = buildShiftSchedule();
+  const totalScheduledHours = calculateTotalScheduledHours(currentSchedule);
+  const totalDays = daySchedules.length;
+
+  // ─── Validation Helpers ─────────────────────────────────────────────────
+  const getSlotValidation = (startTime: string, endTime: string) => {
+    if (!startTime || !endTime) return null;
+    return validateShiftSlot(startTime, endTime);
   };
 
   const handleLocationSelect = (result: LocationSearchResult) => {
@@ -76,7 +147,6 @@ export default function NewJobPage() {
       locationPostalCode: result.postalCode,
       coordinates: coords,
     });
-    // Clear coordinates error if present
     setErrors((prev) => {
       const next = { ...prev };
       delete next.coordinates;
@@ -97,6 +167,28 @@ export default function NewJobPage() {
       if (!form.startDate) e.startDate = 'Start date required';
       if (!form.endDate) e.endDate = 'End date required';
       if (!form.applicationDeadline) e.applicationDeadline = 'Deadline required';
+
+      // Validate all schedule slots
+      if (sameEveryDay) {
+        const v = getSlotValidation(sharedDayTemplate.startTime, sharedDayTemplate.endTime);
+        if (v && !v.valid) e.schedule = v.error || 'Invalid schedule';
+      } else {
+        for (const day of daySchedules) {
+          if (day.sameForAllGuards) {
+            const v = getSlotValidation(day.sharedSlot.startTime, day.sharedSlot.endTime);
+            if (v && !v.valid) { e.schedule = `${day.date}: ${v.error}`; break; }
+          } else {
+            for (let g = 0; g < guardsNeeded; g++) {
+              const slot = day.guardSlots[g];
+              if (slot) {
+                const v = getSlotValidation(slot.startTime, slot.endTime);
+                if (v && !v.valid) { e.schedule = `${day.date}, Guard ${g + 1}: ${v.error}`; break; }
+              }
+            }
+            if (e.schedule) break;
+          }
+        }
+      }
     } else if (step === 2) {
       if (!form.budgetAmount || form.budgetAmount <= 0) e.budgetAmount = 'Enter a valid budget';
     }
@@ -111,7 +203,15 @@ export default function NewJobPage() {
     if (!asDraft && !validateStep()) return;
     setSubmitting(true);
     try {
-      const resp = await createJob({ ...form, coordinates: mapCoords, status: asDraft ? JobStatus.DRAFT : JobStatus.OPEN } as CreateJobPayload);
+      const schedule = buildShiftSchedule();
+      const payload: CreateJobPayload = {
+        ...form as CreateJobPayload,
+        coordinates: mapCoords,
+        status: asDraft ? JobStatus.DRAFT : JobStatus.OPEN,
+        shiftSchedule: schedule,
+        totalScheduledHours: calculateTotalScheduledHours(schedule),
+      };
+      const resp = await createJob(payload);
       if (resp.success && resp.data) {
         setCreatedJobId(resp.data.jobId);
         setShowSuccess(true);
@@ -145,22 +245,81 @@ export default function NewJobPage() {
 
   const inputCls = 'w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:outline-none focus:ring-1 focus:ring-[var(--color-input-border-focus)] transition-colors';
   const labelCls = 'text-[11px] font-bold text-[var(--color-input-label)] mb-1.5 block';
+  const timeCls = 'px-2 py-1.5 text-xs rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] focus:border-[var(--color-input-border-focus)] focus:outline-none focus:ring-1 focus:ring-[var(--color-input-border-focus)] transition-colors w-[100px]';
 
   const resetForm = () => {
     setStep(0);
     setMapCoords(null);
+    setSameEveryDay(true);
+    setSharedDayTemplate({ startTime: '08:00', endTime: '18:00' });
     setForm({
       title: '', description: '', jobType: JobType.ONE_TIME,
       isUrgent: false, numberOfGuardsNeeded: 1,
       location: '', locationCity: '', locationState: '', locationCountry: '', locationPostalCode: '',
       coordinates: null,
-      startDate: '', endDate: '', startTime: '08:00', endTime: '18:00',
+      startDate: '', endDate: '',
       isFlexibleTime: false, applicationDeadline: '',
       budgetType: BudgetType.HOURLY, budgetAmount: 0, budgetMax: undefined,
       requiredSkills: [], requiredLicenseType: undefined,
       requiresFirstAid: false, requiresWhiteCard: false, requiresChildrenCheck: false,
       minExperience: 0, preferredLanguages: [],
     });
+  };
+
+  // ─── Schedule Input Helpers ─────────────────────────────────────────────
+  const updateDaySchedule = (index: number, field: 'sharedSlot' | 'sameForAllGuards', value: ScheduleInput | boolean) => {
+    setDaySchedules((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
+  };
+
+  const updateGuardSlot = (dayIndex: number, guardIndex: number, field: 'startTime' | 'endTime', value: string) => {
+    setDaySchedules((prev) => prev.map((d, i) => {
+      if (i !== dayIndex) return d;
+      const newSlots = [...d.guardSlots];
+      newSlots[guardIndex] = { ...newSlots[guardIndex], [field]: value };
+      return { ...d, guardSlots: newSlots };
+    }));
+  };
+
+  const formatDateLabel = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  };
+
+  // ─── Time Cell Component ────────────────────────────────────────────────
+  const TimeInputCell = ({ startTime, endTime, onStartChange, onEndChange }: {
+    startTime: string; endTime: string;
+    onStartChange: (v: string) => void; onEndChange: (v: string) => void;
+  }) => {
+    const overnight = startTime && endTime && isOvernightShift(startTime, endTime);
+    const duration = startTime && endTime ? calculateShiftDuration(startTime, endTime) : 0;
+    const validation = startTime && endTime ? getSlotValidation(startTime, endTime) : null;
+
+    return (
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1">
+          <input type="time" value={startTime} onChange={(e) => onStartChange(e.target.value)} className={timeCls} />
+          <span className="text-[9px] text-[var(--color-text-muted)]">to</span>
+          <input type="time" value={endTime} onChange={(e) => onEndChange(e.target.value)} className={timeCls} />
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {overnight && (
+            <span className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              <Moon className="h-2.5 w-2.5" /> Overnight
+            </span>
+          )}
+          {duration > 0 && (
+            <span className="text-[9px] font-bold text-[var(--color-text-secondary)]">
+              {duration}h
+            </span>
+          )}
+          {validation && !validation.valid && (
+            <span className="text-[8px] text-[var(--color-danger)] flex items-center gap-0.5">
+              <AlertTriangle className="h-2.5 w-2.5" /> {validation.error}
+            </span>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -281,7 +440,7 @@ export default function NewJobPage() {
               </div>
             )}
 
-            {/* Address fields (auto-populated, editable) */}
+            {/* Address fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <label className={labelCls}>Full Address *</label>
@@ -298,21 +457,107 @@ export default function NewJobPage() {
               <div><label className={labelCls}>Postal Code</label><input value={form.locationPostalCode || ''} onChange={(e) => update({ locationPostalCode: e.target.value })} placeholder="EC2A 1NT" className={inputCls} /></div>
             </div>
 
+            {/* Date Selection */}
             <div className="border-t border-[var(--color-surface-border)] pt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className={labelCls}>Start Date *</label><input type="date" value={form.startDate || ''} onChange={(e) => update({ startDate: e.target.value })} className={inputCls} />{errors.startDate && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.startDate}</p>}</div>
               <div><label className={labelCls}>End Date *</label><input type="date" value={form.endDate || ''} onChange={(e) => update({ endDate: e.target.value })} className={inputCls} />{errors.endDate && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.endDate}</p>}</div>
-              <div><label className={labelCls}>Start Time</label><input type="time" value={form.startTime || ''} onChange={(e) => update({ startTime: e.target.value })} className={inputCls} /></div>
-              <div><label className={labelCls}>End Time</label><input type="time" value={form.endTime || ''} onChange={(e) => update({ endTime: e.target.value })} className={inputCls} /></div>
             </div>
+
+            {/* ─── Shift Schedule Builder ──────────────────────────────────── */}
+            {daySchedules.length > 0 && (
+              <div className="border-t border-[var(--color-surface-border)] pt-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-black text-[var(--color-text-primary)] flex items-center gap-1.5">
+                    <Clock className="h-4 w-4 text-[var(--color-primary)]" />
+                    Shift Schedule
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <Toggle checked={sameEveryDay} onCheckedChange={setSameEveryDay} />
+                    <span className="text-[10px] font-bold text-[var(--color-text-secondary)]">Same schedule every day</span>
+                  </div>
+                </div>
+
+                {/* Same every day mode */}
+                {sameEveryDay ? (
+                  <div className="p-4 rounded-xl bg-[var(--color-bg-subtle)] border border-[var(--color-surface-border)]">
+                    <p className="text-[10px] font-bold text-[var(--color-text-muted)] mb-3 uppercase tracking-wider">
+                      Applied to all {totalDays} day{totalDays > 1 ? 's' : ''} {guardsNeeded > 1 ? `• ${guardsNeeded} guards` : ''}
+                    </p>
+                    <TimeInputCell
+                      startTime={sharedDayTemplate.startTime}
+                      endTime={sharedDayTemplate.endTime}
+                      onStartChange={(v) => setSharedDayTemplate((p) => ({ ...p, startTime: v }))}
+                      onEndChange={(v) => setSharedDayTemplate((p) => ({ ...p, endTime: v }))}
+                    />
+                  </div>
+                ) : (
+                  /* Per-day mode */
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                    {daySchedules.map((day, di) => (
+                      <div key={day.date} className="p-3 rounded-xl bg-[var(--color-bg-subtle)] border border-[var(--color-surface-border)]">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-[var(--color-text-primary)]">
+                            {formatDateLabel(day.date)}
+                          </span>
+                          {guardsNeeded > 1 && (
+                            <div className="flex items-center gap-2">
+                              <Toggle
+                                checked={day.sameForAllGuards}
+                                onCheckedChange={(v) => updateDaySchedule(di, 'sameForAllGuards', v)}
+                              />
+                              <span className="text-[9px] font-bold text-[var(--color-text-muted)]">Same for all guards</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {day.sameForAllGuards || guardsNeeded === 1 ? (
+                          <TimeInputCell
+                            startTime={day.sharedSlot.startTime}
+                            endTime={day.sharedSlot.endTime}
+                            onStartChange={(v) => updateDaySchedule(di, 'sharedSlot', { ...day.sharedSlot, startTime: v })}
+                            onEndChange={(v) => updateDaySchedule(di, 'sharedSlot', { ...day.sharedSlot, endTime: v })}
+                          />
+                        ) : (
+                          <div className="space-y-2">
+                            {Array.from({ length: guardsNeeded }, (_, g) => (
+                              <div key={g} className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold text-[var(--color-text-muted)] w-16 shrink-0">Guard {g + 1}</span>
+                                <TimeInputCell
+                                  startTime={day.guardSlots[g]?.startTime || '08:00'}
+                                  endTime={day.guardSlots[g]?.endTime || '18:00'}
+                                  onStartChange={(v) => updateGuardSlot(di, g, 'startTime', v)}
+                                  onEndChange={(v) => updateGuardSlot(di, g, 'endTime', v)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Schedule Summary */}
+                <div className="mt-4 p-3 rounded-xl bg-[var(--color-primary-light)] dark:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20">
+                  <p className="text-xs font-bold text-[var(--color-primary)] flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    Total scheduled hours: {totalScheduledHours} hrs across {totalDays} day{totalDays > 1 ? 's' : ''} for {guardsNeeded} guard{guardsNeeded > 1 ? 's' : ''}
+                  </p>
+                </div>
+
+                {errors.schedule && (
+                  <p className="text-[10px] text-[var(--color-danger)] mt-2 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" /> {errors.schedule}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
                 <Toggle checked={form.isFlexibleTime || false} onCheckedChange={(v) => update({ isFlexibleTime: v })} />
                 <span className="text-xs font-bold text-[var(--color-text-secondary)]"><Clock className="h-3.5 w-3.5 inline mr-1" />Flexible Time</span>
               </div>
-              {calcHours() > 0 && (
-                <Badge className="text-[10px] h-6"><Clock className="h-3 w-3 mr-1" />{calcHours()} total hours</Badge>
-              )}
             </div>
 
             <div>

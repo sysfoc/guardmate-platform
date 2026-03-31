@@ -2,7 +2,7 @@
 // GuardMate — Job & Bid Type Definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { JobStatus, BidStatus, JobType, BudgetType } from './enums';
+import { JobStatus, BidStatus, JobType, BudgetType, HiringStatus } from './enums';
 import type { Certification } from './user.types';
 
 // ─── Coordinates ──────────────────────────────────────────────────────────────
@@ -39,6 +39,31 @@ export interface MapMarker {
   onClick: () => void;
 }
 
+// ─── Shift Schedule Types ─────────────────────────────────────────────────────
+
+export interface ShiftSlot {
+  slotNumber: number;
+  startTime: string;
+  endTime: string;
+  isOvernight: boolean;
+  actualEndDate: string;
+  durationHours: number;
+  assignedGuardUid: string | null;
+}
+
+export interface ShiftScheduleDay {
+  date: string;
+  slots: ShiftSlot[];
+}
+
+export interface AcceptedGuard {
+  guardUid: string;
+  guardName: string;
+  guardPhoto: string | null;
+  bidId: string;
+  acceptedAt: string | Date;
+}
+
 // ─── Job Interface ────────────────────────────────────────────────────────────
 
 export interface IJob {
@@ -64,10 +89,14 @@ export interface IJob {
   // Schedule
   startDate: string | Date;
   endDate: string | Date;
-  startTime: string;
-  endTime: string;
+  startTime?: string;
+  endTime?: string;
   isFlexibleTime: boolean;
   totalHours: number;
+
+  // Shift Schedule (new multi-day system)
+  shiftSchedule: ShiftScheduleDay[];
+  totalScheduledHours: number;
 
   // Budget
   budgetType: BudgetType;
@@ -86,6 +115,9 @@ export interface IJob {
   // Staffing
   numberOfGuardsNeeded: number;
   applicationDeadline: string | Date;
+  hiringStatus: HiringStatus;
+  acceptedGuards: AcceptedGuard[];
+  isShiftAssigned: boolean;
 
   // Counters
   totalBids: number;
@@ -183,10 +215,13 @@ export interface CreateJobPayload {
 
   startDate: string;
   endDate: string;
-  startTime: string;
-  endTime: string;
+  startTime?: string;
+  endTime?: string;
   isFlexibleTime: boolean;
   applicationDeadline: string;
+
+  shiftSchedule?: ShiftScheduleDay[];
+  totalScheduledHours?: number;
 
   budgetType: BudgetType;
   budgetAmount: number;
@@ -206,6 +241,12 @@ export interface CreateJobPayload {
 
 export interface UpdateJobPayload extends Partial<CreateJobPayload> {
   isFeatured?: boolean;
+}
+
+export interface ShiftAssignment {
+  date: string;
+  slotNumber: number;
+  guardUid: string;
 }
 
 export interface SubmitBidPayload {

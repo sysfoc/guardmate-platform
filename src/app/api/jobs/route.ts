@@ -4,9 +4,16 @@ import connectDB from '@/lib/mongodb';
 import Job from '@/models/Job.model';
 import User from '@/models/User.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { JobStatus, UserRole, UserStatus, BudgetType } from '@/types/enums';
+import { JobStatus, UserRole, UserStatus, BudgetType, HiringStatus } from '@/types/enums';
 import { processJobLifecycle } from '@/lib/jobs/jobLifecycle';
 import { calculateDistance } from '@/lib/utils/haversine';
+import {
+  isOvernightShift,
+  calculateShiftDuration,
+  getActualEndDate,
+  calculateTotalScheduledHours,
+} from '@/lib/utils/shiftCalculations';
+import type { ShiftScheduleDay } from '@/types/job.types';
 
 /**
  * POST /api/jobs
@@ -35,9 +42,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Validate required fields
+    // Validate required fields (startTime/endTime no longer required — shiftSchedule is used)
     const requiredFields = ['title', 'description', 'jobType', 'location', 'locationCity',
-      'startDate', 'endDate', 'startTime', 'endTime', 'budgetType', 'budgetAmount', 'applicationDeadline'];
+      'startDate', 'endDate', 'budgetType', 'budgetAmount', 'applicationDeadline'];
 
     for (const field of requiredFields) {
       if (!body[field] && body[field] !== 0 && body[field] !== false) {
@@ -49,16 +56,60 @@ export async function POST(request: NextRequest) {
       return createApiResponse(false, null, 'Description must be 2000 characters or less.', 400);
     }
 
-    // Calculate totalHours
+    // Process shiftSchedule — enrich each slot with computed fields
+    let shiftSchedule: ShiftScheduleDay[] = [];
+    let totalScheduledHours = 0;
     let totalHours = 0;
-    if (body.startDate && body.endDate && body.startTime && body.endTime) {
+
+    if (body.shiftSchedule && Array.isArray(body.shiftSchedule) && body.shiftSchedule.length > 0) {
+      shiftSchedule = body.shiftSchedule.map((day: ShiftScheduleDay) => ({
+        date: day.date,
+        slots: day.slots.map((slot) => {
+          const overnight = isOvernightShift(slot.startTime, slot.endTime);
+          const duration = calculateShiftDuration(slot.startTime, slot.endTime);
+          const endDate = getActualEndDate(day.date, slot.startTime, slot.endTime);
+          return {
+            slotNumber: slot.slotNumber,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isOvernight: overnight,
+            actualEndDate: endDate,
+            durationHours: duration,
+            assignedGuardUid: null,
+          };
+        }),
+      }));
+      totalScheduledHours = calculateTotalScheduledHours(shiftSchedule);
+      totalHours = totalScheduledHours;
+    } else if (body.startTime && body.endTime) {
+      // Backward compat: build schedule from legacy startTime/endTime
       const start = new Date(body.startDate);
       const end = new Date(body.endDate);
       const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-      const [sh, sm] = body.startTime.split(':').map(Number);
-      const [eh, em] = body.endTime.split(':').map(Number);
-      const hoursPerDay = (eh + em / 60) - (sh + sm / 60);
-      totalHours = Math.max(0, Math.round(days * hoursPerDay * 10) / 10);
+      const guardsNeeded = body.numberOfGuardsNeeded || 1;
+      const overnight = isOvernightShift(body.startTime, body.endTime);
+      const duration = calculateShiftDuration(body.startTime, body.endTime);
+
+      const current = new Date(body.startDate);
+      for (let i = 0; i < days; i++) {
+        const dateStr = current.toISOString().split('T')[0];
+        const slots = [];
+        for (let g = 1; g <= guardsNeeded; g++) {
+          slots.push({
+            slotNumber: g,
+            startTime: body.startTime,
+            endTime: body.endTime,
+            isOvernight: overnight,
+            actualEndDate: getActualEndDate(dateStr, body.startTime, body.endTime),
+            durationHours: duration,
+            assignedGuardUid: null,
+          });
+        }
+        shiftSchedule.push({ date: dateStr, slots });
+        current.setDate(current.getDate() + 1);
+      }
+      totalScheduledHours = calculateTotalScheduledHours(shiftSchedule);
+      totalHours = totalScheduledHours;
     }
 
     await connectDB();
@@ -80,10 +131,12 @@ export async function POST(request: NextRequest) {
       coordinates: body.coordinates || null,
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate),
-      startTime: body.startTime,
-      endTime: body.endTime,
+      startTime: body.startTime || null,
+      endTime: body.endTime || null,
       isFlexibleTime: body.isFlexibleTime || false,
       totalHours,
+      shiftSchedule,
+      totalScheduledHours,
       budgetType: body.budgetType,
       budgetAmount: body.budgetAmount,
       budgetMax: body.budgetMax || null,
@@ -96,6 +149,7 @@ export async function POST(request: NextRequest) {
       preferredLanguages: body.preferredLanguages || [],
       numberOfGuardsNeeded: body.numberOfGuardsNeeded || 1,
       applicationDeadline: new Date(body.applicationDeadline),
+      hiringStatus: HiringStatus.OPEN,
       isUrgent: body.isUrgent || false,
     });
 
@@ -110,6 +164,54 @@ export async function POST(request: NextRequest) {
     console.error('POST /api/jobs error:', error);
     return createApiResponse(false, null, 'Failed to create job.', 500);
   }
+}
+
+/**
+ * Backward-compat migration: synthesize shiftSchedule from legacy startTime/endTime for old jobs.
+ */
+function migrateOldJobSchedule(job: Record<string, unknown>): Record<string, unknown> {
+  const schedule = job.shiftSchedule as ShiftScheduleDay[] | undefined;
+  if (schedule && Array.isArray(schedule) && schedule.length > 0) return job;
+
+  const startTime = job.startTime as string | undefined;
+  const endTime = job.endTime as string | undefined;
+  if (!startTime || !endTime) return job;
+
+  const startDate = new Date(job.startDate as string);
+  const endDate = new Date(job.endDate as string);
+  const days = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  const guardsNeeded = (job.numberOfGuardsNeeded as number) || 1;
+  const overnight = isOvernightShift(startTime, endTime);
+  const duration = calculateShiftDuration(startTime, endTime);
+
+  const shiftSchedule: ShiftScheduleDay[] = [];
+  const current = new Date(startDate);
+  for (let i = 0; i < days; i++) {
+    const dateStr = current.toISOString().split('T')[0];
+    const slots = [];
+    for (let g = 1; g <= guardsNeeded; g++) {
+      slots.push({
+        slotNumber: g,
+        startTime,
+        endTime,
+        isOvernight: overnight,
+        actualEndDate: getActualEndDate(dateStr, startTime, endTime),
+        durationHours: duration,
+        assignedGuardUid: null,
+      });
+    }
+    shiftSchedule.push({ date: dateStr, slots });
+    current.setDate(current.getDate() + 1);
+  }
+
+  return {
+    ...job,
+    shiftSchedule,
+    totalScheduledHours: calculateTotalScheduledHours(shiftSchedule),
+    hiringStatus: job.hiringStatus || HiringStatus.OPEN,
+    acceptedGuards: job.acceptedGuards || [],
+    isShiftAssigned: job.isShiftAssigned || false,
+  };
 }
 
 /**
@@ -168,7 +270,7 @@ export async function GET(request: NextRequest) {
         
         // Fetch valid bids for this mate
         const Bid = (await import('@/models/Bid.model')).default;
-        const myBidsFilter: Record<string, any> = { guardUid: user.uid };
+        const myBidsFilter: Record<string, string> = { guardUid: user.uid };
         if (myBids !== 'ALL') myBidsFilter.status = myBids;
         
         const bids = await Bid.find(myBidsFilter).select('jobId').lean() as { jobId: string }[];

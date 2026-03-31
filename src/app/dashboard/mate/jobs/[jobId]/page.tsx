@@ -114,7 +114,7 @@ export default function MateJobDetailPage() {
           </div>
         )}
 
-        <JobDetailView job={job}>
+        <JobDetailView job={job} currentUserUid={user?.uid}>
           {/* Apply section in sidebar */}
           <Card className="p-5">
             <h3 className="font-bold text-sm mb-3">Apply for this Job</h3>

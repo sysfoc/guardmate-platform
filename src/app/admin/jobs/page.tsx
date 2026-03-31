@@ -167,9 +167,16 @@ export default function AdminJobsPage() {
                       <JobStatusBadge status={job.status} />
                     </td>
                     <td className="px-4 py-3">
-                      <span className="flex items-center gap-1 text-[var(--color-text-secondary)]">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(job.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                      <span className="flex flex-col text-[var(--color-text-secondary)]">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(job.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                        </span>
+                        {job.shiftSchedule && job.shiftSchedule.length > 1 && (
+                          <span className="text-[9px] text-[var(--color-text-muted)] ml-4">
+                            to {new Date(job.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                          </span>
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center font-bold text-[var(--color-text-primary)]">
@@ -212,16 +219,21 @@ export default function AdminJobsPage() {
               <p className="text-[var(--color-text-secondary)]">{selectedJob.companyName}</p>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 bg-[var(--color-bg-subtle)] p-3 rounded-xl border border-[var(--color-surface-border)]">
-              <div>
+            <div className="grid grid-cols-3 gap-4 bg-[var(--color-bg-subtle)] p-3 rounded-xl border border-[var(--color-surface-border)]">
+              <div className="col-span-1">
                 <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)] flex items-center gap-1"><MapPin className="h-3 w-3"/> Location</p>
                 <p className="font-medium text-[var(--color-text-primary)] mt-0.5">{selectedJob.locationCity}</p>
-                <p className="text-xs text-[var(--color-text-secondary)] truncate">{selectedJob.location}</p>
               </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)]">Budget</p>
+              <div className="col-span-1">
+                <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)] flex items-center gap-1">Budget</p>
                 <p className="font-medium text-[var(--color-text-primary)] mt-0.5">
                   £{selectedJob.budgetAmount}{selectedJob.budgetType === BudgetType.HOURLY ? '/hr' : ' Fixed'}
+                </p>
+              </div>
+              <div className="col-span-1">
+                <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)] flex items-center gap-1">Hours</p>
+                <p className="font-medium text-[var(--color-text-primary)] mt-0.5">
+                  {selectedJob.totalScheduledHours || selectedJob.totalHours} hrs
                 </p>
               </div>
             </div>

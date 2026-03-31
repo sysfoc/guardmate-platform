@@ -4,6 +4,13 @@ import Job from '@/models/Job.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import { JobStatus, UserRole } from '@/types/enums';
 import { processJobLifecycle } from '@/lib/jobs/jobLifecycle';
+import {
+  isOvernightShift,
+  calculateShiftDuration,
+  getActualEndDate,
+  calculateTotalScheduledHours,
+} from '@/lib/utils/shiftCalculations';
+import type { ShiftScheduleDay } from '@/types/job.types';
 
 /**
  * GET /api/jobs/[jobId]
@@ -87,17 +94,38 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Recalculate totalHours if schedule fields changed
-    if (body.startDate || body.endDate || body.startTime || body.endTime) {
-      const sDate = new Date(body.startDate || job.startDate);
-      const eDate = new Date(body.endDate || job.endDate);
+    // Recalculate schedule if shiftSchedule changed
+    if (body.shiftSchedule && Array.isArray(body.shiftSchedule)) {
+      body.shiftSchedule = body.shiftSchedule.map((day: ShiftScheduleDay) => ({
+        date: day.date,
+        slots: day.slots.map((slot) => {
+          const overnight = isOvernightShift(slot.startTime, slot.endTime);
+          const duration = calculateShiftDuration(slot.startTime, slot.endTime);
+          const endDate = getActualEndDate(day.date, slot.startTime, slot.endTime);
+          return {
+            slotNumber: slot.slotNumber,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isOvernight: overnight,
+            actualEndDate: endDate,
+            durationHours: duration,
+            assignedGuardUid: slot.assignedGuardUid || null,
+          };
+        }),
+      }));
+      body.totalScheduledHours = calculateTotalScheduledHours(body.shiftSchedule);
+      body.totalHours = body.totalScheduledHours;
+    } else if (body.startDate || body.endDate || body.startTime || body.endTime) {
+      // Legacy fallback recalculation
       const sTime = body.startTime || job.startTime;
       const eTime = body.endTime || job.endTime;
-      const days = Math.max(1, Math.ceil((eDate.getTime() - sDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-      const [sh, sm] = sTime.split(':').map(Number);
-      const [eh, em] = eTime.split(':').map(Number);
-      const hoursPerDay = (eh + em / 60) - (sh + sm / 60);
-      body.totalHours = Math.max(0, Math.round(days * hoursPerDay * 10) / 10);
+      if (sTime && eTime) {
+        const sDate = new Date(body.startDate || job.startDate);
+        const eDate = new Date(body.endDate || job.endDate);
+        const days = Math.max(1, Math.ceil((eDate.getTime() - sDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+        const duration = calculateShiftDuration(sTime, eTime);
+        body.totalHours = Math.round(days * duration * 10) / 10;
+      }
     }
 
     // Prevent status change via this route (only DRAFT ↔ OPEN allowed)

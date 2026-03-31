@@ -15,7 +15,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import type { IBid, IJob } from '@/types/job.types';
-import { BidStatus } from '@/types/enums';
+import { BidStatus, HiringStatus } from '@/types/enums';
 import { ChevronLeft, Users, Loader2, Inbox } from 'lucide-react';
 
 export default function BossJobBidsPage() {
@@ -115,9 +115,10 @@ export default function BossJobBidsPage() {
 
   if (userLoading || loading) return <DashboardSkeleton />;
 
-  const acceptedBid = bids.find((b) => b.status === BidStatus.ACCEPTED);
+  const acceptedBids = bids.filter((b) => b.status === BidStatus.ACCEPTED);
   const pendingBids = bids.filter((b) => b.status === BidStatus.PENDING);
   const otherBids = bids.filter((b) => b.status !== BidStatus.PENDING && b.status !== BidStatus.ACCEPTED);
+  const isFullyHired = job?.hiringStatus === HiringStatus.FULLY_HIRED;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
@@ -145,14 +146,19 @@ export default function BossJobBidsPage() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* Accepted Bid */}
-            {acceptedBid && (
+            {/* Accepted Bids */}
+            {acceptedBids.length > 0 && (
               <div>
-                <h2 className="text-xs font-bold text-[var(--color-success)] uppercase tracking-wider mb-2">✓ Accepted Bid</h2>
-                <BidCard 
-                  bid={acceptedBid} 
-                  onMessage={(bidId, guardId) => handleMessageGuard(bidId, guardId)}
-                />
+                <h2 className="text-xs font-bold text-[var(--color-success)] uppercase tracking-wider mb-2">✓ Accepted Bids ({acceptedBids.length}/{job?.numberOfGuardsNeeded})</h2>
+                <div className="space-y-3">
+                  {acceptedBids.map((bid) => (
+                    <BidCard 
+                      key={bid.bidId}
+                      bid={bid} 
+                      onMessage={(bidId, guardId) => handleMessageGuard(bidId, guardId)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
@@ -165,7 +171,7 @@ export default function BossJobBidsPage() {
                     <BidCard
                       key={bid.bidId}
                       bid={bid}
-                      showActions={!acceptedBid}
+                      showActions={!isFullyHired}
                       onAccept={(id) => setConfirmAccept(id)}
                       onReject={(id) => setShowRejectModal(id)}
                       onSelectForCompare={handleSelectForCompare}
@@ -196,7 +202,11 @@ export default function BossJobBidsPage() {
         onCancel={() => setConfirmAccept(null)}
         onConfirm={handleAccept}
         title="Accept this bid?"
-        message="Accepting this bid will automatically reject all other pending bids and mark the job as FILLED. This action cannot be undone."
+        message={
+          job?.numberOfGuardsNeeded && acceptedBids.length + 1 >= job.numberOfGuardsNeeded
+            ? "Accepting this bid will fill the final slot, automatically rejecting all other pending bids and marking the job as FILLED. This action cannot be undone."
+            : `Accepting this bid will add this guard to your hired list. You still need to hire ${job?.numberOfGuardsNeeded ? job.numberOfGuardsNeeded - (acceptedBids.length + 1) : 0} more guards.`
+        }
         confirmLabel={accepting ? 'Accepting...' : 'Accept Bid'}
       />
 

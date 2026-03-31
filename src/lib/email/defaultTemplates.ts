@@ -226,4 +226,12 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
     variables: ['bossName', 'guardName', 'jobTitle', 'incidentType', 'severity', 'dashboardUrl'],
     isActive: true,
   },
+  [NotificationEventType.SHIFT_ASSIGNED]: {
+    notificationType: NotificationEventType.SHIFT_ASSIGNED,
+    subject: 'Shift Assigned: {{jobTitle}}',
+    htmlBody: BASE_HTML('Your Shifts Have Been Assigned', '<p>Hi {{guardName}},</p><p>You have been assigned the following shifts for <strong>{{jobTitle}}</strong>:</p><ul>{{scheduleHtml}}</ul><p>Please review your assigned schedule and prepare accordingly.</p><a href="{{dashboardUrl}}" class="btn">View My Shifts</a>'),
+    textBody: 'Hi {{guardName}}, You have been assigned shifts for {{jobTitle}}. Log in to view your schedule.',
+    variables: ['guardName', 'jobTitle', 'scheduleHtml', 'dashboardUrl'],
+    isActive: true,
+  },
 };

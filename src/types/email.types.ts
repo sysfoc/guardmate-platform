@@ -23,6 +23,7 @@ export enum NotificationEventType {
   GUARD_WITHDREW_BID = 'guardWithdrewBid',
   JOB_REOPENED_TO_BIDDERS = 'jobReopened',
   INCIDENT_REPORTED = 'incidentReported',
+  SHIFT_ASSIGNED = 'shiftAssigned',
 }
 
 export interface IEmailSettings {

@@ -9,6 +9,7 @@ import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import { UserRole, JobStatus, BidStatus } from '@/types/enums';
 import { calculateDistance } from '@/lib/utils/haversine';
 import { sendShiftCheckinAlert } from '@/lib/email/emailTriggers';
+import type { ShiftScheduleDay, ShiftSlot } from '@/types/job.types';
 
 /** Get today's date at midnight UTC for consistent daily shift lookups. */
 function getTodayMidnightUTC(): Date {
@@ -16,10 +17,17 @@ function getTodayMidnightUTC(): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 
+/** Get today's ISO date string (YYYY-MM-DD) */
+function getTodayISO(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+}
+
 /**
  * POST /api/shifts/[jobId]/checkin
  * Mate only — GPS-verified check-in with geofence validation.
  * Creates a new shift record for today (allows daily cycles for multi-day jobs).
+ * Validates guard is assigned to a slot for today and is within 30-min check-in window.
  */
 export async function POST(
   request: NextRequest,
@@ -66,9 +74,43 @@ export async function POST(
       return createApiResponse(false, null, 'You do not have an accepted bid on this job.', 403);
     }
 
+    // Find guard's assigned slot for today
+    const todayISO = getTodayISO();
+    const schedule = job.shiftSchedule as ShiftScheduleDay[] | undefined;
+    let assignedSlot: ShiftSlot | null = null;
+
+    if (schedule && schedule.length > 0) {
+      const todaySchedule = schedule.find((d) => d.date === todayISO);
+      if (todaySchedule) {
+        assignedSlot = todaySchedule.slots.find(
+          (s: ShiftSlot) => s.assignedGuardUid === user.uid
+        ) || null;
+      }
+
+      if (!assignedSlot) {
+        return createApiResponse(false, null, 'No shift assigned for you today.', 400);
+      }
+
+      // Validate 30-min early check-in window
+      const now = new Date();
+      const [sh, sm] = assignedSlot.startTime.split(':').map(Number);
+      const slotStartToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), sh, sm));
+      const earliestCheckin = new Date(slotStartToday.getTime() - 30 * 60 * 1000);
+
+      if (now < earliestCheckin) {
+        const earliestStr = `${String(earliestCheckin.getUTCHours()).padStart(2, '0')}:${String(earliestCheckin.getUTCMinutes()).padStart(2, '0')}`;
+        return createApiResponse(
+          false,
+          null,
+          `Your shift starts at ${assignedSlot.startTime}. Check-in available from ${earliestStr}.`,
+          400
+        );
+      }
+    }
+
     // Check if already checked in TODAY
     const today = getTodayMidnightUTC();
-    const existingShift = await Shift.findOne({ jobId, shiftDate: today });
+    const existingShift = await Shift.findOne({ jobId, guardUid: user.uid, shiftDate: today });
     if (existingShift?.checkInTime) {
       return createApiResponse(false, null, 'You have already checked in for today.', 400);
     }
@@ -80,12 +122,11 @@ export async function POST(
 
     const settings = await PlatformSettings.findOne().lean();
     const radiusMeters = settings?.checkInRadiusMeters ?? 1000;
-    // 1000 meters = 0.621371 miles, 500 kr dena previously 500 meters ka radius tha
     const distanceMiles = calculateDistance(
       coordinates.lat,
       coordinates.lng,
-      job.coordinates.lat,
-      job.coordinates.lng
+      (job.coordinates as { lat: number; lng: number }).lat,
+      (job.coordinates as { lat: number; lng: number }).lng
     );
     const distanceMeters = Math.round(distanceMiles * 1609.34);
 
@@ -100,9 +141,9 @@ export async function POST(
 
     const now = new Date();
 
-    // Create today's shift record (or update if partially exists)
+    // Create today's shift record (per guard per day)
     const shift = await Shift.findOneAndUpdate(
-      { jobId, shiftDate: today },
+      { jobId, guardUid: user.uid, shiftDate: today },
       {
         $set: {
           guardUid: user.uid,

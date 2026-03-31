@@ -59,8 +59,8 @@ const ShiftSchema = new Schema<ShiftDocument>({
 
 // ─── Compound Indexes ─────────────────────────────────────────────────────────
 
-// One shift per job per calendar day
-ShiftSchema.index({ jobId: 1, shiftDate: 1 }, { unique: true });
+// One shift per guard per job per calendar day
+ShiftSchema.index({ jobId: 1, guardUid: 1, shiftDate: 1 }, { unique: true });
 ShiftSchema.index({ guardUid: 1, createdAt: -1 });
 ShiftSchema.index({ bossUid: 1, createdAt: -1 });
 

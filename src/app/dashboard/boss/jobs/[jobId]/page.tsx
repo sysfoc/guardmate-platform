@@ -19,8 +19,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import toast from 'react-hot-toast';
 import type { IJob } from '@/types/job.types';
 import type { PendingReview } from '@/types/review.types';
-import { JobStatus, BidStatus } from '@/types/enums';
-import { Edit, Trash2, Users, ChevronLeft, Loader2, CheckCircle2, XCircle, Clock, MessageSquare } from 'lucide-react';
+import { JobStatus, BidStatus, HiringStatus } from '@/types/enums';
+import { Edit, Trash2, Users, ChevronLeft, Loader2, CheckCircle2, XCircle, Clock, MessageSquare, CalendarCheck } from 'lucide-react';
 import { getJobBids } from '@/lib/api/job.api';
 import { createOrGetConversation } from '@/lib/api/chat.api';
 import ShiftMonitoringPanel from '@/components/shifts/ShiftMonitoringPanel';
@@ -232,6 +232,17 @@ export default function BossJobDetailPage() {
               {canCancel && (
                 <Button size="sm" variant="danger" leftIcon={<Trash2 className="h-4 w-4" />} onClick={() => setShowCancel(true)}>
                   Cancel Job
+                </Button>
+              )}
+              {job.hiringStatus === HiringStatus.FULLY_HIRED && job.status === JobStatus.FILLED && (
+                <Button 
+                  size="sm" 
+                  variant={job.isShiftAssigned ? "secondary" : "primary"} 
+                  onClick={() => router.push(`/dashboard/boss/jobs/${job.jobId}/assign-shifts`)} 
+                  className={job.isShiftAssigned ? "border border-[var(--color-surface-border)]" : "shadow-md shadow-[var(--color-primary)]/20 animate-[pulse_2s_ease-in-out_infinite]"}
+                  leftIcon={<CalendarCheck className="h-4 w-4" />}
+                >
+                  {job.isShiftAssigned ? 'Edit Shift Assignments' : 'Assign Shifts Now'}
                 </Button>
               )}
             </>

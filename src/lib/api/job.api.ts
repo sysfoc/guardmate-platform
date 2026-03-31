@@ -16,9 +16,19 @@ import type {
   SubmitBidPayload,
   JobFilters,
   BidWithJob,
+  ShiftAssignment,
 } from '@/types/job.types';
 
 // ─── Job Endpoints ────────────────────────────────────────────────────────────
+
+/**
+ * Assign guards to shift slots (Boss only, FILLED jobs).
+ * @param jobId - The job ID
+ * @param assignments - Array of { date, slotNumber, guardUid }
+ */
+export async function assignShifts(jobId: string, assignments: ShiftAssignment[]): Promise<ApiResponse<IJob>> {
+  return apiPatch<IJob>(`/api/jobs/${jobId}/assign-shifts`, { assignments });
+}
 
 /**
  * Create a new job posting (Boss only).

@@ -69,7 +69,7 @@ export async function processJobLifecycle(): Promise<void> {
       const filledJobs = await Job.find({ status: JobStatus.FILLED }).lean();
 
       for (const job of filledJobs) {
-        const shiftStart = combineDateAndTime(new Date(job.startDate), job.startTime);
+        const shiftStart = combineDateAndTime(new Date(job.startDate), job.startTime || '00:00');
         if (now >= shiftStart) {
           await Job.updateOne(
             { _id: job._id, status: JobStatus.FILLED },
@@ -92,7 +92,7 @@ export async function processJobLifecycle(): Promise<void> {
       }).lean();
 
       for (const job of inProgressJobs) {
-        const shiftEnd = combineDateAndTime(new Date(job.endDate), job.endTime);
+        const shiftEnd = combineDateAndTime(new Date(job.endDate), job.endTime || '23:59');
         const autoCompleteThreshold = new Date(shiftEnd.getTime() + 24 * 60 * 60 * 1000);
 
         if (now >= autoCompleteThreshold) {

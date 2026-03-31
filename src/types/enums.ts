@@ -76,6 +76,11 @@ export enum JobStatus {
   EXPIRED     = 'EXPIRED',
 }
 
+export enum HiringStatus {
+  OPEN         = 'OPEN',
+  FULLY_HIRED  = 'FULLY_HIRED',
+}
+
 export enum BidStatus {
   PENDING   = 'PENDING',
   ACCEPTED  = 'ACCEPTED',

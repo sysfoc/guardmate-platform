@@ -240,3 +240,28 @@ export const sendIncidentReported = async (
     },
   });
 };
+
+export const sendShiftAssigned = async (
+  guardEmail: string,
+  guardName: string,
+  jobTitle: string,
+  assignedSlots: { date: string; startTime: string; endTime: string; isOvernight: boolean }[]
+) => {
+  const scheduleHtml = assignedSlots.map((s) => {
+    const d = new Date(s.date + 'T00:00:00');
+    const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const overnight = s.isOvernight ? ' <span style="color:#d97706;font-weight:600;">(+1 day)</span>' : '';
+    return `<li>${dateStr}: ${s.startTime} – ${s.endTime}${overnight}</li>`;
+  }).join('');
+
+  await sendEmail({
+    to: guardEmail,
+    notificationType: NotificationEventType.SHIFT_ASSIGNED,
+    variables: {
+      guardName,
+      jobTitle,
+      scheduleHtml,
+      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/mate/shifts`,
+    },
+  });
+};

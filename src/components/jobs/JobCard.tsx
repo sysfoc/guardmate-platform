@@ -6,6 +6,7 @@ import {
   MapPin, Calendar, Clock, Eye, Users, Zap,
   Briefcase, PoundSterling, ChevronRight,
   ShieldCheck, HeartPulse, HardHat, Baby,
+  CheckCircle2
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -13,7 +14,7 @@ import { JobStatusBadge } from './JobStatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Tooltip } from '@/components/ui/Tooltip';
 import type { IJob } from '@/types/job.types';
-import { BudgetType } from '@/types/enums';
+import { BudgetType, HiringStatus } from '@/types/enums';
 
 interface JobCardProps {
   job: IJob;
@@ -31,6 +32,11 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
 
   const timeAgo = getTimeAgo(new Date(job.createdAt));
   const deadlineLeft = getDeadlineLeft(new Date(job.applicationDeadline));
+
+  const isMultiDay = job.shiftSchedule && job.shiftSchedule.length > 1;
+  const totalDays = job.shiftSchedule ? job.shiftSchedule.length : 1;
+  const isPartiallyHired = job.hiringStatus === HiringStatus.OPEN && job.acceptedGuards && job.acceptedGuards.length > 0;
+  const guardsHired = job.acceptedGuards ? job.acceptedGuards.length : 0;
 
   if (viewMode === 'list') {
     return (
@@ -70,8 +76,18 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
               {distance !== undefined && (
                 <span className="font-bold text-[var(--color-primary)]">{distance} mi away</span>
               )}
-              <span className="flex items-center gap-0.5"><Calendar className="h-2.5 w-2.5" />{new Date(job.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+              <span className="flex items-center gap-0.5">
+                <Calendar className="h-2.5 w-2.5" />
+                {isMultiDay
+                  ? `${new Date(job.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${new Date(job.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+                  : new Date(job.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+              </span>
               <span className="font-bold text-[var(--color-text-primary)]">{budgetDisplay}</span>
+              {isPartiallyHired && (
+                <span className="font-bold text-[var(--color-info)] bg-[var(--color-info)]/10 px-1.5 py-0.5 rounded-sm">
+                  {guardsHired}/{job.numberOfGuardsNeeded} Hired
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-tertiary)]">
@@ -153,11 +169,23 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
           </div>
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />
-            <span>{new Date(job.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            <span>
+              {isMultiDay
+                ? `${new Date(job.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} to ${new Date(job.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                : new Date(job.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
           </div>
           <div className="flex items-center gap-1">
-            <PoundSterling className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />
-            <span className="font-bold text-[var(--color-text-primary)]">{budgetDisplay}</span>
+            <Clock className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />
+            <span>{isMultiDay ? `${totalDays} days • ${job.totalScheduledHours || job.totalHours} hrs total` : `${job.totalScheduledHours || job.totalHours} hours total`}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <PoundSterling className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />
+              <span className="font-bold text-[var(--color-text-primary)]">{budgetDisplay}</span>
+            </div>
+            {isPartiallyHired && <span className="text-[9px] font-bold text-[var(--color-info)] bg-[var(--color-info)]/10 px-1.5 py-0.5 rounded-sm">{guardsHired}/{job.numberOfGuardsNeeded} Hired</span>}
+            {job.hiringStatus === HiringStatus.FULLY_HIRED && <span title="Fully Hired"><CheckCircle2 className="h-3.5 w-3.5 text-[var(--color-success)]" /></span>}
           </div>
         </div>
 

@@ -26,3 +26,14 @@ export async function GET(request: NextRequest) {
     return createApiResponse(false, null, 'Failed to fetch settings', 500);
   }
 }
+
+
+
+
+
+// everything is done and is going right but how will the  
+// guaards be informed that which shift is which one's????
+//  it should be in their some page ad also inform via email 
+// and make sure that the guard check in check out 
+// matches aligns with the shifts  given. implement 
+// that, cuz as of now i do not see thi.
