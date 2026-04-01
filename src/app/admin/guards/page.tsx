@@ -12,6 +12,8 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getUsers, updateUserStatus, promoteToAdmin, bulkUpdateStatus } from '@/lib/api/admin.api';
 import type { UserProfile, MateProfile } from '@/types/user.types';
 import { UserRole, UserStatus } from '@/types/enums';
+import { ABNStatus } from '@/types/abr.types';
+import { AustralianStateNames } from '@/types/abr.types';
 import {
   Search,
   ShieldCheck,
@@ -72,7 +74,37 @@ const statusOptions = [
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status: string }) {
+function ABNStatusBadge({ status, abn, state }: { status: string | undefined | null; abn?: string | null; state?: string | null }) {
+  if (!status || status === ABNStatus.NOT_PROVIDED) return <span className="text-xs text-[var(--color-text-muted)]">—</span>;
+
+  const isVerified = status === ABNStatus.VERIFIED;
+  const isPending = status === ABNStatus.PENDING_VERIFICATION;
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <Badge
+        variant={isVerified ? 'success' : isPending ? 'warning' : 'neutral'}
+        size="sm"
+        className="text-[9px]"
+      >
+        {isVerified ? 'Verified' : status.replace(/_/g, ' ')}
+      </Badge>
+      {abn && (
+        <span className="text-[9px] font-mono text-[var(--color-text-muted)]">
+          {abn.slice(0, 2)} {abn.slice(2, 5)} {abn.slice(5, 8)} {abn.slice(8)}
+        </span>
+      )}
+      {state && (
+        <span className="text-[9px] text-[var(--color-text-muted)]">
+          {AustralianStateNames[state as keyof typeof AustralianStateNames] || state}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function StatusBadge({ status }: { status: string | undefined }) {
+  if (!status) return <span className="text-xs text-[var(--color-text-muted)]">—</span>;
   const map: Record<string, { variant: 'success' | 'warning' | 'danger' | 'info' | 'neutral'; label: string }> = {
     ACTIVE: { variant: 'success', label: 'Active' },
     PENDING: { variant: 'warning', label: 'Pending' },
@@ -364,6 +396,7 @@ function GuardsPageInner() {
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Location / Address</th>
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">License Info</th>
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Expiry</th>
+                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">ABN Status</th>
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Verification</th>
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Status</th>
                   <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Strikes</th>
@@ -430,6 +463,13 @@ function GuardsPageInner() {
                             <ExpiryBadge expiry={mate.idExpiry} />
                           </div>
                         </div>
+                      </td>
+                      <td className="px-3 py-2 hidden lg:table-cell">
+                        <ABNStatusBadge
+                          status={mate.abnStatus}
+                          abn={mate.abn}
+                          state={mate.abnState}
+                        />
                       </td>
                       <td className="px-3 py-2 hidden xl:table-cell">
                         <div className="flex flex-col gap-1">

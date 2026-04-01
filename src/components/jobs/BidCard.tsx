@@ -10,7 +10,8 @@ import { BidStatus } from '@/types/enums';
 import type { IBid } from '@/types/job.types';
 import {
   Clock, PoundSterling, Shield, Calendar,
-  CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronUp, MessageSquare
+  CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronUp, MessageSquare,
+  Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -107,6 +108,11 @@ export function BidCard({
                   <span className="text-[9px] sm:text-[10px] font-bold text-[var(--color-text-tertiary)] whitespace-nowrap">
                     {bid.guardExperience}yr exp
                   </span>
+                )}
+                {bid.guardABNVerified && (
+                  <Badge variant="success" className="text-[9px] h-4 sm:h-5 gap-0.5 px-1.5">
+                    <Building2 className="h-2.5 w-2.5" /> ABN
+                  </Badge>
                 )}
               </div>
             </div>

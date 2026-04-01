@@ -11,6 +11,7 @@ import {
   AdminLevel,
   CertificateStatus,
 } from './enums';
+import { ABNStatus, AustralianState } from './abr.types';
 
 export {
   UserRole,
@@ -20,6 +21,8 @@ export {
   VerificationStatus,
   AdminLevel,
   CertificateStatus,
+  ABNStatus,
+  AustralianState,
 };
 
 // ─── Sub-models ───────────────────────────────────────────────────────────────
@@ -244,6 +247,20 @@ export interface MateProfile extends BaseUser {
   backgroundCheckStatus: VerificationStatus;
   backgroundCheckDate: string | null;
   backgroundCheckDocument: string | null;
+
+  // ── ABN Fields ────────────────────────────────────────────────────────────
+  abn: string | null;
+  abnVerified: boolean;
+  abnStatus: ABNStatus;
+  abnBusinessName: string | null;
+  abnGstRegistered: boolean | null;
+  abnVerifiedAt: string | null;
+  abnState: AustralianState | null;
+
+  victorianBusinessLicence: string | null;
+  victorianBusinessLicenceStatus: CertificateStatus | null;
+  victorianBusinessLicenceExpiry: string | null;
+  victorianBusinessLicenceVerifiedAt: string | null;
 }
 
 // ─── Admin Profile ────────────────────────────────────────────────────────────
@@ -328,6 +345,12 @@ export interface MateProfileUpdatePayload extends BaseProfileUpdatePayload {
   worksWithChildren?: boolean;
   workingWithChildrenCheck?: string | null;
   workingWithChildrenCheckExpiry?: string | null;
+  abn?: string | null;
+  abnState?: AustralianState | null;
+  victorianBusinessLicence?: string | null;
+  victorianBusinessLicenceStatus?: CertificateStatus | null;
+  victorianBusinessLicenceExpiry?: string | null;
+  victorianBusinessLicenceVerifiedAt?: string | null;
 }
 
 export type ProfileUpdatePayload = BossProfileUpdatePayload | MateProfileUpdatePayload;

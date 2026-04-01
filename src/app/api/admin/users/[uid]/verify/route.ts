@@ -15,6 +15,7 @@ const VALID_FIELDS: Record<string, string[]> = {
   firstAidCertificateStatus: Object.values(CertificateStatus),
   constructionWhiteCardStatus: Object.values(CertificateStatus),
   workingWithChildrenCheckStatus: Object.values(CertificateStatus),
+  victorianBusinessLicenceStatus: Object.values(CertificateStatus),
 };
 
 /**
@@ -101,6 +102,10 @@ export async function PATCH(
       updateData.workingWithChildrenCheckVerifiedAt = now;
     }
 
+    if (field === 'victorianBusinessLicenceStatus' && value === CertificateStatus.VALID) {
+      updateData.victorianBusinessLicenceVerifiedAt = now;
+    }
+
     // Apply update
     const updatedUser = await User.findOneAndUpdate(
       { uid },
@@ -116,6 +121,7 @@ export async function PATCH(
       firstAidCertificateStatus: AdminActionType.VERIFY_FIRST_AID,
       constructionWhiteCardStatus: AdminActionType.VERIFY_WHITE_CARD,
       workingWithChildrenCheckStatus: AdminActionType.VERIFY_CHILDREN_CHECK,
+      victorianBusinessLicenceStatus: AdminActionType.VERIFY_VICTORIAN_LICENCE,
     };
 
     // Log admin activity

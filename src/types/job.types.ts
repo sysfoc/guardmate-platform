@@ -152,6 +152,7 @@ export interface IBid {
   guardRating: number;
   guardExperience: number;
   guardLicenseType: string | null;
+  guardABNVerified?: boolean;
   guardSkills?: string[];
   guardCertifications?: Certification[];
   guardReliabilityScore?: number;

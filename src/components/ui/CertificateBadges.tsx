@@ -4,6 +4,7 @@ import React from 'react';
 import { Tooltip } from '@/components/ui/Tooltip';
 import type { MateProfile } from '@/types/user.types';
 import { LicenseStatus, VerificationStatus, CertificateStatus } from '@/types/enums';
+import { ABNStatus } from '@/types/abr.types';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,16 @@ function ChildrenIcon({ className }: { className?: string }) {
       <circle cx="17" cy="19" r="1.5" />
       <path d="m9 12-3 4" />
       <path d="m15 12 3 4" />
+    </svg>
+  );
+}
+
+function BuildingIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 22V9L12 5L18 9V22" />
+      <path d="M6 9H18" />
+      <path d="M10 22V14H14V22" />
     </svg>
   );
 }
@@ -139,6 +150,13 @@ export function CertificateBadges({ user, size = 'md' }: CertificateBadgesProps)
       icon: ChildrenIcon,
       show: !!user.worksWithChildren,
       status: getCertStatus(user.workingWithChildrenCheckStatus, user.workingWithChildrenCheck),
+    },
+    {
+      id: 'abn-verified',
+      label: 'ABN Verified',
+      icon: BuildingIcon,
+      show: user.abnVerified ?? false,
+      status: 'valid' as const,
     },
     {
       id: 'id-verified',

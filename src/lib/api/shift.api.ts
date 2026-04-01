@@ -57,7 +57,10 @@ export interface GetShiftResponse {
  * @param jobId - The job to get shift data for
  */
 export async function getShift(jobId: string): Promise<ApiResponse<GetShiftResponse>> {
-  return apiGet<GetShiftResponse>(`/api/shifts/${jobId}`);
+  console.log('[DEBUG CLIENT] getShift called with jobId:', jobId);
+  const result = await apiGet<GetShiftResponse>(`/api/shifts/${jobId}`);
+  console.log('[DEBUG CLIENT] getShift response:', result);
+  return result;
 }
 
 /**
@@ -84,7 +87,7 @@ export async function submitIncidentReport(payload: SubmitIncidentPayload): Prom
  * @param jobId - The job to get incidents for
  */
 export async function getIncidentReports(jobId: string): Promise<ApiResponse<IIncidentReport[]>> {
-  return apiGet<IIncidentReport[]>(`/api/shifts/${jobId}/incidents`);
+  return apiGet<IIncidentReport[]>(`/api/shifts/${jobId}/incident`);
 }
 
 /**

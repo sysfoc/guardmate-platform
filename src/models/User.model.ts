@@ -12,6 +12,7 @@ import {
   AdminProfile,
   CertificateStatus
 } from '@/types/user.types';
+import { ABNStatus, AustralianState } from '@/types/abr.types';
 
 // Export an all-encompassing union interface for Mongoose interactions
 export type IUser = BaseUser & 
@@ -181,6 +182,21 @@ const UserSchema = new Schema<UserDocument>({
   workingWithChildrenCheckExpiry: { type: Date, default: null },
   workingWithChildrenCheckStatus: { type: String, enum: Object.values(CertificateStatus), default: null },
   workingWithChildrenCheckVerifiedAt: { type: Date, default: null },
+
+  // ── ABN Fields (Mate Only) ────────────────────────────────────────────────
+  abn: { type: String, default: null },
+  abnVerified: { type: Boolean, default: false },
+  abnStatus: { type: String, enum: Object.values(ABNStatus), default: ABNStatus.NOT_PROVIDED },
+  abnBusinessName: { type: String, default: null },
+  abnGstRegistered: { type: Boolean, default: null },
+  abnVerifiedAt: { type: Date, default: null },
+  abnState: { type: String, enum: Object.values(AustralianState), default: null },
+
+  // ── Victorian Private Security Business Licence ─────────────────────────────
+  victorianBusinessLicence: { type: String, default: null },
+  victorianBusinessLicenceStatus: { type: String, enum: Object.values(CertificateStatus), default: null },
+  victorianBusinessLicenceExpiry: { type: Date, default: null },
+  victorianBusinessLicenceVerifiedAt: { type: Date, default: null },
 
   // ── Admin Fields (Optional) ───────────────────────────────────────────────
   adminLevel: { type: String, enum: Object.values(AdminLevel), default: null },

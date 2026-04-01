@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { PoundSterling, Calendar, FileText, Send } from 'lucide-react';
+import { PoundSterling, Calendar, FileText, Send, Building2, Lock, AlertCircle } from 'lucide-react';
 import type { SubmitBidPayload } from '@/types/job.types';
 import type { IJob } from '@/types/job.types';
 
@@ -14,13 +14,26 @@ interface BidSubmissionModalProps {
   job: IJob;
   isSubmitting: boolean;
   apiError?: string | null;
+  abnVerified?: boolean;
+  abrVerificationEnabled?: boolean;
 }
 
-export function BidSubmissionModal({ isOpen, onClose, onSubmit, job, isSubmitting, apiError }: BidSubmissionModalProps) {
+export function BidSubmissionModal({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  job, 
+  isSubmitting, 
+  apiError,
+  abnVerified = false,
+  abrVerificationEnabled = false
+}: BidSubmissionModalProps) {
   const [proposedRate, setProposedRate] = useState<string>(String(job.budgetAmount || ''));
   const [coverMessage, setCoverMessage] = useState('');
   const [availableFrom, setAvailableFrom] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const isLockedRate = abrVerificationEnabled && !abnVerified;
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
@@ -55,9 +68,30 @@ export function BidSubmissionModal({ isOpen, onClose, onSubmit, job, isSubmittin
           </p>
         </div>
 
+        {/* ABN Restriction Notice */}
+        {abrVerificationEnabled && (
+          <div className={`p-3 rounded-lg ${abnVerified ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-amber-500/5 border border-amber-500/20'}`}>
+            <div className="flex items-start gap-2">
+              {abnVerified ? (
+                <Building2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+              ) : (
+                <Lock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className={`text-xs font-medium ${abnVerified ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                  {abnVerified 
+                    ? 'Your ABN is verified. You can propose your own rate for this job.'
+                    : 'Your rate is locked to the posted amount. Verify your ABN to propose custom rates.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {apiError && (
-          <div className="bg-[var(--color-danger-light)] text-[var(--color-danger)] p-3 rounded-lg text-xs font-bold">
-            {apiError}
+          <div className="bg-[var(--color-danger-light)] text-[var(--color-danger)] p-3 rounded-lg text-xs font-bold flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{apiError}</span>
           </div>
         )}
 
@@ -67,9 +101,28 @@ export function BidSubmissionModal({ isOpen, onClose, onSubmit, job, isSubmittin
           </label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold text-sm">£</span>
-            <input type="number" step="0.01" min="0" value={proposedRate} onChange={(e) => setProposedRate(e.target.value)} placeholder="0.00" className={`${inputCls} pl-8`} />
+            <input 
+              type="number" 
+              step="0.01" 
+              min="0" 
+              value={proposedRate} 
+              onChange={(e) => setProposedRate(e.target.value)} 
+              placeholder="0.00" 
+              className={`${inputCls} pl-8 ${isLockedRate ? 'bg-[var(--color-bg-tertiary)] cursor-not-allowed' : ''}`}
+              disabled={isLockedRate}
+            />
+            {isLockedRate && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Lock className="h-4 w-4 text-[var(--color-text-tertiary)]" />
+              </div>
+            )}
           </div>
           {errors.proposedRate && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.proposedRate}</p>}
+          {isLockedRate && (
+            <p className="text-[10px] text-amber-500 mt-1">
+              Rate is locked to posted amount. <a href="/dashboard/mate/profile" className="underline">Verify your ABN</a> to set custom rates.
+            </p>
+          )}
         </div>
 
         <div>

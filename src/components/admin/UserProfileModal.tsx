@@ -11,6 +11,7 @@ import { getUserProfile, updateUserStatus, promoteToAdmin, updateVerificationSta
 import { ExpiryBadge } from '@/components/ui/ExpiryBadge';
 import type { UserProfile, MateProfile, BossProfile, AdminProfile, LoginHistoryEntry } from '@/types/user.types';
 import { UserRole, UserStatus, LicenseStatus, VerificationStatus, CertificateStatus } from '@/types/enums';
+import { AustralianState } from '@/types/abr.types';
 import {
   User,
   Briefcase,
@@ -649,6 +650,7 @@ function SecurityLicenseTab({
     user.firstAidCertificateStatus,
     user.worksOnConstructionSite ? user.constructionWhiteCardStatus : null,
     user.worksWithChildren ? user.workingWithChildrenCheckStatus : null,
+    (user.abnState === 'VIC' || user.victorianBusinessLicence) ? user.victorianBusinessLicenceStatus : null,
   ].filter(Boolean);
 
   const pendingCount = allStatuses.filter(s => s === 'PENDING_REVIEW' || s === 'PENDING').length;
@@ -769,6 +771,26 @@ function SecurityLicenseTab({
             status={user.workingWithChildrenCheckStatus as any}
             documentUrl={user.workingWithChildrenCheck}
             expiry={user.workingWithChildrenCheckExpiry}
+            verifyLoading={verifyLoading}
+            setVerifyLoading={setVerifyLoading}
+            fetchUser={fetchUser}
+            onStatusChanged={onStatusChanged}
+            verifyNotes={verifyNotes}
+            setVerifyNotes={setVerifyNotes}
+          />
+        )}
+
+        {/* Victorian Business Licence (Conditional) */}
+        {(user.abnState === AustralianState.VIC || user.victorianBusinessLicence) && (
+          <CertVerificationCard
+            title="Victorian Private Security Business Licence"
+            icon={<Shield className="h-5 w-5 text-blue-500" />}
+            iconBg="bg-blue-500/10"
+            type="VICTORIAN_LICENCE"
+            uid={user.uid}
+            status={user.victorianBusinessLicenceStatus as any}
+            documentUrl={user.victorianBusinessLicence}
+            expiry={user.victorianBusinessLicenceExpiry}
             verifyLoading={verifyLoading}
             setVerifyLoading={setVerifyLoading}
             fetchUser={fetchUser}

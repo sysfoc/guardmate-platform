@@ -97,6 +97,7 @@ const CERTIFICATE_FIELD_MAP: Record<string, string> = {
   CHILDREN_CHECK: 'workingWithChildrenCheckStatus',
   LICENSE: 'licenseStatus',
   ID: 'idVerificationStatus',
+  VICTORIAN_LICENCE: 'victorianBusinessLicenceStatus',
 };
 
 export async function updateCertificateStatus(

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { getJobById, submitBid } from '@/lib/api/job.api';
 import { JobDetailView } from '@/components/jobs/JobDetailView';
 import { BidSubmissionModal } from '@/components/jobs/BidSubmissionModal';
@@ -15,13 +16,15 @@ import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import toast from 'react-hot-toast';
 import type { IJob, SubmitBidPayload } from '@/types/job.types';
 import { JobStatus, UserStatus, LicenseStatus } from '@/types/enums';
-import { ChevronLeft, Send, CheckCircle2, Loader2, AlertCircle, MessageSquare } from 'lucide-react';
+import { ChevronLeft, Send, CheckCircle2, Loader2, AlertCircle, MessageSquare, Building2 } from 'lucide-react';
 import { createOrGetConversation } from '@/lib/api/chat.api';
+import type { MateProfile } from '@/types/user.types';
 
 export default function MateJobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const router = useRouter();
   const { user, isLoading: userLoading } = useUser();
+  const { platformSettings } = usePlatformContext();
   const [job, setJob] = useState<IJob | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBidModal, setShowBidModal] = useState(false);
@@ -46,6 +49,10 @@ export default function MateJobDetailPage() {
   }, [jobId]);
 
   const isGuardReady = user?.status === UserStatus.ACTIVE && user !== null && 'licenseStatus' in user && user.licenseStatus === LicenseStatus.VALID;
+
+  const abrVerificationEnabled = platformSettings?.abrVerificationEnabled ?? false;
+  const mateUser = user as MateProfile | null;
+  const abnVerified = mateUser?.abnVerified ?? false;
 
   const handleSubmitBid = async (payload: SubmitBidPayload) => {
     if (!jobId) return;
@@ -140,9 +147,22 @@ export default function MateJobDetailPage() {
             ) : job.status !== JobStatus.OPEN ? (
               <Badge className="w-full justify-center py-2">Job is no longer accepting applications</Badge>
             ) : (
-              <Button size="sm" className="w-full shadow-md shadow-[var(--color-primary)]/10" leftIcon={<Send className="h-4 w-4" />} onClick={() => setShowBidModal(true)}>
-                Apply Now
-              </Button>
+              <>
+                {/* ABN Status Indicator */}
+                {abrVerificationEnabled && (
+                  <div className={`mb-3 p-2 rounded-lg ${abnVerified ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-amber-500/5 border border-amber-500/20'}`}>
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className={`h-3.5 w-3.5 ${abnVerified ? 'text-emerald-500' : 'text-amber-500'}`} />
+                      <span className={`text-[10px] font-medium ${abnVerified ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                        {abnVerified ? 'ABN Verified — Custom rates enabled' : 'No verified ABN — Rate locked to posting'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <Button size="sm" className="w-full shadow-md shadow-[var(--color-primary)]/10" leftIcon={<Send className="h-4 w-4" />} onClick={() => setShowBidModal(true)}>
+                  Apply Now
+                </Button>
+              </>
             )}
             <Link href="/dashboard/mate/bids" className="block text-center text-[10px] font-bold text-[var(--color-primary)] mt-3 hover:underline">
               View My Bids →
@@ -160,6 +180,8 @@ export default function MateJobDetailPage() {
           job={job}
           isSubmitting={submitting}
           apiError={apiError}
+          abnVerified={abnVerified}
+          abrVerificationEnabled={abrVerificationEnabled}
         />
       )}
     </div>

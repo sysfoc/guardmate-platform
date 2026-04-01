@@ -163,6 +163,7 @@ export default function ActiveShiftCard({
       const pos = await getCurrentPosition();
       const resp = await checkIn(jobId, {
         coordinates: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+        timezoneOffset: new Date().getTimezoneOffset(),
       });
       if (resp.success && resp.data) {
         setTodayShift(resp.data as IShift);
@@ -238,7 +239,8 @@ export default function ActiveShiftCard({
           {/* Distance Indicator */}
           {currentDistance !== null && status === ShiftStatus.NOT_STARTED && (
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold ${
-              currentDistance <= 500
+              currentDistance <= 1000
+              // yahan pr 500 meters kr dena
                 ? 'bg-[var(--color-success-light)] text-[var(--color-success)]'
                 : 'bg-[var(--color-danger-light)] text-[var(--color-danger)]'
             }`}>

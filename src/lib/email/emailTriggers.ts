@@ -265,3 +265,42 @@ export const sendShiftAssigned = async (
     },
   });
 };
+
+/**
+ * Send ABN verification success email to guard
+ */
+export const sendABNVerified = async (
+  guardEmail: string,
+  guardName: string,
+  businessName: string | null
+) => {
+  await sendEmail({
+    to: guardEmail,
+    notificationType: NotificationEventType.ABN_VERIFIED,
+    variables: {
+      guardName,
+      businessName: businessName || 'your business',
+      profileUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/mate/profile`,
+    },
+  });
+};
+
+/**
+ * Send ABN verification failure email to guard
+ */
+export const sendABNVerificationFailed = async (
+  guardEmail: string,
+  guardName: string,
+  reason: string
+) => {
+  await sendEmail({
+    to: guardEmail,
+    notificationType: NotificationEventType.ABN_VERIFICATION_FAILED,
+    variables: {
+      guardName,
+      reason,
+      abrUrl: 'https://abr.business.gov.au',
+      profileUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/mate/profile`,
+    },
+  });
+};

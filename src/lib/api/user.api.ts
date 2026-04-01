@@ -7,7 +7,8 @@
 
 import { apiGet, apiPatch, apiPost } from '@/lib/apiClient';
 import type { ApiResponse } from '@/types/api.types';
-import type { UserProfile, ProfileUpdatePayload } from '@/types/user.types';
+import type { UserProfile, ProfileUpdatePayload, MateProfile } from '@/types/user.types';
+import type { AustralianState } from '@/types/abr.types';
 
 // ─── API Methods ──────────────────────────────────────────────────────────────
 
@@ -42,11 +43,24 @@ export async function uploadProfilePhoto(file: File): Promise<ApiResponse<{ url:
  */
 export async function uploadDocument(
   file: File,
-  type: 'license' | 'id' | 'companyLicense' | 'firstAid' | 'whiteCard' | 'childrenCheck'
+  type: 'license' | 'id' | 'companyLicense' | 'firstAid' | 'whiteCard' | 'childrenCheck' | 'victorianBusinessLicence'
 ): Promise<ApiResponse<{ url: string; field: string }>> {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('type', type);
 
   return apiPost<{ url: string; field: string }>('/api/upload/document', formData);
+}
+
+/**
+ * Verifies an ABN with the Australian Business Register (ABR) API.
+ * @param abn - The ABN to verify (11 digits)
+ * @param abnState - The Australian state where the guard primarily operates
+ * @returns Updated Mate profile with ABN verification details
+ */
+export async function verifyABN(
+  abn: string,
+  abnState: AustralianState
+): Promise<ApiResponse<Partial<MateProfile>>> {
+  return apiPost<Partial<MateProfile>>('/api/mate/verify-abn', { abn, abnState });
 }

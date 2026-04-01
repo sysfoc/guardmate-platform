@@ -46,6 +46,10 @@ export async function POST(
 
     const body = await request.json();
     const coordinates = body?.coordinates;
+    // Client timezone offset in minutes (e.g. -300 for UTC+5, -600 for UTC+10)
+    // Date.getTimezoneOffset() returns: UTC - local (in minutes)
+    // So for UTC+5 it returns -300, for UTC+10 it returns -600
+    const clientTimezoneOffset: number = typeof body?.timezoneOffset === 'number' ? body.timezoneOffset : 0;
 
     if (!coordinates || typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
       return createApiResponse(false, null, 'Valid GPS coordinates are required.', 400);
@@ -75,7 +79,11 @@ export async function POST(
     }
 
     // Find guard's assigned slot for today
-    const todayISO = getTodayISO();
+    // Use client timezone to determine "today" in guard's local time
+    const nowUTC = new Date();
+    const localNow = new Date(nowUTC.getTime() - clientTimezoneOffset * 60 * 1000);
+    const todayISO = `${localNow.getUTCFullYear()}-${String(localNow.getUTCMonth() + 1).padStart(2, '0')}-${String(localNow.getUTCDate()).padStart(2, '0')}`;
+
     const schedule = job.shiftSchedule as ShiftScheduleDay[] | undefined;
     let assignedSlot: ShiftSlot | null = null;
 
@@ -92,13 +100,16 @@ export async function POST(
       }
 
       // Validate 30-min early check-in window
-      const now = new Date();
+      // Shift times (e.g. "14:35") are in guard's local timezone
+      // Convert slot start to UTC for comparison: UTC = local + offset
       const [sh, sm] = assignedSlot.startTime.split(':').map(Number);
-      const slotStartToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), sh, sm));
-      const earliestCheckin = new Date(slotStartToday.getTime() - 30 * 60 * 1000);
+      const slotStartLocalMs = Date.UTC(localNow.getUTCFullYear(), localNow.getUTCMonth(), localNow.getUTCDate(), sh, sm);
+      const slotStartUTC = new Date(slotStartLocalMs + clientTimezoneOffset * 60 * 1000);
+      const earliestCheckin = new Date(slotStartUTC.getTime() - 30 * 60 * 1000);
 
-      if (now < earliestCheckin) {
-        const earliestStr = `${String(earliestCheckin.getUTCHours()).padStart(2, '0')}:${String(earliestCheckin.getUTCMinutes()).padStart(2, '0')}`;
+      if (nowUTC < earliestCheckin) {
+        const earliestLocal = new Date(earliestCheckin.getTime() - clientTimezoneOffset * 60 * 1000);
+        const earliestStr = `${String(earliestLocal.getUTCHours()).padStart(2, '0')}:${String(earliestLocal.getUTCMinutes()).padStart(2, '0')}`;
         return createApiResponse(
           false,
           null,
@@ -108,9 +119,9 @@ export async function POST(
       }
     }
 
-    // Check if already checked in TODAY
-    const today = getTodayMidnightUTC();
-    const existingShift = await Shift.findOne({ jobId, guardUid: user.uid, shiftDate: today });
+    // Check if already checked in TODAY (use local date for midnight)
+    const todayMidnightLocal = new Date(Date.UTC(localNow.getUTCFullYear(), localNow.getUTCMonth(), localNow.getUTCDate()));
+    const existingShift = await Shift.findOne({ jobId, guardUid: user.uid, shiftDate: todayMidnightLocal });
     if (existingShift?.checkInTime) {
       return createApiResponse(false, null, 'You have already checked in for today.', 400);
     }
@@ -121,7 +132,8 @@ export async function POST(
     }
 
     const settings = await PlatformSettings.findOne().lean();
-    const radiusMeters = settings?.checkInRadiusMeters ?? 1000;
+    // Default to 1000, and if the DB has older settings (like 500), force it up to 1000.
+    const radiusMeters = Math.max(settings?.checkInRadiusMeters ?? 1000, 1000);
     const distanceMiles = calculateDistance(
       coordinates.lat,
       coordinates.lng,
@@ -139,11 +151,9 @@ export async function POST(
       );
     }
 
-    const now = new Date();
-
     // Create today's shift record (per guard per day)
     const shift = await Shift.findOneAndUpdate(
-      { jobId, guardUid: user.uid, shiftDate: today },
+      { jobId, guardUid: user.uid, shiftDate: todayMidnightLocal },
       {
         $set: {
           guardUid: user.uid,
@@ -151,14 +161,14 @@ export async function POST(
           jobTitle: job.title,
           jobLocation: job.location,
           jobCoordinates: job.coordinates,
-          checkInTime: now,
+          checkInTime: nowUTC,
           checkInCoordinates: coordinates,
           checkInDistance: distanceMeters,
           checkInVerified: true,
         },
         $setOnInsert: {
           jobId,
-          shiftDate: today,
+          shiftDate: todayMidnightLocal,
           locationHistory: [],
           isApprovedByBoss: false,
         },
@@ -175,7 +185,7 @@ export async function POST(
           boss.companyName || `${boss.firstName} ${boss.lastName}`,
           `${user.firstName} ${user.lastName}`,
           job.location,
-          now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+          nowUTC.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
           job.title
         );
       }

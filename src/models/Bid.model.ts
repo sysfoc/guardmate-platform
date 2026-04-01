@@ -20,6 +20,7 @@ const BidSchema = new Schema<BidDocument>({
   guardRating:      { type: Number, default: 0 },
   guardExperience:  { type: Number, default: 0 },
   guardLicenseType: { type: String, default: null },
+  guardABNVerified:   { type: Boolean, default: false },
 
   status:        { type: String, enum: Object.values(BidStatus), default: BidStatus.PENDING, index: true },
   proposedRate:  { type: Number, required: true },

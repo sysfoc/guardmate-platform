@@ -14,13 +14,15 @@ import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Toggle } from '@/components/ui/Toggle';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { CertificateBadges } from '@/components/ui/CertificateBadges';
-import { updateUserProfile, uploadProfilePhoto, uploadDocument } from '@/lib/api/user.api';
+import { updateUserProfile, uploadProfilePhoto, uploadDocument, verifyABN } from '@/lib/api/user.api';
 import type { MateProfile, MateProfileUpdatePayload } from '@/types/user.types';
 import { VerificationStatus, LicenseStatus, CertificateStatus } from '@/types/enums';
+import { ABNStatus, AustralianState, AustralianStateNames } from '@/types/abr.types';
 import toast from 'react-hot-toast';
 import {
   Camera, Save, Loader2, Upload, FileText, AlertCircle, Heart,
-  User, Shield, Briefcase, MapPin, Mail, Star, Clock, Plus, X, Globe, Calendar, Trash2, ChevronLeft, HardHat
+  User, Shield, Briefcase, MapPin, Mail, Star, Clock, Plus, X, Globe, Calendar, Trash2, ChevronLeft, HardHat,
+  Building2, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 
 export default function MateProfileEdit() {
@@ -35,6 +37,7 @@ export default function MateProfileEdit() {
   const firstAidFileRef = useRef<HTMLInputElement>(null);
   const whiteCardFileRef = useRef<HTMLInputElement>(null);
   const childrenCheckFileRef = useRef<HTMLInputElement>(null);
+  const victorianLicenceFileRef = useRef<HTMLInputElement>(null);
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -45,20 +48,28 @@ export default function MateProfileEdit() {
   const [isUploadingFirstAid, setIsUploadingFirstAid] = useState(false);
   const [isUploadingWhiteCard, setIsUploadingWhiteCard] = useState(false);
   const [isUploadingChildrenCheck, setIsUploadingChildrenCheck] = useState(false);
+  const [isUploadingVictorianLicence, setIsUploadingVictorianLicence] = useState(false);
   const [showClearWhiteCardDialog, setShowClearWhiteCardDialog] = useState(false);
   const [showClearChildrenCheckDialog, setShowClearChildrenCheckDialog] = useState(false);
+
+  // ABN Section State
+  const [abnInput, setAbnInput] = useState('');
+  const [abnState, setAbnState] = useState<AustralianState | ''>('');
+  const [isVerifyingABN, setIsVerifyingABN] = useState(false);
 
   const [localLicenseDoc, setLocalLicenseDoc] = useState<string | undefined>(undefined);
   const [localIdDoc, setLocalIdDoc] = useState<string | undefined>(undefined);
   const [localFirstAidDoc, setLocalFirstAidDoc] = useState<string | undefined>(undefined);
   const [localWhiteCardDoc, setLocalWhiteCardDoc] = useState<string | undefined>(undefined);
   const [localChildrenCheckDoc, setLocalChildrenCheckDoc] = useState<string | undefined>(undefined);
+  const [localVictorianLicenceDoc, setLocalVictorianLicenceDoc] = useState<string | undefined>(undefined);
 
   const [worksOnConstructionSite, setWorksOnConstructionSite] = useState(false);
   const [worksWithChildren, setWorksWithChildren] = useState(false);
   const [firstAidExpiry, setFirstAidExpiry] = useState('');
   const [whiteCardExpiry, setWhiteCardExpiry] = useState('');
   const [childrenCheckExpiry, setChildrenCheckExpiry] = useState('');
+  const [victorianLicenceExpiry, setVictorianLicenceExpiry] = useState('');
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -116,6 +127,7 @@ export default function MateProfileEdit() {
       setFirstAidExpiry(mate.firstAidCertificateExpiry ? new Date(mate.firstAidCertificateExpiry).toISOString().split('T')[0] : '');
       setWhiteCardExpiry(mate.constructionWhiteCardExpiry ? new Date(mate.constructionWhiteCardExpiry).toISOString().split('T')[0] : '');
       setChildrenCheckExpiry(mate.workingWithChildrenCheckExpiry ? new Date(mate.workingWithChildrenCheckExpiry).toISOString().split('T')[0] : '');
+      setVictorianLicenceExpiry(mate.victorianBusinessLicenceExpiry ? new Date(mate.victorianBusinessLicenceExpiry).toISOString().split('T')[0] : '');
     }
   }, [mate]);
 
@@ -152,7 +164,7 @@ export default function MateProfileEdit() {
     }
   };
 
-  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'license' | 'id' | 'bgCheck' | 'firstAid' | 'whiteCard' | 'childrenCheck') => {
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'license' | 'id' | 'bgCheck' | 'firstAid' | 'whiteCard' | 'childrenCheck' | 'victorianBusinessLicence') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -162,15 +174,17 @@ export default function MateProfileEdit() {
       firstAid: setIsUploadingFirstAid,
       whiteCard: setIsUploadingWhiteCard,
       childrenCheck: setIsUploadingChildrenCheck,
+      victorianBusinessLicence: setIsUploadingVictorianLicence,
     };
 
-    const apiTypeMap: Record<string, 'license' | 'id' | 'companyLicense' | 'firstAid' | 'whiteCard' | 'childrenCheck'> = {
+    const apiTypeMap: Record<string, 'license' | 'id' | 'companyLicense' | 'firstAid' | 'whiteCard' | 'childrenCheck' | 'victorianBusinessLicence'> = {
       license: 'license',
       id: 'id',
       bgCheck: 'id',
       firstAid: 'firstAid',
       whiteCard: 'whiteCard',
       childrenCheck: 'childrenCheck',
+      victorianBusinessLicence: 'victorianBusinessLicence',
     };
 
     const setterMap: Record<string, (v: string) => void> = {
@@ -179,6 +193,7 @@ export default function MateProfileEdit() {
       firstAid: setLocalFirstAidDoc,
       whiteCard: setLocalWhiteCardDoc,
       childrenCheck: setLocalChildrenCheckDoc,
+      victorianBusinessLicence: setLocalVictorianLicenceDoc,
     };
 
     loadingMap[type]?.(true);
@@ -196,6 +211,34 @@ export default function MateProfileEdit() {
     }
   };
 
+  const handleVerifyABN = async () => {
+    if (!abnInput.trim()) {
+      toast.error('Please enter your ABN');
+      return;
+    }
+    if (!abnState) {
+      toast.error('Please select your operating state');
+      return;
+    }
+
+    setIsVerifyingABN(true);
+    try {
+      const resp = await verifyABN(abnInput, abnState);
+      if (resp.success && resp.data) {
+        toast.success(resp.message || 'ABN verified successfully!');
+        await fetchUser();
+        setAbnInput('');
+        setAbnState('');
+      } else {
+        toast.error(resp.message || 'ABN verification failed');
+      }
+    } catch (err) {
+      toast.error('Failed to verify ABN. Please try again.');
+    } finally {
+      setIsVerifyingABN(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -206,6 +249,10 @@ export default function MateProfileEdit() {
     }
     if (worksWithChildren && !localChildrenCheckDoc && !mate.workingWithChildrenCheck) {
       toast.error('Please upload your Working With Children Check document.');
+      return;
+    }
+    if (mate.abnState === AustralianState.VIC && !localVictorianLicenceDoc && !mate.victorianBusinessLicence) {
+      toast.error('Victorian law requires you to upload your Private Security Business Licence.');
       return;
     }
 
@@ -225,6 +272,8 @@ export default function MateProfileEdit() {
         worksWithChildren,
         workingWithChildrenCheck: worksWithChildren ? (localChildrenCheckDoc || mate.workingWithChildrenCheck || undefined) : undefined,
         workingWithChildrenCheckExpiry: worksWithChildren && childrenCheckExpiry ? new Date(childrenCheckExpiry).toISOString() : undefined,
+        victorianBusinessLicence: localVictorianLicenceDoc || mate.victorianBusinessLicence || undefined,
+        victorianBusinessLicenceExpiry: victorianLicenceExpiry ? new Date(victorianLicenceExpiry).toISOString() : undefined,
         certifications: mate.certifications,
         isOnboardingComplete: true,
         isProfileComplete: !!(formData.firstName && formData.lastName && formData.bio && formData.phone && formData.address),
@@ -603,6 +652,213 @@ export default function MateProfileEdit() {
                   </div>
                 )}
                 <input type="file" ref={childrenCheckFileRef} className="hidden" accept=".pdf,image/*" onChange={(e) => handleDocUpload(e, 'childrenCheck')} />
+
+                {/* Victorian Private Security Business Licence */}
+                {(mate.abnState === AustralianState.VIC || mate.victorianBusinessLicence) && (
+                  <div className="mt-4 p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
+                        <Shield className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold">Private Security Business Licence (Victoria)</p>
+                      </div>
+                      {mate.victorianBusinessLicenceStatus && (
+                        <CertStatusBadge status={mate.victorianBusinessLicenceStatus} />
+                      )}
+                    </div>
+
+                    {mate.abnState === AustralianState.VIC && (
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                        <AlertCircle className="h-4 w-4 text-blue-500 shrink-0" />
+                        <p className="text-[10px] font-bold text-blue-500">Victorian law requires security contractors to hold a Private Security Business Licence (effective 19 December 2025). Upload yours for admin verification.</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <DocUploadRow label="Licence Document" url={localVictorianLicenceDoc || mate.victorianBusinessLicence} isUploading={isUploadingVictorianLicence} onUpload={() => victorianLicenceFileRef.current?.click()} status={mate.victorianBusinessLicenceStatus} />
+                      <div>
+                        <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Expiry Date</label>
+                        <input type="date" value={victorianLicenceExpiry} onChange={(e) => { setVictorianLicenceExpiry(e.target.value); setHasUnsavedChanges(true); }} className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none" />
+                      </div>
+                    </div>
+                    {localVictorianLicenceDoc || mate.victorianBusinessLicence ? (
+                      <a href={localVictorianLicenceDoc || mate.victorianBusinessLicence || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1">
+                        <FileText className="h-3 w-3" /> View Document
+                      </a>
+                    ) : null}
+                  </div>
+                )}
+                <input type="file" ref={victorianLicenceFileRef} className="hidden" accept=".pdf,image/*" onChange={(e) => handleDocUpload(e, 'victorianBusinessLicence')} />
+              </Card>
+
+              {/* ── ABN & Business Details ──────────────────────────── */}
+              <Card padding="md">
+                <SectionHeader icon={<Building2 className="h-4 w-4" />} title="ABN & Business Details" />
+                
+                <div className="mt-4 space-y-4">
+                  {/* Info Box */}
+                  <div className="p-3 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20">
+                    <p className="text-xs text-[var(--color-text-secondary)]">
+                      Guards with a verified ABN can propose their own rates when bidding on jobs. Without ABN you can only apply for jobs at the posted rate.
+                    </p>
+                  </div>
+
+                  {/* Legal Disclaimer */}
+                  <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                      By providing your ABN you confirm you hold all required licences to operate as a security contractor in your state. GuardMate verifies ABN existence only and is not responsible for your licence compliance.
+                    </p>
+                  </div>
+
+                  {/* Victorian Law Notice */}
+                  {mate.abnState === AustralianState.VIC && (
+                    <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-blue-600 dark:text-blue-400">
+                          Note: From June 2026 Victoria requires security contractors to hold both an Individual Security Licence and a Private Security Business Licence in addition to ABN.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ABN Status Display */}
+                  {mate.abnStatus && mate.abnStatus !== ABNStatus.NOT_PROVIDED && (
+                    <div className="p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`p-1.5 rounded-lg ${
+                            mate.abnVerified ? 'bg-emerald-500/10 text-emerald-500' : 
+                            mate.abnStatus === ABNStatus.PENDING_VERIFICATION ? 'bg-amber-500/10 text-amber-500' :
+                            'bg-red-500/10 text-red-500'
+                          }`}>
+                            <Building2 className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold">Australian Business Number</p>
+                            <p className="text-[9px] text-[var(--color-text-tertiary)]">
+                              {mate.abn ? `${mate.abn.slice(0, 2)} ${mate.abn.slice(2, 5)} ${mate.abn.slice(5, 8)} ${mate.abn.slice(8)}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge 
+                          variant={
+                            mate.abnVerified ? 'success' : 
+                            mate.abnStatus === ABNStatus.PENDING_VERIFICATION ? 'warning' :
+                            'danger'
+                          } 
+                          className="text-[9px] h-5 py-0"
+                        >
+                          {mate.abnVerified ? 'Verified' : mate.abnStatus.replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+
+                      {mate.abnBusinessName && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-[var(--color-text-tertiary)]">Business:</span>
+                          <span className="font-medium text-[var(--color-text-primary)]">{mate.abnBusinessName}</span>
+                        </div>
+                      )}
+
+                      {mate.abnVerifiedAt && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-[var(--color-text-tertiary)]">Verified:</span>
+                          <span className="font-medium text-[var(--color-text-primary)]">
+                            {new Date(mate.abnVerifiedAt).toLocaleDateString('en-AU')}
+                          </span>
+                        </div>
+                      )}
+
+                      {mate.abnGstRegistered !== null && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-[var(--color-text-tertiary)]">GST Registered:</span>
+                          <Badge variant={mate.abnGstRegistered ? 'success' : 'neutral'} className="text-[9px] h-4 py-0">
+                            {mate.abnGstRegistered ? 'Yes' : 'No'}
+                          </Badge>
+                        </div>
+                      )}
+
+                      {mate.abnState && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-[var(--color-text-tertiary)]">Operating State:</span>
+                          <span className="font-medium text-[var(--color-text-primary)]">
+                            {AustralianStateNames[mate.abnState]}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Re-verify button for verified/pending */}
+                      {(mate.abnVerified || mate.abnStatus === ABNStatus.PENDING_VERIFICATION || mate.abnStatus === ABNStatus.INVALID || mate.abnStatus === ABNStatus.CANCELLED) && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-2"
+                          onClick={() => {
+                            setAbnInput(mate.abn || '');
+                            setAbnState(mate.abnState || '');
+                          }}
+                        >
+                          Re-verify ABN
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ABN Input Form */}
+                  {(!mate.abnVerified || abnInput) && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">
+                          ABN Number (11 digits)
+                        </label>
+                        <Input
+                          type="text"
+                          value={abnInput}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                            setAbnInput(val);
+                          }}
+                          placeholder="Enter 11 digit ABN"
+                          maxLength={11}
+                        />
+                        <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
+                          Format: XX XXX XXX XXX (stored without spaces)
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">
+                          Operating State
+                        </label>
+                        <select
+                          value={abnState}
+                          onChange={(e) => setAbnState(e.target.value as AustralianState)}
+                          className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none"
+                        >
+                          <option value="">Select State/Territory</option>
+                          {Object.values(AustralianState).map((state) => (
+                            <option key={state} value={state}>
+                              {AustralianStateNames[state]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="primary"
+                        className="w-full"
+                        loading={isVerifyingABN}
+                        onClick={handleVerifyABN}
+                        leftIcon={mate.abnVerified ? <CheckCircle2 className="h-4 w-4" /> : undefined}
+                      >
+                        {mate.abnVerified ? 'Re-verify ABN' : 'Verify ABN'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </Card>
             </div>
           </div>

@@ -13,6 +13,7 @@ const DOCUMENT_FIELD_MAP: Record<string, string> = {
   firstAid: 'firstAidCertificate',
   whiteCard: 'constructionWhiteCard',
   childrenCheck: 'workingWithChildrenCheck',
+  victorianBusinessLicence: 'victorianBusinessLicence',
 };
 
 const ALLOWED_MIME_TYPES = [
@@ -100,6 +101,8 @@ export async function POST(request: NextRequest) {
       updateData.constructionWhiteCardStatus = 'PENDING_REVIEW';
     } else if (docType === 'childrenCheck') {
       updateData.workingWithChildrenCheckStatus = 'PENDING_REVIEW';
+    } else if (docType === 'victorianBusinessLicence') {
+      updateData.victorianBusinessLicenceStatus = 'PENDING_REVIEW';
     }
 
     await User.findOneAndUpdate(

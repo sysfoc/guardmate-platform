@@ -24,6 +24,8 @@ export enum NotificationEventType {
   JOB_REOPENED_TO_BIDDERS = 'jobReopened',
   INCIDENT_REPORTED = 'incidentReported',
   SHIFT_ASSIGNED = 'shiftAssigned',
+  ABN_VERIFIED = 'abnVerified',
+  ABN_VERIFICATION_FAILED = 'abnVerificationFailed',
 }
 
 export interface IEmailSettings {

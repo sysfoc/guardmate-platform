@@ -21,6 +21,14 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
     min: 50,
     max: 5000,
   },
+  abrGuid: {
+    type: String,
+    default: null,
+  },
+  abrVerificationEnabled: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });

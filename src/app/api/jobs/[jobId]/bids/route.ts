@@ -4,6 +4,7 @@ import connectDB from '@/lib/mongodb';
 import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
+import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import { UserRole, UserStatus, BidStatus, LicenseStatus, JobStatus } from '@/types/enums';
 import { sendBidReceived } from '@/lib/email/emailTriggers';
@@ -37,8 +38,24 @@ export async function POST(
       return createApiResponse(false, null, 'Your SIA license must be VALID to submit bids.', 403);
     }
 
+    // Check ABN verification status and proposed rate
     await connectDB();
     const { jobId } = await params;
+
+    const platformSettings = await PlatformSettings.findOne({}).lean();
+    const abrVerificationEnabled = platformSettings?.abrVerificationEnabled ?? false;
+    const userDoc = await User.findOne({ uid: user.uid }).lean();
+    const abnVerified = userDoc?.abnVerified ?? false;
+
+    const body = await request.json();
+
+    // If ABR verification is enabled and user doesn't have verified ABN, they can only apply at job's rate
+    if (abrVerificationEnabled && !abnVerified) {
+      const job = await Job.findOne({ jobId }).lean();
+      if (job && body.proposedRate !== job.budgetAmount) {
+        return createApiResponse(false, null, 'Without a verified ABN, you can only apply at the posted rate. Please verify your ABN to propose custom rates.', 403);
+      }
+    }
 
     // Check job exists and is OPEN
     const job = await Job.findOne({ jobId });
@@ -80,8 +97,6 @@ export async function POST(
       }
     }
 
-    const body = await request.json();
-
     if (!body.proposedRate || !body.coverMessage || !body.availableFrom) {
       return createApiResponse(false, null, 'Missing required fields: proposedRate, coverMessage, availableFrom.', 400);
     }
@@ -101,6 +116,7 @@ export async function POST(
       guardRating: user.averageRating || 0,
       guardExperience: user.experience || 0,
       guardLicenseType: user.licenseType || null,
+      guardABNVerified: abnVerified,
       status: BidStatus.PENDING,
       proposedRate: body.proposedRate,
       budgetType: body.budgetType || job.budgetType,

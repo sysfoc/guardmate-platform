@@ -21,6 +21,8 @@ export default function AdminSettingsPage() {
   const [platformSettings, setPlatformSettings] = useState<IPlatformSettings | null>(null);
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>('none');
   const [checkInRadiusMeters, setCheckInRadiusMeters] = useState<number>(500);
+  const [abrGuid, setAbrGuid] = useState<string>('');
+  const [abrVerificationEnabled, setAbrVerificationEnabled] = useState<boolean>(false);
   const [platformSaving, setPlatformSaving] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -45,6 +47,8 @@ export default function AdminSettingsPage() {
       setPlatformSettings(platformData);
       setSelectedCountryCode(platformData.platformCountry?.countryCode || 'none');
       setCheckInRadiusMeters(platformData.checkInRadiusMeters ?? 500);
+      setAbrGuid(platformData.abrGuid || '');
+      setAbrVerificationEnabled(platformData.abrVerificationEnabled ?? false);
     } catch (err: any) {
       setErrorMsg('Failed to load settings');
     } finally {
@@ -101,12 +105,16 @@ export default function AdminSettingsPage() {
           dialCode: targetCountry.dialCode,
           flag: targetCountry.flag
         } as IPlatformCountry : null,
-        checkInRadiusMeters
+        checkInRadiusMeters,
+        abrGuid: abrGuid || undefined,
+        abrVerificationEnabled
       };
 
       const updated = await settingsApi.updatePlatformSettings(payload);
       setPlatformSettings(updated);
       setSelectedCountryCode(updated.platformCountry?.countryCode || 'none');
+      setAbrGuid(updated.abrGuid || '');
+      setAbrVerificationEnabled(updated.abrVerificationEnabled ?? false);
       await refreshSettings(); // Sync global context
       
       setSuccessMsg('Platform configuration saved successfully.');
@@ -405,6 +413,55 @@ export default function AdminSettingsPage() {
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[var(--color-text-muted)] font-medium pointer-events-none">
                     meters
                   </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-[var(--color-border-primary)]">
+              <h3 className="text-lg font-bold text-[var(--color-text-primary)]">ABR (Australian Business Register) Configuration</h3>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1 mb-4">
+                Configure ABN verification settings. Guards with verified ABN can propose custom rates when bidding.
+              </p>
+
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md flex items-start gap-3 mb-4">
+                <AlertTriangle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-semibold text-blue-800">ABR API Access</h3>
+                  <p className="text-sm text-blue-700 mt-1 pb-1">
+                    Obtain your GUID from <a href="https://abr.business.gov.au/" target="_blank" rel="noopener noreferrer" className="underline">abr.business.gov.au</a>.
+                    The GUID is kept server-side and never exposed to the frontend.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text-primary)]">Enable ABN Verification</p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">
+                      When enabled, guards without verified ABN can only bid at the posted rate
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={abrVerificationEnabled}
+                    onCheckedChange={setAbrVerificationEnabled}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[var(--color-input-label)]">
+                    ABR GUID (Server-side only)
+                  </label>
+                  <input
+                    type="password"
+                    value={abrGuid}
+                    onChange={(e) => setAbrGuid(e.target.value)}
+                    placeholder="Enter your ABR API GUID"
+                    className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    This GUID is used for ABN lookups. Never share this publicly.
+                  </p>
                 </div>
               </div>
             </div>

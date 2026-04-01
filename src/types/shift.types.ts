@@ -98,6 +98,8 @@ export interface IIncidentReport {
 
 export interface CheckInPayload {
   coordinates: Coordinates;
+  /** Client's timezone offset in minutes (from Date.getTimezoneOffset()). */
+  timezoneOffset?: number;
 }
 
 export interface CheckOutPayload {

@@ -234,4 +234,20 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
     variables: ['guardName', 'jobTitle', 'scheduleHtml', 'dashboardUrl'],
     isActive: true,
   },
+  [NotificationEventType.ABN_VERIFIED]: {
+    notificationType: NotificationEventType.ABN_VERIFIED,
+    subject: 'ABN Verified Successfully',
+    htmlBody: BASE_HTML('ABN Verification Complete', '<p>Hi {{guardName}},</p><p>Great news! Your Australian Business Number (ABN) has been successfully verified with the Australian Business Register.</p><p><strong>Business:</strong> {{businessName}}</p><p>You can now propose custom rates when bidding on jobs. Log in to your profile to update your settings.</p><a href="{{profileUrl}}" class="btn">View Profile</a>'),
+    textBody: 'Hi {{guardName}}, Your ABN has been verified for {{businessName}}. You can now propose custom rates when bidding on jobs.',
+    variables: ['guardName', 'businessName', 'profileUrl'],
+    isActive: true,
+  },
+  [NotificationEventType.ABN_VERIFICATION_FAILED]: {
+    notificationType: NotificationEventType.ABN_VERIFICATION_FAILED,
+    subject: 'ABN Verification Failed',
+    htmlBody: BASE_HTML('ABN Verification Issue', '<p>Hi {{guardName}},</p><p>Unfortunately, we were unable to verify your Australian Business Number (ABN).</p><p><strong>Reason:</strong> {{reason}}</p><p>Please check your ABN status at <a href="{{abrUrl}}">abr.business.gov.au</a> and try again with a valid ABN.</p><a href="{{profileUrl}}" class="btn">Update ABN</a>'),
+    textBody: 'Hi {{guardName}}, Your ABN verification failed: {{reason}}. Please check your ABN at abr.business.gov.au.',
+    variables: ['guardName', 'reason', 'abrUrl', 'profileUrl'],
+    isActive: true,
+  },
 };

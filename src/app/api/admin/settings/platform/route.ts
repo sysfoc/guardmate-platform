@@ -30,7 +30,13 @@ export async function PATCH(request: NextRequest) {
     
     const settings = await PlatformSettings.findOneAndUpdate(
       {},
-      { $set: { platformCountry: body.platformCountry } },
+      { 
+        $set: { 
+          platformCountry: body.platformCountry,
+          abrGuid: body.abrGuid,
+          abrVerificationEnabled: body.abrVerificationEnabled,
+        } 
+      },
       { new: true, upsert: true }
     ).lean();
 
@@ -42,8 +48,8 @@ export async function PATCH(request: NextRequest) {
       actionType: AdminActionType.SYSTEM_SETTING_UPDATE,
       targetType: 'SETTING',
       targetId: String(settings._id || 'platform-settings'),
-      targetName: `Platform Country Restriction`,
-      details: body.platformCountry ? `Locked to ${body.platformCountry.countryName} (${body.platformCountry.dialCode})` : 'Removed country restriction',
+      targetName: `Platform Settings Update`,
+      details: `Updated platform settings: ${body.platformCountry ? `Country: ${body.platformCountry.countryName}` : ''} ABR Verification: ${body.abrVerificationEnabled ? 'Enabled' : 'Disabled'} ABR GUID: ${body.abrGuid}`,
       ipAddress: getClientIp(request),
       userAgent: deviceInfo.userAgent,
     });

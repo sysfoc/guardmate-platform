@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { getJobs, getMyBids } from '@/lib/api/job.api';
 import { checkDateOverlap } from '@/lib/jobs/overlapCheck';
 import { JobCard } from '@/components/jobs/JobCard';
@@ -16,11 +17,12 @@ import type { IJob, JobFilters as JobFiltersType, BidWithJob, MapMarker } from '
 import type { MateProfile } from '@/types/user.types';
 import { UserStatus, LicenseStatus, UserRole } from '@/types/enums';
 import { calculateDistance } from '@/lib/utils/haversine';
-import { Briefcase, Loader2, Search, X, Map as MapIcon, List, AlertCircle } from 'lucide-react';
+import { Briefcase, Loader2, Search, X, Map as MapIcon, List, AlertCircle, Building2, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function MateJobsPage() {
   const { user, isLoading: userLoading } = useUser();
+  const { platformSettings } = usePlatformContext();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -237,6 +239,10 @@ export default function MateJobsPage() {
 
   const isGuardReady = user?.status === UserStatus.ACTIVE && user?.role === UserRole.MATE && user.licenseStatus === LicenseStatus.VALID;
 
+  const mateUser = user as MateProfile | null;
+  const abrVerificationEnabled = platformSettings?.abrVerificationEnabled ?? false;
+  const abnVerified = mateUser?.abnVerified ?? false;
+
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)] p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -251,6 +257,37 @@ export default function MateJobsPage() {
             {!isGuardReady && (
               <div className="mt-2 px-3 py-2 rounded-lg bg-[var(--color-warning-light)] border border-[var(--color-warning)]/20 text-xs text-[var(--color-warning)] font-medium">
                 ⚠️ Your account must be ACTIVE with a VALID license to apply for jobs.
+              </div>
+            )}
+
+            {/* ABN Verification Banner */}
+            {abrVerificationEnabled && !abnVerified && (
+              <div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                <div className="flex items-start gap-2">
+                  <Lock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                      Verify your ABN to propose your own rates. Without ABN, you can only apply at the posted rate.
+                    </p>
+                    <button
+                      onClick={() => router.push('/dashboard/mate/profile')}
+                      className="mt-1.5 text-[10px] font-bold text-[var(--color-primary)] hover:underline"
+                    >
+                      Verify ABN in Profile →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {abrVerificationEnabled && abnVerified && (
+              <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-emerald-500" />
+                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    ABN Verified — You can propose custom rates when bidding
+                  </span>
+                </div>
               </div>
             )}
           </div>
