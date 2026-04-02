@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import connectDB from '@/lib/mongodb';
 import Job from '@/models/Job.model';
 import User from '@/models/User.model';
+import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import { JobStatus, UserRole, UserStatus, BudgetType, HiringStatus } from '@/types/enums';
 import { processJobLifecycle } from '@/lib/jobs/jobLifecycle';
@@ -55,6 +56,45 @@ export async function POST(request: NextRequest) {
     if (body.description && body.description.length > 2000) {
       return createApiResponse(false, null, 'Description must be 2000 characters or less.', 400);
     }
+
+    await connectDB();
+
+    // ─── MINIMUM RATE ENFORCEMENT ───────────────────────────────────────────
+    const platformSettings = await PlatformSettings.findOne().lean();
+    const minimumRateEnforced = platformSettings?.minimumRateEnforced ?? false;
+    const minimumHourlyRate = platformSettings?.minimumHourlyRate ?? null;
+    const minimumFixedRate = platformSettings?.minimumFixedRate ?? null;
+    const currency = platformSettings?.platformCurrency || 'AUD';
+
+    if (minimumRateEnforced) {
+      // Validate budget amount is provided
+      if (!body.budgetAmount || body.budgetAmount <= 0) {
+        return createApiResponse(false, null, 'Budget amount is required.', 400);
+      }
+
+      if (body.budgetType === BudgetType.HOURLY && minimumHourlyRate !== null) {
+        if (body.budgetAmount < minimumHourlyRate) {
+          return createApiResponse(
+            false,
+            null,
+            `The minimum hourly rate on this platform is ${currency}${minimumHourlyRate.toFixed(2)}. Your posted rate of ${currency}${body.budgetAmount.toFixed(2)} is below the minimum. Please increase your rate.`,
+            400
+          );
+        }
+      }
+
+      if (body.budgetType === BudgetType.FIXED && minimumFixedRate !== null) {
+        if (body.budgetAmount < minimumFixedRate) {
+          return createApiResponse(
+            false,
+            null,
+            `The minimum fixed rate on this platform is ${currency}${minimumFixedRate.toFixed(2)}. Your posted amount of ${currency}${body.budgetAmount.toFixed(2)} is below the minimum. Please increase your budget.`,
+            400
+          );
+        }
+      }
+    }
+    // ─── END MINIMUM RATE ENFORCEMENT ─────────────────────────────────────────
 
     // Process shiftSchedule — enrich each slot with computed fields
     let shiftSchedule: ShiftScheduleDay[] = [];
@@ -111,8 +151,6 @@ export async function POST(request: NextRequest) {
       totalScheduledHours = calculateTotalScheduledHours(shiftSchedule);
       totalHours = totalScheduledHours;
     }
-
-    await connectDB();
 
     const job = await Job.create({
       jobId: uuidv4(),

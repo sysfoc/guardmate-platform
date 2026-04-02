@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Job from '@/models/Job.model';
+import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { JobStatus, UserRole } from '@/types/enums';
+import { JobStatus, UserRole, BudgetType } from '@/types/enums';
 import { processJobLifecycle } from '@/lib/jobs/jobLifecycle';
 import {
   isOvernightShift,
@@ -93,6 +94,49 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+    // ─── MINIMUM RATE ENFORCEMENT ───────────────────────────────────────────
+    // Only validate if budgetAmount is being updated
+    if (body.budgetAmount !== undefined) {
+      const platformSettings = await PlatformSettings.findOne().lean();
+      const minimumRateEnforced = platformSettings?.minimumRateEnforced ?? false;
+      const minimumHourlyRate = platformSettings?.minimumHourlyRate ?? null;
+      const minimumFixedRate = platformSettings?.minimumFixedRate ?? null;
+      const currency = platformSettings?.platformCurrency || 'AUD';
+
+      // Determine the budget type: use body value if provided, otherwise use existing job value
+      const budgetType = body.budgetType || job.budgetType;
+
+      if (minimumRateEnforced) {
+        // Validate budget amount is provided and greater than 0
+        if (!body.budgetAmount || body.budgetAmount <= 0) {
+          return createApiResponse(false, null, 'Budget amount is required.', 400);
+        }
+
+        if (budgetType === BudgetType.HOURLY && minimumHourlyRate !== null) {
+          if (body.budgetAmount < minimumHourlyRate) {
+            return createApiResponse(
+              false,
+              null,
+              `The minimum hourly rate on this platform is ${currency}${minimumHourlyRate.toFixed(2)}. Your posted rate of ${currency}${body.budgetAmount.toFixed(2)} is below the minimum. Please increase your rate.`,
+              400
+            );
+          }
+        }
+
+        if (budgetType === BudgetType.FIXED && minimumFixedRate !== null) {
+          if (body.budgetAmount < minimumFixedRate) {
+            return createApiResponse(
+              false,
+              null,
+              `The minimum fixed rate on this platform is ${currency}${minimumFixedRate.toFixed(2)}. Your posted amount of ${currency}${body.budgetAmount.toFixed(2)} is below the minimum. Please increase your budget.`,
+              400
+            );
+          }
+        }
+      }
+    }
+    // ─── END MINIMUM RATE ENFORCEMENT ─────────────────────────────────────────
 
     // Recalculate schedule if shiftSchedule changed
     if (body.shiftSchedule && Array.isArray(body.shiftSchedule)) {

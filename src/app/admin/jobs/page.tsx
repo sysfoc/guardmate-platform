@@ -9,6 +9,7 @@ import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import { Modal } from '@/components/ui/Modal';
 import { MapDisplay } from '@/components/maps/MapDisplay';
 import { getAdminJobs } from '@/lib/api/admin.api';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { JobStatus, BudgetType } from '@/types/enums';
 import type { IJob } from '@/types/job.types';
 import {
@@ -27,6 +28,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function AdminJobsPage() {
+  const { minimumHourlyRate, minimumFixedRate } = usePlatformContext();
   const [jobs, setJobs] = useState<IJob[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -37,6 +39,17 @@ export default function AdminJobsPage() {
   const [searchInput, setSearchInput] = useState('');
   const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
   const limit = 20;
+
+  // Helper to check if job is at minimum rate
+  const isJobAtMinimumRate = (job: IJob): boolean => {
+    if (job.budgetType === BudgetType.HOURLY && minimumHourlyRate !== null) {
+      return Math.abs(job.budgetAmount - minimumHourlyRate) < 0.01;
+    }
+    if (job.budgetType === BudgetType.FIXED && minimumFixedRate !== null) {
+      return Math.abs(job.budgetAmount - minimumFixedRate) < 0.01;
+    }
+    return false;
+  };
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -152,7 +165,14 @@ export default function AdminJobsPage() {
                   >
                     <td className="px-4 py-3">
                       <p className="font-bold text-[var(--color-text-primary)] truncate max-w-[200px]">{job.title}</p>
-                      <p className="text-[9px] text-[var(--color-text-muted)] mt-0.5 font-mono">{job.jobId.slice(0, 8)}...</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <p className="text-[9px] text-[var(--color-text-muted)] font-mono">{job.jobId.slice(0, 8)}...</p>
+                        {isJobAtMinimumRate(job) && (
+                          <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] border border-[var(--color-surface-border)]">
+                            At Minimum Rate
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-[var(--color-text-secondary)] truncate max-w-[150px]">{job.companyName}</p>

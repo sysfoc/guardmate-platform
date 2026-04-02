@@ -1,12 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { IPlatformSettings, IPlatformCountry } from '@/types/settings.types';
 import { settingsApi } from '@/lib/api/settings.api';
 
 interface PlatformContextType {
   platformSettings: IPlatformSettings | null;
   platformCountry: IPlatformCountry | null;
+  platformCurrency: string;
+  minimumHourlyRate: number | null;
+  minimumFixedRate: number | null;
+  minimumRateEnforced: boolean;
   loading: boolean;
   refreshSettings: () => Promise<void>;
 }
@@ -32,15 +36,19 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadSettings();
   }, []);
 
+  const value = useMemo(() => ({
+    platformSettings,
+    platformCountry: platformSettings?.platformCountry || null,
+    platformCurrency: platformSettings?.platformCurrency || 'AUD',
+    minimumHourlyRate: platformSettings?.minimumHourlyRate ?? null,
+    minimumFixedRate: platformSettings?.minimumFixedRate ?? null,
+    minimumRateEnforced: platformSettings?.minimumRateEnforced ?? false,
+    loading,
+    refreshSettings: loadSettings,
+  }), [platformSettings, loading]);
+
   return (
-    <PlatformContext.Provider
-      value={{
-        platformSettings,
-        platformCountry: platformSettings?.platformCountry || null,
-        loading,
-        refreshSettings: loadSettings,
-      }}
-    >
+    <PlatformContext.Provider value={value}>
       {children}
     </PlatformContext.Provider>
   );

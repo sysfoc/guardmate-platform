@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { createJob } from '@/lib/api/job.api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -49,6 +50,7 @@ interface DayScheduleInput {
 export default function NewJobPage() {
   const router = useRouter();
   const { user, isLoading } = useUser();
+  const { platformCurrency, minimumHourlyRate, minimumFixedRate, minimumRateEnforced } = usePlatformContext();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -191,6 +193,21 @@ export default function NewJobPage() {
       }
     } else if (step === 2) {
       if (!form.budgetAmount || form.budgetAmount <= 0) e.budgetAmount = 'Enter a valid budget';
+      
+      // ─── MINIMUM RATE VALIDATION ────────────────────────────────────────────
+      if (minimumRateEnforced && form.budgetAmount && form.budgetAmount > 0) {
+        if (form.budgetType === BudgetType.HOURLY && minimumHourlyRate !== null) {
+          if (form.budgetAmount < minimumHourlyRate) {
+            e.budgetAmount = `Minimum hourly rate is ${platformCurrency}${minimumHourlyRate.toFixed(2)}. You cannot post below this rate.`;
+          }
+        }
+        if (form.budgetType === BudgetType.FIXED && minimumFixedRate !== null) {
+          if (form.budgetAmount < minimumFixedRate) {
+            e.budgetAmount = `Minimum fixed budget is ${platformCurrency}${minimumFixedRate.toFixed(2)}. You cannot post below this amount.`;
+          }
+        }
+      }
+      // ─── END MINIMUM RATE VALIDATION ─────────────────────────────────────────
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -577,22 +594,32 @@ export default function NewJobPage() {
                 {[BudgetType.HOURLY, BudgetType.FIXED].map((t) => (
                   <button key={t} onClick={() => update({ budgetType: t })}
                     className={`flex-1 py-2.5 rounded-lg border-2 text-xs font-bold transition-all ${form.budgetType === t ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)] text-[var(--color-primary)] dark:bg-[var(--color-primary)]/10' : 'border-[var(--color-surface-border)] text-[var(--color-text-muted)]'}`}>
-                    {t === BudgetType.HOURLY ? '£/Hour' : '£ Fixed'}
+                    {t === BudgetType.HOURLY ? `${platformCurrency}/Hour` : `${platformCurrency} Fixed`}
                   </button>
                 ))}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Budget Amount (£) *</label>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">£</span>
-                <input type="number" min={0} step="0.01" value={form.budgetAmount || ''} onChange={(e) => update({ budgetAmount: Number(e.target.value) })} className={`${inputCls} pl-8`} /></div>
+                <label className={labelCls}>Budget Amount ({platformCurrency}) *</label>
+                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">{platformCurrency}</span>
+                <input type="number" min={0} step="0.01" value={form.budgetAmount || ''} onChange={(e) => update({ budgetAmount: Number(e.target.value) })} className={`${inputCls} pl-12`} /></div>
+                {/* Minimum rate hint */}
+                {minimumRateEnforced && (
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                    {form.budgetType === BudgetType.HOURLY && minimumHourlyRate !== null
+                      ? `Platform minimum: ${platformCurrency}${minimumHourlyRate.toFixed(2)}/hr`
+                      : form.budgetType === BudgetType.FIXED && minimumFixedRate !== null
+                        ? `Platform minimum: ${platformCurrency}${minimumFixedRate.toFixed(2)}`
+                        : ''}
+                  </p>
+                )}
                 {errors.budgetAmount && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.budgetAmount}</p>}
               </div>
               <div>
                 <label className={labelCls}>Max Budget (optional)</label>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">£</span>
-                <input type="number" min={0} step="0.01" value={form.budgetMax ?? ''} onChange={(e) => update({ budgetMax: e.target.value ? Number(e.target.value) : undefined })} className={`${inputCls} pl-8`} placeholder="—" /></div>
+                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">{platformCurrency}</span>
+                <input type="number" min={0} step="0.01" value={form.budgetMax ?? ''} onChange={(e) => update({ budgetMax: e.target.value ? Number(e.target.value) : undefined })} className={`${inputCls} pl-12`} placeholder="—" /></div>
               </div>
             </div>
 
@@ -645,9 +672,9 @@ export default function NewJobPage() {
               </Button>
             )}
             {step < 2 ? (
-              <Button size="sm" onClick={handleNext} rightIcon={<ChevronRight className="h-4 w-4" />}>Next</Button>
+              <Button size="sm" onClick={handleNext} disabled={step === 2 && !!errors.budgetAmount} rightIcon={<ChevronRight className="h-4 w-4" />}>Next</Button>
             ) : (
-              <Button size="sm" onClick={() => handleSubmit(false)} disabled={submitting} leftIcon={<CheckCircle2 className="h-4 w-4" />} className="shadow-md shadow-[var(--color-primary)]/10">
+              <Button size="sm" onClick={() => handleSubmit(false)} disabled={submitting || !!errors.budgetAmount} leftIcon={<CheckCircle2 className="h-4 w-4" />} className="shadow-md shadow-[var(--color-primary)]/10">
                 {submitting ? 'Posting...' : 'Post Job'}
               </Button>
             )}

@@ -29,6 +29,30 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
     type: Boolean,
     default: false,
   },
+  platformCurrency: {
+    type: String,
+    default: 'AUD',
+  },
+  minimumHourlyRate: {
+    type: Number,
+    default: null,
+  },
+  minimumFixedRate: {
+    type: Number,
+    default: null,
+  },
+  minimumRateEnforced: {
+    type: Boolean,
+    default: false,
+  },
+  minimumRateLastUpdatedAt: {
+    type: Date,
+    default: null,
+  },
+  minimumRateLastUpdatedBy: {
+    type: String,
+    default: null,
+  },
 }, {
   timestamps: true,
 });

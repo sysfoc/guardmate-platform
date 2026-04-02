@@ -25,6 +25,12 @@ export default function AdminSettingsPage() {
   const [abrVerificationEnabled, setAbrVerificationEnabled] = useState<boolean>(false);
   const [platformSaving, setPlatformSaving] = useState(false);
 
+  // Minimum Rate Enforcement State
+  const [minimumRateEnforced, setMinimumRateEnforced] = useState<boolean>(false);
+  const [minimumHourlyRate, setMinimumHourlyRate] = useState<number | null>(null);
+  const [minimumFixedRate, setMinimumFixedRate] = useState<number | null>(null);
+  const [platformCurrency, setPlatformCurrency] = useState<string>('AUD');
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -49,6 +55,11 @@ export default function AdminSettingsPage() {
       setCheckInRadiusMeters(platformData.checkInRadiusMeters ?? 500);
       setAbrGuid(platformData.abrGuid || '');
       setAbrVerificationEnabled(platformData.abrVerificationEnabled ?? false);
+      // Load minimum rate enforcement settings
+      setMinimumRateEnforced(platformData.minimumRateEnforced ?? false);
+      setMinimumHourlyRate(platformData.minimumHourlyRate ?? null);
+      setMinimumFixedRate(platformData.minimumFixedRate ?? null);
+      setPlatformCurrency(platformData.platformCurrency || 'AUD');
     } catch (err: any) {
       setErrorMsg('Failed to load settings');
     } finally {
@@ -94,6 +105,16 @@ export default function AdminSettingsPage() {
       setErrorMsg('');
       setSuccessMsg('');
 
+      // Validation: If minimumRateEnforced is true, both rates must be set
+      if (minimumRateEnforced) {
+        if (minimumHourlyRate === null || minimumHourlyRate === undefined || minimumHourlyRate <= 0 ||
+            minimumFixedRate === null || minimumFixedRate === undefined || minimumFixedRate <= 0) {
+          setErrorMsg('Please set both minimum rates before enabling enforcement');
+          setPlatformSaving(false);
+          return;
+        }
+      }
+
       const targetCountry = selectedCountryCode === 'none' 
         ? null 
         : countries.find(c => c.code === selectedCountryCode) || null;
@@ -107,7 +128,10 @@ export default function AdminSettingsPage() {
         } as IPlatformCountry : null,
         checkInRadiusMeters,
         abrGuid: abrGuid || undefined,
-        abrVerificationEnabled
+        abrVerificationEnabled,
+        minimumRateEnforced,
+        minimumHourlyRate: minimumHourlyRate ?? null,
+        minimumFixedRate: minimumFixedRate ?? null,
       };
 
       const updated = await settingsApi.updatePlatformSettings(payload);
@@ -115,6 +139,10 @@ export default function AdminSettingsPage() {
       setSelectedCountryCode(updated.platformCountry?.countryCode || 'none');
       setAbrGuid(updated.abrGuid || '');
       setAbrVerificationEnabled(updated.abrVerificationEnabled ?? false);
+      // Update minimum rate fields with server response (includes audit fields)
+      setMinimumRateEnforced(updated.minimumRateEnforced ?? false);
+      setMinimumHourlyRate(updated.minimumHourlyRate ?? null);
+      setMinimumFixedRate(updated.minimumFixedRate ?? null);
       await refreshSettings(); // Sync global context
       
       setSuccessMsg('Platform configuration saved successfully.');
@@ -463,6 +491,110 @@ export default function AdminSettingsPage() {
                     This GUID is used for ABN lookups. Never share this publicly.
                   </p>
                 </div>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-[var(--color-border-primary)]">
+              <h3 className="text-lg font-bold text-[var(--color-text-primary)]">Minimum Rate Enforcement</h3>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1 mb-4">
+                Set minimum hourly and fixed rates that all jobs must meet. When enabled, Bosses cannot post jobs below these rates.
+              </p>
+
+              {/* Enable Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] mb-4">
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)]">Enable Minimum Rate Enforcement</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">
+                    When OFF, all fields below are disabled and no enforcement happens
+                  </p>
+                </div>
+                <Toggle
+                  checked={minimumRateEnforced}
+                  onCheckedChange={setMinimumRateEnforced}
+                />
+              </div>
+
+              {/* Rate Inputs */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[var(--color-input-label)]">
+                    Minimum Hourly Rate
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">
+                      {platformCurrency}
+                    </span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={minimumHourlyRate ?? ''}
+                      onChange={(e) => setMinimumHourlyRate(e.target.value ? Number(e.target.value) : null)}
+                      placeholder="e.g. 25.15"
+                      disabled={!minimumRateEnforced}
+                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 pl-12 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[var(--color-input-label)]">
+                    Minimum Fixed Rate
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">
+                      {platformCurrency}
+                    </span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={minimumFixedRate ?? ''}
+                      onChange={(e) => setMinimumFixedRate(e.target.value ? Number(e.target.value) : null)}
+                      placeholder="e.g. 50.00"
+                      disabled={!minimumRateEnforced}
+                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 pl-12 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md mb-4">
+                <h3 className="text-sm font-semibold text-amber-800 mb-1">Australia&apos;s Security Services Industry Award</h3>
+                <p className="text-sm text-amber-700">
+                  Australia&apos;s Security Services Industry Award (MA000016) sets the minimum rate for security guards at $25.15/hr
+                  for full-time/part-time and $31.44/hr for casual workers (effective 1 July 2025). Update these values every 1 July
+                  when the Fair Work Commission announces the new annual rate.{' '}
+                  <a
+                    href="https://www.fairwork.gov.au/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-medium"
+                  >
+                    Source: fairwork.gov.au
+                  </a>
+                </p>
+              </div>
+
+              {/* Last Updated Info */}
+              <div className="text-sm text-[var(--color-text-muted)] mb-4">
+                {platformSettings?.minimumRateLastUpdatedAt ? (
+                  <p>
+                    Last updated: {new Date(platformSettings.minimumRateLastUpdatedAt).toLocaleDateString('en-AU', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                    {platformSettings.minimumRateLastUpdatedBy && (
+                      <span> by admin</span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="text-[var(--color-text-tertiary)]">
+                    Never updated — please set minimum rates before enabling enforcement
+                  </p>
+                )}
               </div>
             </div>
 

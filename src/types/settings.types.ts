@@ -11,6 +11,12 @@ export interface IPlatformSettings {
   checkInRadiusMeters: number;
   abrGuid: string | null;
   abrVerificationEnabled: boolean;
+  platformCurrency: string;
+  minimumHourlyRate: number | null;
+  minimumFixedRate: number | null;
+  minimumRateEnforced: boolean;
+  minimumRateLastUpdatedAt: string | Date | null;
+  minimumRateLastUpdatedBy: string | null;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

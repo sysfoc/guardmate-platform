@@ -27,21 +27,60 @@ export async function PATCH(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
-    
+
+    // Build update payload
+    const updatePayload: Record<string, unknown> = {
+      platformCountry: body.platformCountry,
+      abrGuid: body.abrGuid,
+      abrVerificationEnabled: body.abrVerificationEnabled,
+    };
+
+    // Handle minimum rate enforcement fields
+    if (body.minimumRateEnforced !== undefined) {
+      updatePayload.minimumRateEnforced = body.minimumRateEnforced;
+    }
+
+    // When saving minimum rates, update audit fields
+    if (body.minimumHourlyRate !== undefined || body.minimumFixedRate !== undefined) {
+      if (body.minimumHourlyRate !== undefined) {
+        updatePayload.minimumHourlyRate = body.minimumHourlyRate;
+      }
+      if (body.minimumFixedRate !== undefined) {
+        updatePayload.minimumFixedRate = body.minimumFixedRate;
+      }
+      // Update audit fields when rates are changed
+      updatePayload.minimumRateLastUpdatedAt = new Date();
+      updatePayload.minimumRateLastUpdatedBy = auth.user.uid;
+    }
+
     const settings = await PlatformSettings.findOneAndUpdate(
       {},
-      { 
-        $set: { 
-          platformCountry: body.platformCountry,
-          abrGuid: body.abrGuid,
-          abrVerificationEnabled: body.abrVerificationEnabled,
-        } 
-      },
+      { $set: updatePayload },
       { new: true, upsert: true }
     ).lean();
 
     // Log Activity
     const deviceInfo = getDeviceInfo(request);
+    const detailsParts: string[] = [];
+    if (body.platformCountry) {
+      detailsParts.push(`Country: ${body.platformCountry.countryName}`);
+    }
+    if (body.abrVerificationEnabled !== undefined) {
+      detailsParts.push(`ABR Verification: ${body.abrVerificationEnabled ? 'Enabled' : 'Disabled'}`);
+    }
+    if (body.abrGuid) {
+      detailsParts.push(`ABR GUID: ${body.abrGuid}`);
+    }
+    if (body.minimumRateEnforced !== undefined) {
+      detailsParts.push(`Minimum Rate Enforcement: ${body.minimumRateEnforced ? 'Enabled' : 'Disabled'}`);
+    }
+    if (body.minimumHourlyRate !== undefined) {
+      detailsParts.push(`Minimum Hourly Rate: ${body.minimumHourlyRate}`);
+    }
+    if (body.minimumFixedRate !== undefined) {
+      detailsParts.push(`Minimum Fixed Rate: ${body.minimumFixedRate}`);
+    }
+
     await AdminActivity.create({
       adminUid: auth.user.uid,
       adminName: `${auth.user.firstName} ${auth.user.lastName}`,
@@ -49,7 +88,7 @@ export async function PATCH(request: NextRequest) {
       targetType: 'SETTING',
       targetId: String(settings._id || 'platform-settings'),
       targetName: `Platform Settings Update`,
-      details: `Updated platform settings: ${body.platformCountry ? `Country: ${body.platformCountry.countryName}` : ''} ABR Verification: ${body.abrVerificationEnabled ? 'Enabled' : 'Disabled'} ABR GUID: ${body.abrGuid}`,
+      details: `Updated platform settings: ${detailsParts.join(' ')}`,
       ipAddress: getClientIp(request),
       userAgent: deviceInfo.userAgent,
     });
