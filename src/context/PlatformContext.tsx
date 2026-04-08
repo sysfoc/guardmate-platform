@@ -11,6 +11,13 @@ interface PlatformContextType {
   minimumHourlyRate: number | null;
   minimumFixedRate: number | null;
   minimumRateEnforced: boolean;
+  // Phase 6: Payment context
+  platformCommissionBoss: number;
+  platformCommissionGuard: number;
+  stripeEnabled: boolean;
+  paypalEnabled: boolean;
+  stripePublishableKey: string | null;
+  paypalClientId: string | null;
   loading: boolean;
   refreshSettings: () => Promise<void>;
 }
@@ -43,6 +50,13 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     minimumHourlyRate: platformSettings?.minimumHourlyRate ?? null,
     minimumFixedRate: platformSettings?.minimumFixedRate ?? null,
     minimumRateEnforced: platformSettings?.minimumRateEnforced ?? false,
+    // Phase 6: Payment context
+    platformCommissionBoss: platformSettings?.platformCommissionBoss ?? 10,
+    platformCommissionGuard: platformSettings?.platformCommissionGuard ?? 5,
+    stripeEnabled: platformSettings?.stripeEnabled ?? false,
+    paypalEnabled: platformSettings?.paypalEnabled ?? false,
+    stripePublishableKey: platformSettings?.stripePublishableKey ?? null,
+    paypalClientId: platformSettings?.paypalClientId ?? null,
     loading,
     refreshSettings: loadSettings,
   }), [platformSettings, loading]);

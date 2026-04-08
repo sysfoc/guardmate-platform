@@ -17,6 +17,27 @@ export interface IPlatformSettings {
   minimumRateEnforced: boolean;
   minimumRateLastUpdatedAt: string | Date | null;
   minimumRateLastUpdatedBy: string | null;
+
+  // ─── Phase 6: Commission Settings ────────────────────────────────────────
+  platformCommissionBoss: number;   // % charged on top of job budget to boss
+  platformCommissionGuard: number;  // % deducted from guard payout
+  minimumWithdrawalAmount: number;
+
+  // ─── Phase 6: Stripe Configuration ───────────────────────────────────────
+  stripeEnabled: boolean;
+  stripePublishableKey?: string;         // Safe for frontend
+  stripeSecretKey?: string;              // TODO: Future AES-256 encryption — server-only
+  stripeWebhookSecret?: string;          // TODO: Future AES-256 encryption — server-only
+  stripeConnectEnabled: boolean;
+
+  // ─── Phase 6: PayPal Configuration ───────────────────────────────────────
+  paypalEnabled: boolean;
+  paypalClientId?: string;               // Safe for frontend
+  paypalClientSecret?: string;           // TODO: Future AES-256 encryption — server-only
+  paypalWebhookId?: string;              // TODO: Future AES-256 encryption — server-only
+  paypalMode: 'sandbox' | 'live';
+
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }
+

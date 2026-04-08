@@ -246,69 +246,70 @@ export default function BossProfileEdit() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      {/* Professional Profile Header */}
-      <div className="h-32 w-full bg-gradient-to-r from-[var(--color-primary)] to-indigo-700 opacity-90" />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Header Card */}
-          <Card className="p-4 border-none shadow-xl ring-1 ring-[var(--color-border-primary)]">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
-              <div className="flex flex-col md:flex-row items-center md:items-end gap-5">
-                <div className="relative group">
-                  <Avatar 
-                    src={boss?.profilePhoto} 
-                    name={displayName} 
-                    size="xl" 
-                    className="ring-4 ring-[var(--color-bg-primary)] shadow-2xl"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 p-2 bg-[var(--color-primary)] text-white rounded-full shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
-                    disabled={isUploadingPhoto}
-                  >
-                    {isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                  </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                    accept="image/*"
-                  />
-                </div>
-                <div className="text-center md:text-left">
-                  <h1 className="text-xl font-black text-[var(--color-text-primary)] leading-tight">
-                    {boss?.firstName} {boss?.lastName}
-                  </h1>
-                  <p className="text-[10px] text-[var(--color-text-secondary)] truncate">Account: {boss?.email}</p>
-                  <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest flex items-center justify-center md:justify-start gap-1.5 mt-0.5">
-                    <Building2 className="h-3 w-3" />
-                    {boss?.companyName || 'Company Profile'}
-                  </p>
-                </div>
+          <Card className="p-0 overflow-hidden border-none shadow-xl ring-1 ring-[var(--color-border-primary)]">
+            {/* Banner containing Avatar and Info */}
+            <div className="w-full bg-gradient-to-r from-[var(--color-primary)] to-indigo-700 px-5 sm:px-6 py-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
+              <div className="relative group shrink-0">
+                <Avatar 
+                  src={boss?.profilePhoto} 
+                  name={displayName} 
+                  size="xl" 
+                  className="ring-4 ring-white/20 shadow-xl"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-1 right-1 p-1.5 bg-white text-[var(--color-primary)] rounded-full shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
+                  disabled={isUploadingPhoto}
+                >
+                  {isUploadingPhoto ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  accept="image/*"
+                />
               </div>
-              <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 mt-4 md:mt-0">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleGoBack}
-                  leftIcon={<ChevronLeft className="h-4 w-4" />}
-                  className="flex-1 sm:flex-none"
-                >
-                  Back
-                </Button>
-                <Button 
-                  type="submit" 
-                  size="sm" 
-                  loading={isSaving} 
-                  leftIcon={<Save className="h-4 w-4" />}
-                  className="flex-1 sm:flex-none px-5"
-                >
-                  Save Changes
-                </Button>
+              
+              <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-1.5 md:gap-3 text-center sm:text-left">
+                <h1 className="text-xl sm:text-2xl font-black text-white leading-tight truncate">
+                  {boss?.firstName} {boss?.lastName}
+                </h1>
+                <p className="text-[10px] sm:text-[11px] font-bold text-white/90 uppercase tracking-widest flex items-center justify-center sm:justify-start gap-1">
+                  <Building2 className="h-3.5 w-3.5 shrink-0" />
+                  {boss?.companyName || 'Company Profile'}
+                </p>
+              </div>
+            </div>
+
+            {/* Actions Bar (Below Banner) */}
+            <div className="px-5 sm:px-6 py-3 bg-[var(--color-bg-primary)]">
+              <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full">
+                <div className="hidden sm:block flex-1 text-xs text-[var(--color-text-secondary)]">Account: {boss?.email}</div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleGoBack}
+                    leftIcon={<ChevronLeft className="h-4 w-4" />}
+                  >
+                    Back
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    size="sm" 
+                    loading={isSaving} 
+                    leftIcon={<Save className="h-4 w-4" />}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
               </div>
             </div>
           </Card>

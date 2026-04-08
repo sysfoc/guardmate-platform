@@ -174,9 +174,9 @@ export function CertificateBadges({ user, size = 'md' }: CertificateBadgesProps)
     : { wrapper: 'h-8 w-8', icon: 'h-4 w-4' };
 
   const statusColors: Record<string, string> = {
-    valid:    'bg-[var(--color-success)] text-white shadow-[0_0_8px_var(--color-success)]',
-    pending:  'bg-[var(--color-warning)] text-white shadow-[0_0_8px_var(--color-warning)]',
-    rejected: 'bg-[var(--color-danger)] text-white shadow-[0_0_8px_var(--color-danger)]',
+    valid:    'bg-[var(--color-success)] text-white',
+    pending:  'bg-[var(--color-warning)] text-white',
+    rejected: 'bg-[var(--color-danger)] text-white',
     none:     'bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]',
   };
 

@@ -127,3 +127,33 @@ export enum IncidentSeverity {
   HIGH     = 'HIGH',
   CRITICAL = 'CRITICAL',
 }
+
+// ─── Phase 6: Payment & Escrow Enums ──────────────────────────────────────────
+
+export enum PaymentMethod {
+  STRIPE = 'STRIPE',
+  PAYPAL = 'PAYPAL',
+}
+
+export enum EscrowPaymentStatus {
+  PENDING  = 'PENDING',
+  HELD     = 'HELD',
+  RELEASED = 'RELEASED',
+  REFUNDED = 'REFUNDED',
+  DISPUTED = 'DISPUTED',
+  FAILED   = 'FAILED',
+}
+
+export enum JobPaymentStatus {
+  UNPAID   = 'UNPAID',
+  HELD     = 'HELD',
+  RELEASED = 'RELEASED',
+  REFUNDED = 'REFUNDED',
+}
+
+export enum WithdrawalStatus {
+  PENDING    = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED  = 'COMPLETED',
+  FAILED     = 'FAILED',
+}

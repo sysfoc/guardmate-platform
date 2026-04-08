@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
@@ -50,7 +50,7 @@ const STATUS_MESSAGE: Record<string, string> = {
   [BidStatus.WITHDRAWN]: 'You withdrew this application',
 };
 
-export default function MateBidsPage() {
+function MateBidsContent() {
   const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -185,17 +185,25 @@ export default function MateBidsPage() {
           <div className="space-y-3">
             {bids.map((bid) => {
               const jobStatus = bid.job?.status as JobStatus | undefined;
+              const paymentStatus = bid.job?.paymentStatus;
+              
+              // Mask ACCEPTED status as PENDING if the Boss hasn't paid yet
+              // This ensures the Guard doesn't see "Accepted / Hired" until funds are secure
+              const isMaskedPending = bid.status === BidStatus.ACCEPTED && paymentStatus === 'UNPAID';
+              const displayStatus = isMaskedPending ? BidStatus.PENDING : bid.status;
+
               const isCompleted = jobStatus === JobStatus.COMPLETED;
-              const isAcceptedFilled = bid.status === BidStatus.ACCEPTED && jobStatus === JobStatus.FILLED;
-              const isAcceptedInProgress = bid.status === BidStatus.ACCEPTED && jobStatus === JobStatus.IN_PROGRESS;
-              const isAcceptedCompleted = bid.status === BidStatus.ACCEPTED && isCompleted;
+              // Ensure we don't show specific ACCEPTED UI elements if it's currently masked
+              const isAcceptedFilled = !isMaskedPending && bid.status === BidStatus.ACCEPTED && jobStatus === JobStatus.FILLED;
+              const isAcceptedInProgress = !isMaskedPending && bid.status === BidStatus.ACCEPTED && jobStatus === JobStatus.IN_PROGRESS;
+              const isAcceptedCompleted = !isMaskedPending && bid.status === BidStatus.ACCEPTED && isCompleted;
 
               const pendingReview = pendingReviews.find(pr => pr.jobId === bid.jobId);
               const submittedReview = submittedReviews[bid.jobId];
 
               return (
                 <Card key={bid.bidId} className={`p-4 hover:border-[var(--color-card-hover-border)] transition-all ${
-                  bid.status === BidStatus.ACCEPTED ? 'border-[var(--color-success)]/30 bg-[var(--color-success-light)]/20' : ''
+                  (!isMaskedPending && bid.status === BidStatus.ACCEPTED) ? 'border-[var(--color-success)]/30 bg-[var(--color-success-light)]/20' : ''
                 }`}>
                   <div className="flex items-start gap-4">
                     {bid.job && (
@@ -207,7 +215,7 @@ export default function MateBidsPage() {
                           {bid.jobTitle}
                         </Link>
                         <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border">
-                          {STATUS_ICON[bid.status]} {bid.status}
+                          {STATUS_ICON[displayStatus as keyof typeof STATUS_ICON]} {displayStatus === BidStatus.PENDING && isMaskedPending ? 'UNDER REVIEW' : displayStatus}
                         </span>
                       </div>
 
@@ -373,5 +381,13 @@ export default function MateBidsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function MateBidsPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <MateBidsContent />
+    </Suspense>
   );
 }

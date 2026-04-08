@@ -9,7 +9,22 @@ export enum NotificationEventType {
   LICENSE_REJECTED = 'licenseRejected',
   BID_RECEIVED = 'bidReceived',
   BID_ACCEPTED = 'bidAccepted',
-  BID_REJECTED = 'bidRejected',
+  BID_REJECTED = 'BID_REJECTED',
+  BID_WITHDRAWN = 'BID_WITHDRAWN',
+
+  // ─── Phase 6: Payment & Escrow ──────────────────────────────────────────
+  PAYMENT_REQUIRED = 'PAYMENT_REQUIRED',     // Boss needs to fund escrow
+  ESCROW_FUNDED = 'ESCROW_FUNDED',           // Boss funded escrow
+  PAYMENT_RELEASED = 'PAYMENT_RELEASED',     // Guard received payment
+  PAYMENT_RELEASED_BOSS = 'PAYMENT_RELEASED_BOSS', // Boss notified of release
+  WITHDRAWAL_INITIATED = 'WITHDRAWAL_INITIATED',
+  WITHDRAWAL_COMPLETED = 'WITHDRAWAL_COMPLETED',
+  WITHDRAWAL_FAILED = 'WITHDRAWAL_FAILED',
+  PAYMENT_FAILED = 'PAYMENT_FAILED',
+  DISPUTE_RAISED_ADMIN = 'DISPUTE_RAISED_ADMIN',
+
+  // System
+  ACCOUNT_CREATED = 'ACCOUNT_CREATED',
   SHIFT_REMINDER = 'shiftReminder',
   SHIFT_CHECKIN_ALERT = 'shiftCheckinAlert',
   SHIFT_CHECKOUT_ALERT = 'shiftCheckoutAlert',

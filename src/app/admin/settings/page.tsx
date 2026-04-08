@@ -15,7 +15,7 @@ import { usePlatformContext } from '@/context/PlatformContext';
 export default function AdminSettingsPage() {
   const { refreshSettings } = usePlatformContext();
 
-  const [activeTab, setActiveTab] = useState<'config' | 'toggles' | 'platform'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'toggles' | 'platform' | 'finance'>('config');
   const [settings, setSettings] = useState<IEmailSettings | null>(null);
   
   const [platformSettings, setPlatformSettings] = useState<IPlatformSettings | null>(null);
@@ -30,6 +30,21 @@ export default function AdminSettingsPage() {
   const [minimumHourlyRate, setMinimumHourlyRate] = useState<number | null>(null);
   const [minimumFixedRate, setMinimumFixedRate] = useState<number | null>(null);
   const [platformCurrency, setPlatformCurrency] = useState<string>('AUD');
+
+  // Phase 6: Payment & Finance State
+  const [platformCommissionBoss, setPlatformCommissionBoss] = useState<number>(10);
+  const [platformCommissionGuard, setPlatformCommissionGuard] = useState<number>(5);
+  const [minimumWithdrawalAmount, setMinimumWithdrawalAmount] = useState<number>(50);
+  const [stripeEnabled, setStripeEnabled] = useState<boolean>(false);
+  const [stripePublishableKey, setStripePublishableKey] = useState<string>('');
+  const [stripeSecretKey, setStripeSecretKey] = useState<string>('');
+  const [stripeWebhookSecret, setStripeWebhookSecret] = useState<string>('');
+  const [stripeConnectEnabled, setStripeConnectEnabled] = useState<boolean>(false);
+  const [paypalEnabled, setPaypalEnabled] = useState<boolean>(false);
+  const [paypalClientId, setPaypalClientId] = useState<string>('');
+  const [paypalClientSecret, setPaypalClientSecret] = useState<string>('');
+  const [paypalWebhookId, setPaypalWebhookId] = useState<string>('');
+  const [paypalMode, setPaypalMode] = useState<'sandbox' | 'live'>('sandbox');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,6 +75,21 @@ export default function AdminSettingsPage() {
       setMinimumHourlyRate(platformData.minimumHourlyRate ?? null);
       setMinimumFixedRate(platformData.minimumFixedRate ?? null);
       setPlatformCurrency(platformData.platformCurrency || 'AUD');
+
+      // Phase 6: Load Payment Settings
+      setPlatformCommissionBoss(platformData.platformCommissionBoss ?? 10);
+      setPlatformCommissionGuard(platformData.platformCommissionGuard ?? 5);
+      setMinimumWithdrawalAmount(platformData.minimumWithdrawalAmount ?? 50);
+      setStripeEnabled(platformData.stripeEnabled ?? false);
+      setStripePublishableKey(platformData.stripePublishableKey || '');
+      setStripeSecretKey(platformData.stripeSecretKey || '');
+      setStripeWebhookSecret(platformData.stripeWebhookSecret || '');
+      setStripeConnectEnabled(platformData.stripeConnectEnabled ?? false);
+      setPaypalEnabled(platformData.paypalEnabled ?? false);
+      setPaypalClientId(platformData.paypalClientId || '');
+      setPaypalClientSecret(platformData.paypalClientSecret || '');
+      setPaypalWebhookId(platformData.paypalWebhookId || '');
+      setPaypalMode(platformData.paypalMode || 'sandbox');
     } catch (err: any) {
       setErrorMsg('Failed to load settings');
     } finally {
@@ -132,6 +162,21 @@ export default function AdminSettingsPage() {
         minimumRateEnforced,
         minimumHourlyRate: minimumHourlyRate ?? null,
         minimumFixedRate: minimumFixedRate ?? null,
+
+        // Phase 6: Payment Settings Payload
+        platformCommissionBoss,
+        platformCommissionGuard,
+        minimumWithdrawalAmount,
+        stripeEnabled,
+        stripePublishableKey,
+        stripeSecretKey,
+        stripeWebhookSecret,
+        stripeConnectEnabled,
+        paypalEnabled,
+        paypalClientId,
+        paypalClientSecret,
+        paypalWebhookId,
+        paypalMode,
       };
 
       const updated = await settingsApi.updatePlatformSettings(payload);
@@ -143,6 +188,21 @@ export default function AdminSettingsPage() {
       setMinimumRateEnforced(updated.minimumRateEnforced ?? false);
       setMinimumHourlyRate(updated.minimumHourlyRate ?? null);
       setMinimumFixedRate(updated.minimumFixedRate ?? null);
+
+      setPlatformCommissionBoss(updated.platformCommissionBoss ?? 10);
+      setPlatformCommissionGuard(updated.platformCommissionGuard ?? 5);
+      setMinimumWithdrawalAmount(updated.minimumWithdrawalAmount ?? 50);
+      setStripeEnabled(updated.stripeEnabled ?? false);
+      setStripePublishableKey(updated.stripePublishableKey || '');
+      setStripeSecretKey(updated.stripeSecretKey || '');
+      setStripeWebhookSecret(updated.stripeWebhookSecret || '');
+      setStripeConnectEnabled(updated.stripeConnectEnabled ?? false);
+      setPaypalEnabled(updated.paypalEnabled ?? false);
+      setPaypalClientId(updated.paypalClientId || '');
+      setPaypalClientSecret(updated.paypalClientSecret || '');
+      setPaypalWebhookId(updated.paypalWebhookId || '');
+      setPaypalMode(updated.paypalMode || 'sandbox');
+
       await refreshSettings(); // Sync global context
       
       setSuccessMsg('Platform configuration saved successfully.');
@@ -286,6 +346,14 @@ export default function AdminSettingsPage() {
           }`}
         >
           Platform Config
+        </button>
+        <button
+          onClick={() => setActiveTab('finance')}
+          className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'finance' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Payments & Finance
         </button>
       </div>
 
@@ -601,6 +669,170 @@ export default function AdminSettingsPage() {
             <div className="flex justify-end pt-4 border-t border-[var(--color-border-primary)]">
               <Button onClick={handleSavePlatform} disabled={platformSaving} leftIcon={<Save className="h-4 w-4" />}>
                 {platformSaving ? 'Saving...' : 'Save Context'}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {activeTab === 'finance' && (
+        <Card className="p-6">
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xl font-bold text-[var(--color-text-primary)]">Payments & Escrow Settings</h3>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1 pb-4 border-b border-[var(--color-border-primary)]">
+                Configure payment gateways, platform commission rates, and withdrawal minimums. Keys are processed securely backend-side.
+              </p>
+            </div>
+
+            {/* Commissions */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2 mt-4 text-blue-600">
+                Platform Commissions (%)
+              </h4>
+              <p className="text-sm text-[var(--color-text-secondary)]">Dual-commission model. Boss pays on top of rate. Guard pays out of their rate.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[var(--color-bg-secondary)] p-4 rounded-xl border border-[var(--color-border-primary)]">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-[var(--color-input-label)]">Boss Escrow Fee (%)</label>
+                  <input
+                    type="number"
+                    min="0" max="50"
+                    value={platformCommissionBoss}
+                    onChange={(e) => setPlatformCommissionBoss(Number(e.target.value))}
+                    className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                  <p className="text-xs text-[var(--color-text-muted)]">e.g. 10% on a $100 job = Boss pays $110.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-[var(--color-input-label)]">Guard Payout Fee (%)</label>
+                  <input
+                    type="number"
+                    min="0" max="50"
+                    value={platformCommissionGuard}
+                    onChange={(e) => setPlatformCommissionGuard(Number(e.target.value))}
+                    className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                  <p className="text-xs text-[var(--color-text-muted)]">e.g. 5% on a $100 job = Guard receives $95.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Withdrawals */}
+            <div className="space-y-4 pt-4 border-t border-[var(--color-border-primary)]">
+              <h4 className="text-lg font-bold text-[var(--color-text-primary)]">Guard Withdrawals</h4>
+              <div className="w-1/2">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-[var(--color-input-label)]">Minimum Withdrawal Amount ({platformCurrency})</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={minimumWithdrawalAmount}
+                    onChange={(e) => setMinimumWithdrawalAmount(Number(e.target.value))}
+                    className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Stripe */}
+            <div className="space-y-4 pt-6 border-t border-[var(--color-border-primary)]">
+              <div className="flex items-center justify-between bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+                <div>
+                  <h4 className="text-lg font-bold text-emerald-800">Stripe Integration</h4>
+                  <p className="text-sm text-emerald-700">Required for direct card payments and Stripe Express payouts.</p>
+                </div>
+                <Toggle checked={stripeEnabled} onCheckedChange={setStripeEnabled} />
+              </div>
+
+              {stripeEnabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animata-in fade-in slide-in-from-top-2">
+                  <InputField
+                    label="Stripe Publishable Key"
+                    value={stripePublishableKey}
+                    onChange={setStripePublishableKey}
+                    placeholder="pk_test_..."
+                  />
+                  <InputField
+                    label="Stripe Secret Key"
+                    type="password"
+                    value={stripeSecretKey}
+                    onChange={setStripeSecretKey}
+                    placeholder="sk_test_..."
+                  />
+                  <InputField
+                    label="Stripe Webhook Secret"
+                    type="password"
+                    value={stripeWebhookSecret}
+                    onChange={setStripeWebhookSecret}
+                    placeholder="whsec_..."
+                  />
+                  <div className="flex items-end pb-2">
+                     <div className="flex items-center gap-3 w-full bg-[var(--color-bg-secondary)] p-3 border border-[var(--color-border-primary)] rounded-md">
+                        <Toggle checked={stripeConnectEnabled} onCheckedChange={setStripeConnectEnabled} />
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">Enable Stripe Connect (Guard Wallets)</span>
+                     </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* PayPal */}
+            <div className="space-y-4 pt-6 border-t border-[var(--color-border-primary)]">
+              <div className="flex items-center justify-between bg-blue-50 p-4 rounded-xl border border-blue-200">
+                <div>
+                  <h4 className="text-lg font-bold text-blue-800">PayPal Integration</h4>
+                  <p className="text-sm text-blue-700">Required for PayPal checkout and email payouts.</p>
+                </div>
+                <Toggle checked={paypalEnabled} onCheckedChange={setPaypalEnabled} />
+              </div>
+
+              {paypalEnabled && (
+                <div className="grid grid-cols-1 gap-6 animata-in fade-in slide-in-from-top-2">
+                  <div className="flex gap-4 mb-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
+                      <input type="radio" checked={paypalMode === 'sandbox'} onChange={() => setPaypalMode('sandbox')} /> Sandbox Mode
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
+                      <input type="radio" checked={paypalMode === 'live'} onChange={() => setPaypalMode('live')} /> Live Mode
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InputField
+                      label="PayPal Client ID"
+                      value={paypalClientId}
+                      onChange={setPaypalClientId}
+                      placeholder="Client ID..."
+                    />
+                    <InputField
+                      label="PayPal Secret"
+                      type="password"
+                      value={paypalClientSecret}
+                      onChange={setPaypalClientSecret}
+                      placeholder="Secret..."
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <InputField
+                      label="PayPal Webhook ID"
+                      type="password"
+                      value={paypalWebhookId}
+                      onChange={setPaypalWebhookId}
+                      placeholder="Webhook ID..."
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Warning regarding keys */}
+            <div className="flex gap-2 items-center text-xs text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
+              <AlertTriangle className="h-4 w-4" />
+              <span>Keys are saved as simple strings temporarily. (Encryption-at-rest integration deferred).</span>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t border-[var(--color-border-primary)]">
+              <Button onClick={handleSavePlatform} disabled={platformSaving} leftIcon={<Save className="h-4 w-4" />}>
+                {platformSaving ? 'Saving...' : 'Save Payment Settings'}
               </Button>
             </div>
           </div>

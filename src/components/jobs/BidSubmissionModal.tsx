@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { PoundSterling, Calendar, FileText, Send, Building2, Lock, AlertCircle } from 'lucide-react';
+import { PoundSterling, Calendar, FileText, Send, Building2, Lock, AlertCircle, Clock } from 'lucide-react';
 import type { SubmitBidPayload } from '@/types/job.types';
 import type { IJob } from '@/types/job.types';
 
@@ -35,6 +35,22 @@ export function BidSubmissionModal({
 
   const isLockedRate = abrVerificationEnabled && !abnVerified;
 
+  // Calculate total hours from job's shift schedule
+  const totalHours = useMemo(() => {
+    return job.totalScheduledHours || 
+      (job.shiftSchedule?.reduce((total, day) => total + day.slots.length, 0) * 8) || // Default 8 hours per slot
+      (job.totalHours || 1);
+  }, [job]);
+
+  // Calculate total proposed amount
+  const totalProposed = useMemo(() => {
+    const rate = Number(proposedRate) || 0;
+    if (job.budgetType === 'HOURLY') {
+      return rate * totalHours;
+    }
+    return rate; // Fixed rate is just the amount
+  }, [proposedRate, job.budgetType, totalHours]);
+
   const validate = (): boolean => {
     const e: Record<string, string> = {};
     if (!proposedRate || Number(proposedRate) <= 0) e.proposedRate = 'Enter a valid rate.';
@@ -50,7 +66,7 @@ export function BidSubmissionModal({
     await onSubmit({
       proposedRate: Number(proposedRate),
       budgetType: job.budgetType,
-      totalProposed: Number(proposedRate),
+      totalProposed: totalProposed,
       coverMessage: coverMessage.trim(),
       availableFrom,
     });
@@ -122,6 +138,26 @@ export function BidSubmissionModal({
             <p className="text-[10px] text-amber-500 mt-1">
               Rate is locked to posted amount. <a href="/dashboard/mate/profile" className="underline">Verify your ABN</a> to set custom rates.
             </p>
+          )}
+          
+          {/* Total Amount Breakdown - Only for hourly jobs with multiple hours */}
+          {job.budgetType === 'HOURLY' && totalHours > 0 && (
+            <div className="mt-3 bg-[var(--color-bg-subtle)] rounded-lg p-3 border border-[var(--color-surface-border)]">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" />
+                <span className="text-[10px] text-[var(--color-text-secondary)]">
+                  {totalHours} hours total ({Math.ceil(totalHours / 8)} days)
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-[var(--color-text-secondary)]">
+                  £{Number(proposedRate || 0).toFixed(2)} × {totalHours} hrs
+                </span>
+                <span className="font-bold text-[var(--color-text-primary)]">
+                  = £{totalProposed.toFixed(2)} total
+                </span>
+              </div>
+            </div>
           )}
         </div>
 

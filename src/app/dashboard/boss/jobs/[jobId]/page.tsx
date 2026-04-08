@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { getJobById, cancelJob, completeJob } from '@/lib/api/job.api';
 import { getMyPendingReviews } from '@/lib/api/review.api';
 import { JobDetailView } from '@/components/jobs/JobDetailView';
@@ -19,16 +20,18 @@ import { Avatar } from '@/components/ui/Avatar';
 import toast from 'react-hot-toast';
 import type { IJob } from '@/types/job.types';
 import type { PendingReview } from '@/types/review.types';
-import { JobStatus, BidStatus, HiringStatus } from '@/types/enums';
+import { JobStatus, BidStatus, HiringStatus, JobPaymentStatus } from '@/types/enums';
 import { Edit, Trash2, Users, ChevronLeft, Loader2, CheckCircle2, XCircle, Clock, MessageSquare, CalendarCheck } from 'lucide-react';
 import { getJobBids } from '@/lib/api/job.api';
 import { createOrGetConversation } from '@/lib/api/chat.api';
 import ShiftMonitoringPanel from '@/components/shifts/ShiftMonitoringPanel';
+import { EscrowBanner } from '@/components/jobs/EscrowBanner';
 
 export default function BossJobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const router = useRouter();
   const { user, isLoading: userLoading } = useUser();
+  const { platformSettings } = usePlatformContext();
   const [job, setJob] = useState<IJob | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +52,9 @@ export default function BossJobDetailPage() {
   // Message guard state
   const [acceptedGuardUid, setAcceptedGuardUid] = useState<string | null>(null);
   const [messagingGuard, setMessagingGuard] = useState(false);
+  
+  // Accepted bid amount for payment
+  const [acceptedBidAmount, setAcceptedBidAmount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!jobId) return;
@@ -77,7 +83,11 @@ export default function BossJobDetailPage() {
         const bidsResp = await getJobBids(jobId);
         if (bidsResp.success && bidsResp.data) {
           const accepted = bidsResp.data.bids.find(b => b.status === BidStatus.ACCEPTED);
-          if (accepted) setAcceptedGuardUid(accepted.guardUid);
+          if (accepted) {
+            setAcceptedGuardUid(accepted.guardUid);
+            // Store the bid amount (totalProposed or proposedRate)
+            setAcceptedBidAmount(accepted.totalProposed || accepted.proposedRate);
+          }
         }
       } catch {}
     };
@@ -156,6 +166,25 @@ export default function BossJobDetailPage() {
         <button onClick={() => router.push('/dashboard/boss/jobs')} className="flex items-center gap-1 text-xs font-bold text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)] mb-4 transition-colors">
           <ChevronLeft className="h-3.5 w-3.5" /> Back to My Jobs
         </button>
+
+        {/* Escrow Payment Banner - Shows when job is filled but not paid */}
+        {job && job.hiringStatus === HiringStatus.FULLY_HIRED && job.paymentStatus === JobPaymentStatus.UNPAID && (
+          <EscrowBanner
+            jobId={job.jobId}
+            paymentStatus={job.paymentStatus}
+            budgetAmount={acceptedBidAmount ?? job.budgetAmount}
+            currency={platformSettings?.platformCurrency || 'AUD'}
+            onPaymentComplete={() => {
+              // Refresh job to get updated payment status
+              getJobById(jobId).then(resp => {
+                if (resp.success && resp.data) {
+                  setJob(resp.data);
+                }
+              });
+            }}
+            bossCommissionRate={platformSettings?.platformCommissionBoss ?? 10}
+          />
+        )}
 
         {/* Message Guard button in header */}
         {job && acceptedGuardUid && (job.status === JobStatus.FILLED || job.status === JobStatus.IN_PROGRESS || job.status === JobStatus.COMPLETED) && (
@@ -257,7 +286,7 @@ export default function BossJobDetailPage() {
                 jobCoordinates={job.coordinates}
               />
               
-              {job.status === JobStatus.COMPLETED && (
+              {job.status === JobStatus.COMPLETED && (submittedReview || pendingReview) && (
                 <Card className="w-full p-4 flex flex-col items-center text-center mt-4">
                   {submittedReview ? (
                     <>

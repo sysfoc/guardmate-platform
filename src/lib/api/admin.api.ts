@@ -159,6 +159,28 @@ export async function getAdminIncidents(
  * Mark an incident report as reviewed by admin.
  * @param incidentId - The incident to mark as reviewed
  */
-export async function markIncidentReviewed(incidentId: string): Promise<ApiResponse<IIncidentReport>> {
-  return apiPatch<IIncidentReport>('/api/admin/incidents', { incidentId });
+export async function markIncidentReviewed(incidentId: string, status: string, adminNotes: string): Promise<ApiResponse<IIncidentReport>> {
+  return apiPatch<IIncidentReport>(`/api/admin/incidents/${incidentId}`, { status, adminNotes });
+}
+
+// ─── Revenue & Finance ────────────────────────────────────────────────────────
+
+export async function getAdminRevenue(
+  page: number = 1,
+  limit: number = 10,
+  dateFrom?: string,
+  dateTo?: string,
+  method?: string,
+  status?: string
+): Promise<ApiResponse<any>> {
+  const queryParams = new URLSearchParams();
+  queryParams.append('page', page.toString());
+  queryParams.append('limit', limit.toString());
+  
+  if (dateFrom) queryParams.append('dateFrom', dateFrom);
+  if (dateTo) queryParams.append('dateTo', dateTo);
+  if (method) queryParams.append('method', method);
+  if (status) queryParams.append('status', status);
+
+  return apiGet<any>(`/api/admin/revenue?${queryParams.toString()}`);
 }

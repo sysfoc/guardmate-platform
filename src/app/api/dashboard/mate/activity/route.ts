@@ -32,18 +32,23 @@ export async function GET(request: NextRequest) {
     // Attach job details
     const jobIds = [...new Set(bids.map((b) => b.jobId))];
     const jobs = await Job.find({ jobId: { $in: jobIds } })
-      .select('jobId title companyName status budgetAmount budgetType')
+      .select('jobId title companyName status budgetAmount budgetType paymentStatus')
       .lean();
     const jobMap = new Map(jobs.map((j) => [j.jobId, j]));
 
     const activity = bids.map((bid) => {
       const job = jobMap.get(bid.jobId);
+      
+      // Strict Info Control: Mask ACCEPTED as PENDING if Boss hasn't paid
+      const isUnpaid = job?.paymentStatus === 'UNPAID';
+      const maskedStatus = (bid.status === 'ACCEPTED' && isUnpaid) ? 'PENDING' : bid.status;
+      
       return {
         bidId: bid.bidId,
         jobId: bid.jobId,
         jobTitle: bid.jobTitle || job?.title || 'Unknown Job',
         companyName: job?.companyName || 'Unknown',
-        bidStatus: bid.status,
+        bidStatus: maskedStatus,
         proposedRate: bid.proposedRate,
         totalProposed: bid.totalProposed,
         budgetType: bid.budgetType,

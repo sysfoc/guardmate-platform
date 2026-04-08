@@ -621,6 +621,16 @@ body {
   scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 }
 
+/* ── Thin scrollbar utility (for sidebar nav etc.) ────────── */
+.scrollbar-thin {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+}
+
 
 /* ─────────────────────────────────────────────────────────────
    TOAST ANIMATIONS

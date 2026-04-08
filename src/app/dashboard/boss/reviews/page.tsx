@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getMyReviewsPage } from '@/lib/api/review.api';
 import type { PaginatedReviews, Review } from '@/types/review.types';
@@ -13,7 +13,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { Star, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function BossReviewsPage() {
+function BossReviewsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') === 'given' ? 'given' : 'received';
@@ -178,5 +178,13 @@ export default function BossReviewsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BossReviewsPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <BossReviewsContent />
+    </Suspense>
   );
 }

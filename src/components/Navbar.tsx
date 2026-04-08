@@ -11,7 +11,7 @@ import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui/Dropdown';
-import { User, Settings, LogOut as LogOutIcon, ChevronDown, Star } from 'lucide-react';
+import { User, Settings, LogOut as LogOutIcon, ChevronDown, Star, Wallet, CreditCard } from 'lucide-react';
 import { GlobalChatListener } from '@/components/chat/GlobalChatListener';
 
 export function Navbar() {
@@ -97,10 +97,16 @@ export function Navbar() {
                   </DropdownItem>
                   
                   {user.role === 'BOSS' && (
-                    <DropdownItem onClick={() => router.push('/dashboard/boss/jobs')}>
-                      <Briefcase className="h-4 w-4 mr-2" />
-                      My Jobs
-                    </DropdownItem>
+                    <>
+                      <DropdownItem onClick={() => router.push('/dashboard/boss/jobs')}>
+                        <Briefcase className="h-4 w-4 mr-2" />
+                        My Jobs
+                      </DropdownItem>
+                      <DropdownItem onClick={() => router.push('/dashboard/boss/payments')}>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Payments & Escrow
+                      </DropdownItem>
+                    </>
                   )}
                   {user.role === 'MATE' && (
                     <>
@@ -111,6 +117,10 @@ export function Navbar() {
                       <DropdownItem onClick={() => router.push('/dashboard/mate/bids')}>
                         <Send className="h-4 w-4 mr-2" />
                         My Bids
+                      </DropdownItem>
+                      <DropdownItem onClick={() => router.push('/dashboard/mate/wallet')}>
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Mate Wallet
                       </DropdownItem>
                     </>
                   )}

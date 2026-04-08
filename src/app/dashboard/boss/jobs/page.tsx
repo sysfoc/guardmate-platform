@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
@@ -23,7 +23,7 @@ const TABS = [
   { key: JobStatus.CANCELLED, label: 'Cancelled' },
 ];
 
-export default function BossJobsPage() {
+function BossJobsContent() {
   const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -145,3 +145,12 @@ export default function BossJobsPage() {
     </div>
   );
 }
+
+export default function BossJobsPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <BossJobsContent />
+    </Suspense>
+  );
+}
+

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { Suspense, useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
@@ -20,7 +20,7 @@ import { calculateDistance } from '@/lib/utils/haversine';
 import { Briefcase, Loader2, Search, X, Map as MapIcon, List, AlertCircle, Building2, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function MateJobsPage() {
+function MateJobsContent() {
   const { user, isLoading: userLoading } = useUser();
   const { platformSettings } = usePlatformContext();
   const router = useRouter();
@@ -425,5 +425,13 @@ export default function MateJobsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MateJobsPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <MateJobsContent />
+    </Suspense>
   );
 }

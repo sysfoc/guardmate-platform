@@ -4,8 +4,7 @@ import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { UserRole, BidStatus, JobStatus, HiringStatus } from '@/types/enums';
-import { sendBidAccepted, sendBidRejected } from '@/lib/email/emailTriggers';
+import { UserRole, BidStatus, JobStatus, HiringStatus, JobPaymentStatus } from '@/types/enums';
 
 /**
  * PATCH /api/jobs/[jobId]/bids/[bidId]/accept
@@ -89,6 +88,7 @@ export async function PATCH(
     if (isFullyHired) {
       updateFields.status = JobStatus.FILLED;
       updateFields.hiringStatus = HiringStatus.FULLY_HIRED;
+      updateFields.paymentStatus = JobPaymentStatus.UNPAID; // Boss must now fund escrow
     }
 
     await Job.updateOne(
@@ -99,32 +99,9 @@ export async function PATCH(
       }
     );
 
-    // Send email to accepted guard
-    try {
-      const guard = await User.findOne({ uid: bid.guardUid });
-      if (guard?.email) {
-        await sendBidAccepted(
-          guard.email,
-          `${guard.firstName}`,
-          job.title,
-          `${user.firstName} ${user.lastName}`,
-          new Date(job.startDate).toISOString().split('T')[0],
-          job.location,
-          bid.proposedRate
-        );
-      }
-    } catch (emailErr) {
-      console.warn('Failed to send bid accepted email:', emailErr);
-    }
-
-    // Only reject remaining bids and send rejection emails when fully hired
+    // Only update remaining bids to rejected when fully hired, but DO NOT send rejection emails yet.
+    // They will be handled either by auto-cancellation or when funds clear.
     if (isFullyHired) {
-      const otherBids = await Bid.find({
-        jobId,
-        bidId: { $ne: bidId },
-        status: BidStatus.PENDING,
-      });
-
       await Bid.updateMany(
         { jobId, status: BidStatus.PENDING },
         { $set: { status: BidStatus.REJECTED, rejectedAt: now } }
@@ -136,21 +113,30 @@ export async function PATCH(
         { $inc: { activeJobsCount: -1 } }
       );
 
-      // Send rejection emails to remaining guards
-      for (const otherBid of otherBids) {
-        try {
-          const guard = await User.findOne({ uid: otherBid.guardUid });
-          if (guard?.email) {
-            await sendBidRejected(
-              guard.email,
-              guard.firstName,
-              job.title,
-              `${user.firstName} ${user.lastName}`
-            );
+      // AUTO-ASSIGN: For simple jobs (1 guard + 1 slot total), auto-assign the shift
+      // This skips the "Assign Shifts" UI for single-guard, single-slot jobs
+      const schedule = job.shiftSchedule || [];
+      const totalSlots = schedule.reduce((sum: number, day: { slots: unknown[] }) => sum + (day.slots?.length || 0), 0);
+      
+      if (job.numberOfGuardsNeeded === 1 && totalSlots === 1) {
+        // Auto-assign the single guard to the single slot
+        const updatedSchedule = schedule.map((day: { date: string; slots: Array<{ slotNumber: number; assignedGuardUid?: string | null }> }) => ({
+          ...day,
+          slots: day.slots.map((slot: { slotNumber: number; assignedGuardUid?: string | null }) => ({
+            ...slot,
+            assignedGuardUid: bid.guardUid,
+          })),
+        }));
+
+        await Job.updateOne(
+          { jobId },
+          { 
+            $set: { 
+              shiftSchedule: updatedSchedule,
+              isShiftAssigned: true,
+            } 
           }
-        } catch (emailErr) {
-          console.warn('Failed to send bid rejected email:', emailErr);
-        }
+        );
       }
     }
 

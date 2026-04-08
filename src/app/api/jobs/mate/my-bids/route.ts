@@ -42,10 +42,19 @@ export async function GET(request: NextRequest) {
     const jobs = await Job.find({ jobId: { $in: jobIds } }).lean();
     const jobMap = new Map(jobs.map((j) => [j.jobId, j]));
 
-    const bidsWithJobs = bids.map((bid) => ({
-      ...bid,
-      job: jobMap.get(bid.jobId) || null,
-    }));
+    const bidsWithJobs = bids.map((bid) => {
+      const job = jobMap.get(bid.jobId);
+      
+      // Strict Info Control: Mask ACCEPTED as PENDING if Boss hasn't paid
+      const isUnpaid = job?.paymentStatus === 'UNPAID';
+      const maskedStatus = (bid.status === 'ACCEPTED' && isUnpaid) ? 'PENDING' : bid.status;
+      
+      return {
+        ...bid,
+        status: maskedStatus,
+        job: job || null,
+      };
+    });
 
     const totalPages = Math.ceil(total / limit);
 

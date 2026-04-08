@@ -31,8 +31,26 @@ export async function PATCH(request: NextRequest) {
     // Build update payload
     const updatePayload: Record<string, unknown> = {
       platformCountry: body.platformCountry,
+      checkInRadiusMeters: body.checkInRadiusMeters,
+      platformCurrency: body.platformCurrency,
       abrGuid: body.abrGuid,
       abrVerificationEnabled: body.abrVerificationEnabled,
+      // Commission & Withdrawal Settings
+      platformCommissionBoss: body.platformCommissionBoss,
+      platformCommissionGuard: body.platformCommissionGuard,
+      minimumWithdrawalAmount: body.minimumWithdrawalAmount,
+      // Stripe Settings
+      stripeEnabled: body.stripeEnabled,
+      stripePublishableKey: body.stripePublishableKey,
+      stripeSecretKey: body.stripeSecretKey,
+      stripeWebhookSecret: body.stripeWebhookSecret,
+      stripeConnectEnabled: body.stripeConnectEnabled,
+      // PayPal Settings
+      paypalEnabled: body.paypalEnabled,
+      paypalClientId: body.paypalClientId,
+      paypalClientSecret: body.paypalClientSecret,
+      paypalWebhookId: body.paypalWebhookId,
+      paypalMode: body.paypalMode,
     };
 
     // Handle minimum rate enforcement fields

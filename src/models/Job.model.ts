@@ -1,5 +1,5 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
-import { JobStatus, JobType, BudgetType, HiringStatus } from '@/types/enums';
+import { JobStatus, JobType, BudgetType, HiringStatus, JobPaymentStatus } from '@/types/enums';
 import type { IJob } from '@/types/job.types';
 
 // ─── Document Type ────────────────────────────────────────────────────────────
@@ -98,6 +98,14 @@ const JobSchema = new Schema<JobDocument>({
   // Flags
   isUrgent:   { type: Boolean, default: false },
   isFeatured: { type: Boolean, default: false },
+
+  // Payment Status (Phase 6)
+  paymentStatus: {
+    type: String,
+    enum: Object.values(JobPaymentStatus),
+    default: JobPaymentStatus.UNPAID,
+    index: true,
+  },
 
   // Cancellation / Completion
   cancelReason: { type: String, default: null },

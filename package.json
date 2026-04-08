@@ -11,6 +11,8 @@
     "postinstall": "node -e \"const fs=require('fs');const p=require('path');const s=p.join('node_modules','leaflet','dist','images');const d=p.join('public','leaflet');fs.mkdirSync(d,{recursive:true});['marker-icon.png','marker-icon-2x.png','marker-shadow.png'].forEach(f=>{try{fs.copyFileSync(p.join(s,f),p.join(d,f))}catch(e){}});\""
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^6.1.0",
+    "@stripe/stripe-js": "^9.0.1",
     "@types/leaflet": "^1.9.21",
     "@types/nodemailer": "^7.0.11",
     "clsx": "^2.1.1",
@@ -28,6 +30,7 @@
     "react-hot-toast": "^2.6.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
+    "stripe": "^21.0.1",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

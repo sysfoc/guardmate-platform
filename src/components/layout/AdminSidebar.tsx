@@ -16,6 +16,7 @@ import {
   X,
   Shield,
   Briefcase,
+  DollarSign,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
@@ -31,6 +32,7 @@ const adminNavItems = [
   { label: 'All Users', icon: Users, href: '/admin/users' },
   { label: 'Jobs', icon: Briefcase, href: '/admin/jobs' },
   { label: 'Incidents', icon: Shield, href: '/admin/incidents' },
+  { label: 'Revenue & Escrow', icon: DollarSign, href: '/admin/payments' },
   { label: 'Activity Log', icon: History, href: '/admin/activity' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];
@@ -62,11 +64,11 @@ export function AdminSidebar({
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sidebarContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* ── Admin Profile Card ────────────────────────────────── */}
       <div
         className={cn(
-          'border-b border-[var(--color-sidebar-border)] transition-all duration-300',
+          'border-b border-[var(--color-sidebar-border)] transition-all duration-300 shrink-0',
           isCollapsed ? 'px-3 py-4' : 'px-5 py-6'
         )}
       >
@@ -91,7 +93,7 @@ export function AdminSidebar({
       </div>
 
       {/* ── Navigation ────────────────────────────────────────── */}
-      <nav className={cn('flex-1 py-4', isCollapsed ? 'px-2' : 'px-3')}>
+      <nav className={cn('flex-1 py-4 overflow-y-auto scrollbar-thin', isCollapsed ? 'px-2' : 'px-3')}>
         <div className="space-y-1">
           {adminNavItems.map((item) => {
             const isActive =
@@ -136,7 +138,7 @@ export function AdminSidebar({
       </nav>
 
       {/* ── Collapse Toggle (desktop only) ────────────────────── */}
-      <div className="hidden md:block border-t border-[var(--color-sidebar-border)] p-3">
+      <div className="hidden md:block border-t border-[var(--color-sidebar-border)] p-3 shrink-0">
         <button
           onClick={onToggleCollapse}
           className="w-full flex items-center justify-center p-2.5 rounded-xl text-white/60 hover:text-white hover:bg-[var(--color-sidebar-item-hover)] transition-all duration-200"

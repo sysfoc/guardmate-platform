@@ -250,4 +250,55 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
     variables: ['guardName', 'reason', 'abrUrl', 'profileUrl'],
     isActive: true,
   },
+  
+  // ─── Phase 6: Payments & Escrow Templates ─────────────────────────────
+  
+  [NotificationEventType.PAYMENT_REQUIRED]: {
+    notificationType: NotificationEventType.PAYMENT_REQUIRED,
+    subject: 'Action Required: Fund Escrow for {{jobTitle}}',
+    htmlBody: BASE_HTML('Fund Escrow to Start the Job', '<p>Hi {{bossName}},</p><p>All positions for your job <strong>{{jobTitle}}</strong> have been filled! The guards have accepted their bids.</p><p>Before the shift can begin, please fund the escrow for this job. GuardMate holds these funds securely and only releases them to the guards after you approve the completed shifts.</p><p>Please log in to your dashboard to complete the payment.</p><p><a href="{{loginUrl}}" class="btn">Fund Escrow Now</a></p>'),
+    textBody: 'Hi {{bossName}}, All positions for your job {{jobTitle}} have been filled! Please log in to your dashboard to fund the escrow so the shift can begin.',
+    variables: ['bossName', 'jobTitle', 'loginUrl', 'platformName'],
+    isActive: true,
+  },
+  [NotificationEventType.ESCROW_FUNDED]: {
+    notificationType: NotificationEventType.ESCROW_FUNDED,
+    subject: 'Escrow Funded for {{jobTitle}}',
+    htmlBody: BASE_HTML('Payment Received - Escrow Funded', '<p>Hi {{bossName}},</p><p>Thank you! Your payment of <strong>{{amount}}</strong> for <strong>{{jobTitle}}</strong> has been securely placed in escrow.</p><p>The guards are now confirmed for the shifts. The funds will remain in escrow until the shifts are completed and you manually approve them.</p>'),
+    textBody: 'Hi {{bossName}}, Thank you! Your payment of {{amount}} for {{jobTitle}} has been securely placed in escrow.',
+    variables: ['bossName', 'jobTitle', 'amount', 'platformName'],
+    isActive: true,
+  },
+  [NotificationEventType.PAYMENT_RELEASED]: {
+    notificationType: NotificationEventType.PAYMENT_RELEASED,
+    subject: '💰 You got paid! Payment released for {{jobTitle}}',
+    htmlBody: BASE_HTML('Payment Released', '<p>Hi {{guardName}},</p><p>Great job! The boss has approved your shift for <strong>{{jobTitle}}</strong>.</p><p>A payment of <strong>{{amount}}</strong> has been released to your GuardMate Wallet. You can withdraw these funds to your linked Stripe account or PayPal email at any time.</p><p><a href="{{walletUrl}}" class="btn">View My Wallet</a></p>'),
+    textBody: 'Hi {{guardName}}, Great job! The boss approved your shift for {{jobTitle}}. A payment of {{amount}} has been released to your GuardMate Wallet.',
+    variables: ['guardName', 'jobTitle', 'amount', 'walletUrl', 'platformName'],
+    isActive: true,
+  },
+  [NotificationEventType.PAYMENT_RELEASED_BOSS]: {
+    notificationType: NotificationEventType.PAYMENT_RELEASED_BOSS,
+    subject: 'Escrow Released for {{jobTitle}}',
+    htmlBody: BASE_HTML('Funds Released to Guards', '<p>Hi {{bossName}},</p><p>This is a confirmation that the escrowed funds for <strong>{{jobTitle}}</strong> have been successfully released to the guards following your approval of their shifts.</p><p>Thank you for using {{platformName}} for your security staffing needs!</p>'),
+    textBody: 'Hi {{bossName}}, The escrowed funds for {{jobTitle}} have been successfully released to the guards following your approval.',
+    variables: ['bossName', 'jobTitle', 'platformName'],
+    isActive: true,
+  },
+  [NotificationEventType.WITHDRAWAL_INITIATED]: {
+    notificationType: NotificationEventType.WITHDRAWAL_INITIATED,
+    subject: 'Withdrawal Processing',
+    htmlBody: BASE_HTML('Withdrawal Request Processing', '<p>Hi {{guardName}},</p><p>We are currently processing your withdrawal request of <strong>{{amount}}</strong> via {{method}}.</p><p>You will receive another notification once the transaction is complete.</p>'),
+    textBody: 'Hi {{guardName}}, We are currently processing your withdrawal request of {{amount}} via {{method}}.',
+    variables: ['guardName', 'amount', 'method', 'platformName'],
+    isActive: true,
+  },
+  [NotificationEventType.WITHDRAWAL_COMPLETED]: {
+    notificationType: NotificationEventType.WITHDRAWAL_COMPLETED,
+    subject: '✅ Withdrawal Completed',
+    htmlBody: BASE_HTML('Funds on the way!', '<p>Hi {{guardName}},</p><p>Your withdrawal of <strong>{{amount}}</strong> via {{method}} has been processed successfully.</p><p>Please note that depending on your bank and the withdrawal method, it may take 1-3 business days for the funds to appear in your account.</p>'),
+    textBody: 'Hi {{guardName}}, Your withdrawal of {{amount}} via {{method}} has been processed successfully.',
+    variables: ['guardName', 'amount', 'method', 'platformName'],
+    isActive: true,
+  },
 };

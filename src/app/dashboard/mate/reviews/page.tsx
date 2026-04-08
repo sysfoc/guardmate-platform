@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getMyReviewsPage } from '@/lib/api/review.api';
@@ -14,7 +14,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { Star, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function MateReviewsPage() {
+function MateReviewsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') === 'given' ? 'given' : 'received';
@@ -179,5 +179,13 @@ export default function MateReviewsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MateReviewsPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <MateReviewsContent />
+    </Suspense>
   );
 }

@@ -42,7 +42,7 @@ export default function AdminIncidentsPage() {
   const handleMarkReviewed = async (id: string) => {
     setReviewingId(id);
     try {
-      const resp = await markIncidentReviewed(id);
+      const resp = await markIncidentReviewed(id, 'REVIEWED', 'Reviewed from incidents dashboard');
       if (resp.success) {
         toast.success('Incident marked as reviewed');
         setIncidents(prev => prev.map(inc => inc._id === id ? { ...inc, isReviewedByAdmin: true, adminReviewedAt: new Date().toISOString() } : inc));

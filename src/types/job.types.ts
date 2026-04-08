@@ -2,7 +2,7 @@
 // GuardMate — Job & Bid Type Definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { JobStatus, BidStatus, JobType, BudgetType, HiringStatus } from './enums';
+import { JobStatus, BidStatus, JobType, BudgetType, HiringStatus, JobPaymentStatus } from './enums';
 import type { Certification } from './user.types';
 
 // ─── Coordinates ──────────────────────────────────────────────────────────────
@@ -118,6 +118,9 @@ export interface IJob {
   hiringStatus: HiringStatus;
   acceptedGuards: AcceptedGuard[];
   isShiftAssigned: boolean;
+
+  // Payment (Phase 6)
+  paymentStatus: JobPaymentStatus;
 
   // Counters
   totalBids: number;

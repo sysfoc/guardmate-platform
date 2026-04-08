@@ -294,104 +294,97 @@ export default function MateProfileEdit() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      {/* Professional Profile Header */}
-      <div className="h-32 w-full bg-gradient-to-r from-[var(--color-primary)] to-indigo-700 opacity-90" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Header Card */}
-          <Card className="p-5 border-none shadow-xl ring-1 ring-[var(--color-border-primary)]">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="relative group">
-                  <Avatar
-                    src={mate?.profilePhoto}
-                    name={displayName}
-                    size="xl"
-                    className="ring-4 ring-[var(--color-bg-primary)] shadow-2xl"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 p-2 bg-[var(--color-primary)] text-white rounded-full shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
-                    disabled={isUploadingPhoto}
-                  >
-                    {isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                  </button>
-                  <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
-                </div>
-                <div className="text-center md:text-left">
-                  <h1 className="text-2xl font-black text-[var(--color-text-primary)] leading-tight">{displayName}</h1>
-                  <p className="text-xs font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest flex items-center justify-center md:justify-start gap-1.5 mt-1">
-                    <Shield className="h-3.5 w-3.5 text-[var(--color-primary)]" />
-                    Professional Security Mate
-                  </p>
-                  <div className="mt-3 flex items-center justify-center md:justify-start gap-4">
-                    <CertificateBadges user={mate} size="sm" />
-                    <div className="h-4 w-px bg-[var(--color-border-primary)]" />
-                    <div className="flex items-center gap-2">
-                       <Toggle 
-                        size="sm"
-                        label="Available" 
-                        checked={formData.isAvailable} 
-                        onCheckedChange={(v) => handleChange('isAvailable', v)} 
-                      />
-                    </div>
-                  </div>
-                </div>
+          <Card className="p-0 overflow-hidden border-none shadow-xl ring-1 ring-[var(--color-border-primary)]">
+            {/* Banner containing Avatar and Info */}
+            <div className="w-full bg-gradient-to-r from-[var(--color-primary)] to-indigo-700 px-5 sm:px-6 py-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
+              <div className="relative group shrink-0">
+                <Avatar
+                  src={mate?.profilePhoto}
+                  name={displayName}
+                  size="xl"
+                  className="ring-4 ring-white/20 shadow-xl"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-1 right-1 p-1.5 bg-white text-[var(--color-primary)] rounded-full shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
+                  disabled={isUploadingPhoto}
+                >
+                  {isUploadingPhoto ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                </button>
+                <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
               </div>
-              <div className="flex flex-wrap items-center justify-center md:justify-end gap-3">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="md" 
-                  onClick={handleGoBack}
-                  leftIcon={<ChevronLeft className="h-4 w-4" />}
-                  className="w-full sm:w-auto"
-                >
-                  Back
-                </Button>
-                <Button 
-                  type="submit" 
-                  variant="primary" 
-                  size="md" 
-                  loading={isSaving} 
-                  leftIcon={<Save className="h-4 w-4" />}
-                  className="w-full sm:w-auto"
-                >
-                  Save Changes
-                </Button>
+              
+              <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-1.5 text-center sm:text-left">
+                <h1 className="text-xl sm:text-2xl font-black text-white leading-tight truncate">{displayName}</h1>
+                <p className="text-[10px] sm:text-[11px] font-bold text-white/90 uppercase tracking-widest flex items-center justify-center sm:justify-start gap-1">
+                  <Shield className="h-3.5 w-3.5 text-white/90 shrink-0" />
+                  Professional Security Mate
+                </p>
+              </div>
+            </div>
+
+            {/* Actions Bar (Below Banner) */}
+            <div className="px-5 sm:px-6 py-3 bg-[var(--color-bg-primary)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                  <CertificateBadges user={mate} size="sm" />
+                  <div className="h-4 w-px bg-[var(--color-border-primary)] hidden sm:block" />
+                  <Toggle
+                    size="sm"
+                    label="Available"
+                    checked={formData.isAvailable}
+                    onCheckedChange={(v) => handleChange('isAvailable', v)}
+                  />
+                </div>
+                <div className="flex items-center justify-center sm:justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleGoBack}
+                    leftIcon={<ChevronLeft className="h-4 w-4" />}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="sm"
+                    loading={isSaving}
+                    leftIcon={<Save className="h-4 w-4" />}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
               </div>
             </div>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Left Column: Personal & Professional Basic */}
-            <div className="space-y-4">
+          <div className="space-y-4">
               <Card padding="md">
                 <SectionHeader icon={<User className="h-4 w-4" />} title="Personal Information" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
                   <Input label="First Name" value={formData.firstName} onChange={(e) => handleChange('firstName', e.target.value)} />
                   <Input label="Last Name" value={formData.lastName} onChange={(e) => handleChange('lastName', e.target.value)} />
-                </div>
-                <div className="mt-3">
-                  <Input label="Street Address" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} placeholder="House #, Street" />
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <Input label="City" value={formData.city} onChange={(e) => handleChange('city', e.target.value)} />
-                  <Input label="State/Region" value={formData.state} onChange={(e) => handleChange('state', e.target.value)} />
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <Input label="Postal Code" value={formData.postalCode} onChange={(e) => handleChange('postalCode', e.target.value)} />
-                  <Input label="Country" value={formData.country} onChange={(e) => handleChange('country', e.target.value)} />
-                </div>
-                <div className="mt-3">
                   <PhoneInput
                     label="Phone Number"
                     value={formData.phone}
                     defaultCountry={formData.phoneCountryCode as any}
                     onChange={(v: string) => { setFormData(prev => ({ ...prev, phone: v })); setHasUnsavedChanges(true); }}
                   />
+                </div>
+                <div className="mt-3">
+                  <Input label="Street Address" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} placeholder="House #, Street" />
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+                  <Input label="City" value={formData.city} onChange={(e) => handleChange('city', e.target.value)} />
+                  <Input label="State/Region" value={formData.state} onChange={(e) => handleChange('state', e.target.value)} />
+                  <Input label="Postal Code" value={formData.postalCode} onChange={(e) => handleChange('postalCode', e.target.value)} />
+                  <Input label="Country" value={formData.country} onChange={(e) => handleChange('country', e.target.value)} />
                 </div>
                 <div className="mt-3">
                   <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Short Bio</label>
@@ -407,7 +400,7 @@ export default function MateProfileEdit() {
 
               <Card padding="md">
                 <SectionHeader icon={<Briefcase className="h-4 w-4" />} title="Professional Basics" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                   <Input label="Experience (Years)" type="number" value={formData.experience} onChange={(e) => handleChange('experience', parseInt(e.target.value) || 0)} />
                   <Input label="Hourly Rate ($)" type="number" value={formData.hourlyRate} onChange={(e) => handleChange('hourlyRate', parseInt(e.target.value) || 0)} />
                   <Input label="Work Radius (km)" type="number" value={formData.preferredWorkRadius} onChange={(e) => handleChange('preferredWorkRadius', parseInt(e.target.value) || 0)} />
@@ -419,7 +412,7 @@ export default function MateProfileEdit() {
               <Card padding="md">
                 <SectionHeader icon={<Star className="h-4 w-4" />} title="Skills & Languages" />
                 
-                <div className="mt-5 space-y-6">
+                <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Skills Tag Input */}
                   <div>
                     <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-2">My Skills</label>
@@ -481,29 +474,33 @@ export default function MateProfileEdit() {
                   </div>
                 </div>
               </Card>
-            </div>
-
-            {/* Right Column: Skills, Availability & Verification */}
-            <div className="space-y-4">
               <Card padding="md">
                 <SectionHeader icon={<FileText className="h-4 w-4" />} title="Verification Documents" />
                 <div className="mt-4 space-y-4">
                   {/* Security License Section */}
-                  <div className="p-3 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                  <div className="p-3 rounded-xl bg-[var(--color-bg-secondary)]/50 space-y-3">
                     <DocUploadRow label="Security License" url={localLicenseDoc || mate.licenseDocument} isUploading={isUploadingLicense} onUpload={() => licenseFileRef.current?.click()} status={mate.licenseStatus} />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Input label="License #" value={formData.licenseNumber} onChange={(e) => handleChange('licenseNumber', e.target.value)} />
                       <Input label="License Type" value={formData.licenseType} onChange={(e) => handleChange('licenseType', e.target.value)} placeholder="e.g. SIA Door Supervisor" />
-                      <div className="sm:col-span-2">
-                        <Input label="License Expiry" type="date" value={formData.licenseExpiry} onChange={(e) => handleChange('licenseExpiry', e.target.value)} />
-                      </div>
+                      <Input label="License Expiry" type="date" value={formData.licenseExpiry} onChange={(e) => handleChange('licenseExpiry', e.target.value)} />
                     </div>
                   </div>
 
                   {/* Government ID Section */}
-                  <div className="p-3 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
-                    <DocUploadRow label="Government ID" url={localIdDoc || mate.idDocument} isUploading={isUploadingId} onUpload={() => idFileRef.current?.click()} status={mate.idVerificationStatus} />
-                    <Input label="ID Expiry Date" type="date" value={formData.idExpiry} onChange={(e) => handleChange('idExpiry', e.target.value)} />
+                  <div className="p-3 rounded-xl bg-[var(--color-bg-secondary)]/50 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <DocUploadRow label="Government ID" url={localIdDoc || mate.idDocument} isUploading={isUploadingId} onUpload={() => idFileRef.current?.click()} status={mate.idVerificationStatus} />
+                      <div className="flex flex-col">
+                        <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Expiry Date</label>
+                        <input
+                          type="date"
+                          value={formData.idExpiry}
+                          onChange={(e) => handleChange('idExpiry', e.target.value)}
+                          className="w-full flex-1 px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <input type="file" ref={licenseFileRef} className="hidden" onChange={(e) => handleDocUpload(e, 'license')} />
@@ -515,7 +512,7 @@ export default function MateProfileEdit() {
                 <SectionHeader icon={<Heart className="h-4 w-4" />} title="Certifications & Licences" />
 
                 {/* First Aid — Always Visible, Mandatory */}
-                <div className="mt-4 p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                <div className="mt-4 p-4 rounded-xl bg-[var(--color-bg-secondary)]/50 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded-lg bg-red-500/10 text-red-500">
@@ -538,17 +535,17 @@ export default function MateProfileEdit() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                     <div>
                       <DocUploadRow label="Certificate Document" url={localFirstAidDoc || mate.firstAidCertificate} isUploading={isUploadingFirstAid} onUpload={() => firstAidFileRef.current?.click()} status={mate.firstAidCertificateStatus} />
                     </div>
-                    <div>
+                    <div className="flex flex-col">
                       <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Expiry Date</label>
                       <input
                         type="date"
                         value={firstAidExpiry}
                         onChange={(e) => { setFirstAidExpiry(e.target.value); setHasUnsavedChanges(true); }}
-                        className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none"
+                        className="w-full flex-1 px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none"
                       />
                     </div>
                   </div>
@@ -579,7 +576,7 @@ export default function MateProfileEdit() {
                 </div>
 
                 {worksOnConstructionSite && (
-                  <div className="mt-3 p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                  <div className="mt-3 p-4 rounded-xl bg-[var(--color-bg-secondary)]/50 space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
                         <HardHat className="h-4 w-4" />
@@ -591,11 +588,11 @@ export default function MateProfileEdit() {
                         <CertStatusBadge status={mate.constructionWhiteCardStatus} />
                       )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                       <DocUploadRow label="White Card Document" url={localWhiteCardDoc || mate.constructionWhiteCard} isUploading={isUploadingWhiteCard} onUpload={() => whiteCardFileRef.current?.click()} status={mate.constructionWhiteCardStatus} />
-                      <div>
+                      <div className="flex flex-col">
                         <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Expiry Date</label>
-                        <input type="date" value={whiteCardExpiry} onChange={(e) => { setWhiteCardExpiry(e.target.value); setHasUnsavedChanges(true); }} className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none" />
+                        <input type="date" value={whiteCardExpiry} onChange={(e) => { setWhiteCardExpiry(e.target.value); setHasUnsavedChanges(true); }} className="w-full flex-1 px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none" />
                       </div>
                     </div>
                     {(localWhiteCardDoc || mate.constructionWhiteCard) && (
@@ -625,7 +622,7 @@ export default function MateProfileEdit() {
                 </div>
 
                 {worksWithChildren && (
-                  <div className="mt-3 p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                  <div className="mt-3 p-4 rounded-xl bg-[var(--color-bg-secondary)]/50 space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500">
                         <Star className="h-4 w-4" />
@@ -637,11 +634,11 @@ export default function MateProfileEdit() {
                         <CertStatusBadge status={mate.workingWithChildrenCheckStatus} />
                       )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                       <DocUploadRow label="DBS Certificate" url={localChildrenCheckDoc || mate.workingWithChildrenCheck} isUploading={isUploadingChildrenCheck} onUpload={() => childrenCheckFileRef.current?.click()} status={mate.workingWithChildrenCheckStatus} />
-                      <div>
+                      <div className="flex flex-col">
                         <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Expiry Date</label>
-                        <input type="date" value={childrenCheckExpiry} onChange={(e) => { setChildrenCheckExpiry(e.target.value); setHasUnsavedChanges(true); }} className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none" />
+                        <input type="date" value={childrenCheckExpiry} onChange={(e) => { setChildrenCheckExpiry(e.target.value); setHasUnsavedChanges(true); }} className="w-full flex-1 px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none" />
                       </div>
                     </div>
                     {(localChildrenCheckDoc || mate.workingWithChildrenCheck) && (
@@ -655,7 +652,7 @@ export default function MateProfileEdit() {
 
                 {/* Victorian Private Security Business Licence */}
                 {(mate.abnState === AustralianState.VIC || mate.victorianBusinessLicence) && (
-                  <div className="mt-4 p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] space-y-3">
+                  <div className="mt-4 p-4 rounded-xl bg-[var(--color-bg-secondary)]/50 space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
                         <Shield className="h-4 w-4" />
@@ -675,11 +672,11 @@ export default function MateProfileEdit() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                       <DocUploadRow label="Licence Document" url={localVictorianLicenceDoc || mate.victorianBusinessLicence} isUploading={isUploadingVictorianLicence} onUpload={() => victorianLicenceFileRef.current?.click()} status={mate.victorianBusinessLicenceStatus} />
-                      <div>
+                      <div className="flex flex-col">
                         <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">Expiry Date</label>
-                        <input type="date" value={victorianLicenceExpiry} onChange={(e) => { setVictorianLicenceExpiry(e.target.value); setHasUnsavedChanges(true); }} className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none" />
+                        <input type="date" value={victorianLicenceExpiry} onChange={(e) => { setVictorianLicenceExpiry(e.target.value); setHasUnsavedChanges(true); }} className="w-full flex-1 px-3 py-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30 text-[var(--color-text-primary)] text-sm focus:ring-2 focus:ring-[var(--color-primary)] transition-all outline-none" />
                       </div>
                     </div>
                     {localVictorianLicenceDoc || mate.victorianBusinessLicence ? (
@@ -860,7 +857,6 @@ export default function MateProfileEdit() {
                   )}
                 </div>
               </Card>
-            </div>
           </div>
         </form>
       </div>

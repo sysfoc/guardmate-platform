@@ -53,6 +53,45 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
     type: String,
     default: null,
   },
+
+  // ─── Phase 6: Commission Settings ──────────────────────────────────────
+  platformCommissionBoss: {
+    type: Number,
+    default: 10,
+    min: 0,
+    max: 50,
+  },
+  platformCommissionGuard: {
+    type: Number,
+    default: 5,
+    min: 0,
+    max: 50,
+  },
+  minimumWithdrawalAmount: {
+    type: Number,
+    default: 50,
+    min: 1,
+  },
+
+  // ─── Phase 6: Stripe Configuration ─────────────────────────────────────
+  stripeEnabled: { type: Boolean, default: false },
+  // TODO: Future AES-256 encryption for stripePublishableKey
+  stripePublishableKey: { type: String, default: null },
+  // TODO: Future AES-256 encryption for stripeSecretKey
+  stripeSecretKey: { type: String, default: null },
+  // TODO: Future AES-256 encryption for stripeWebhookSecret
+  stripeWebhookSecret: { type: String, default: null },
+  stripeConnectEnabled: { type: Boolean, default: false },
+
+  // ─── Phase 6: PayPal Configuration ─────────────────────────────────────
+  paypalEnabled: { type: Boolean, default: false },
+  // TODO: Future AES-256 encryption for paypalClientId
+  paypalClientId: { type: String, default: null },
+  // TODO: Future AES-256 encryption for paypalClientSecret
+  paypalClientSecret: { type: String, default: null },
+  // TODO: Future AES-256 encryption for paypalWebhookId
+  paypalWebhookId: { type: String, default: null },
+  paypalMode: { type: String, enum: ['sandbox', 'live'], default: 'sandbox' },
 }, {
   timestamps: true,
 });

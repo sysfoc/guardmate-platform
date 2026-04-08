@@ -1,6 +1,8 @@
 import { sendEmail } from './sendEmail';
 import { NotificationEventType } from '@/types/email.types';
 
+const PLATFORM_NAME = 'GuardMate';
+
 export const sendGuardSignupAlert = async (adminEmail: string, guardName: string, guardEmail: string) => {
   await sendEmail({
     to: adminEmail,
@@ -302,5 +304,85 @@ export const sendABNVerificationFailed = async (
       abrUrl: 'https://abr.business.gov.au',
       profileUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/mate/profile`,
     },
+  });
+};
+
+// ─── Phase 6: Payments & Escrow Emails ───────────────────────────────
+
+export const sendPaymentRequired = async (
+  to: string,
+  bossName: string,
+  jobTitle: string
+) => {
+  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/boss/payments`;
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.PAYMENT_REQUIRED,
+    variables: { bossName, jobTitle, loginUrl, platformName: PLATFORM_NAME }
+  });
+};
+
+export const sendEscrowFunded = async (
+  to: string,
+  bossName: string,
+  jobTitle: string,
+  amount: string
+) => {
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.ESCROW_FUNDED,
+    variables: { bossName, jobTitle, amount, platformName: PLATFORM_NAME }
+  });
+};
+
+export const sendPaymentReleasedGuard = async (
+  to: string,
+  guardName: string,
+  jobTitle: string,
+  amount: string
+) => {
+  const walletUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/mate/wallet`;
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.PAYMENT_RELEASED,
+    variables: { guardName, jobTitle, amount, walletUrl, platformName: PLATFORM_NAME }
+  });
+};
+
+export const sendPaymentReleasedBoss = async (
+  to: string,
+  bossName: string,
+  jobTitle: string
+) => {
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.PAYMENT_RELEASED_BOSS,
+    variables: { bossName, jobTitle, platformName: PLATFORM_NAME }
+  });
+};
+
+export const sendWithdrawalInitiated = async (
+  to: string,
+  guardName: string,
+  amount: string,
+  method: string
+) => {
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.WITHDRAWAL_INITIATED,
+    variables: { guardName, amount, method, platformName: PLATFORM_NAME }
+  });
+};
+
+export const sendWithdrawalCompleted = async (
+  to: string,
+  guardName: string,
+  amount: string,
+  method: string
+) => {
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.WITHDRAWAL_COMPLETED,
+    variables: { guardName, amount, method, platformName: PLATFORM_NAME }
   });
 };

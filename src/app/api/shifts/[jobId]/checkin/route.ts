@@ -6,7 +6,7 @@ import User from '@/models/User.model';
 import Shift from '@/models/Shift.model';
 import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { UserRole, JobStatus, BidStatus } from '@/types/enums';
+import { UserRole, JobStatus, BidStatus, JobPaymentStatus } from '@/types/enums';
 import { calculateDistance } from '@/lib/utils/haversine';
 import { sendShiftCheckinAlert } from '@/lib/email/emailTriggers';
 import type { ShiftScheduleDay, ShiftSlot } from '@/types/job.types';
@@ -65,6 +65,9 @@ export async function POST(
     }
     if (job.status !== JobStatus.IN_PROGRESS) {
       return createApiResponse(false, null, 'Job is not currently in progress.', 400);
+    }
+    if (job.paymentStatus !== JobPaymentStatus.HELD) {
+      return createApiResponse(false, null, 'Check-in unavailable at this time. The Boss has not secured escrow funding.', 400);
     }
 
     // Verify guard has an ACCEPTED bid

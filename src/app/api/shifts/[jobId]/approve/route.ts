@@ -6,6 +6,7 @@ import User from '@/models/User.model';
 import Shift from '@/models/Shift.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import { UserRole, JobStatus, BidStatus } from '@/types/enums';
+import { releasePayment } from '@/lib/payments/releasePayment';
 import { sendShiftApproved, sendPaymentSent } from '@/lib/email/emailTriggers';
 import { updateGuardReliabilityScore } from '@/lib/jobs/reliabilityScore';
 
@@ -99,6 +100,13 @@ export async function POST(
         await User.updateOne({ uid: acceptedBid.guardUid }, { $inc: { totalJobsCompleted: 1 } });
         await User.updateOne({ uid: user.uid }, { $inc: { completedJobsCount: 1 } });
         try { await updateGuardReliabilityScore(acceptedBid.guardUid); } catch { /* silient */ }
+
+        // Trigger payment release
+        try {
+          await releasePayment(jobId);
+        } catch (paymentError) {
+          console.error(`Payment release failed for job ${jobId}:`, paymentError);
+        }
 
         const guard = await User.findOne({ uid: acceptedBid.guardUid }).lean();
         if (guard) {

@@ -11,7 +11,7 @@
  *   3. IN_PROGRESS → COMPLETED  (endDate + endTime + 24 h passed, not yet completed)
  */
 
-import { JobStatus, BidStatus } from '@/types/enums';
+import { JobStatus, BidStatus, JobPaymentStatus } from '@/types/enums';
 import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
@@ -63,14 +63,17 @@ export async function processJobLifecycle(): Promise<void> {
       if (isDev) console.error('[Lifecycle] OPEN → EXPIRED error:', err);
     }
 
-    // ── 2. FILLED → IN_PROGRESS ───────────────────────────────────────────
+    // ── 2. FILLED → IN_PROGRESS & Auto-Cancellation ───────────────────────
     try {
       // We need to check startDate + startTime, so we query FILLED jobs and filter
       const filledJobs = await Job.find({ status: JobStatus.FILLED }).lean();
 
       for (const job of filledJobs) {
         const shiftStart = combineDateAndTime(new Date(job.startDate), job.startTime || '00:00');
-        if (now >= shiftStart) {
+        const twoHoursPastStart = new Date(shiftStart.getTime() + 2 * 60 * 60 * 1000);
+
+        // Strict Gate: Only transition to IN_PROGRESS if funds are secured.
+        if (now >= shiftStart && job.paymentStatus === JobPaymentStatus.HELD) {
           await Job.updateOne(
             { _id: job._id, status: JobStatus.FILLED },
             { $set: { status: JobStatus.IN_PROGRESS } }
@@ -78,10 +81,54 @@ export async function processJobLifecycle(): Promise<void> {
           if (isDev) {
             console.log(`[Lifecycle] FILLED → IN_PROGRESS: ${job.jobId}`);
           }
+        } 
+        // Auto-Cancel & Strike: If 2 hours past start and still UNPAID.
+        else if (now >= twoHoursPastStart && job.paymentStatus === JobPaymentStatus.UNPAID) {
+          // FIRST: Query accepted bids to notify them BEFORE we expire them
+          const acceptedBids = await Bid.find({ jobId: job.jobId, status: BidStatus.ACCEPTED }).lean();
+
+          // Cancel the job
+          await Job.updateOne(
+            { _id: job._id, status: JobStatus.FILLED },
+            { $set: { status: JobStatus.CANCELLED, cancelReason: "Auto-cancelled: Failure to fund escrow." } }
+          );
+
+          // Expire the accepted bids so guards are released cleanly
+          await Bid.updateMany(
+            { jobId: job.jobId, status: BidStatus.ACCEPTED },
+            { $set: { status: BidStatus.EXPIRED, withdrawnAt: now } }
+          );
+
+          // Issue a Strike to the Boss
+          await User.updateOne(
+            { uid: job.postedBy },
+            { $inc: { cancellationStrikes: 1, cancelledJobsCount: 1, activeJobsCount: -1 } }
+          );
+
+          // Notify strictly about cancellation without mentioning the boss's payment failure
+          for (const bid of acceptedBids) {
+            const guard = await User.findOne({ uid: bid.guardUid }).lean();
+            if (guard?.email) {
+              const { sendEmail } = await import('@/lib/email/sendEmail');
+              const { NotificationEventType } = await import('@/types/email.types');
+              await sendEmail({
+                to: guard.email,
+                notificationType: NotificationEventType.JOB_CANCELLED_BY_BOSS,
+                variables: { 
+                    firstName: guard.firstName, 
+                    message: `The company has cancelled the job posting: "${job.title}". Your bid has been released so you can apply to other opportunities.`
+                },
+              }).catch(() => {});
+            }
+          }
+
+          if (isDev) {
+            console.log(`[Lifecycle] FILLED → CANCELLED (Strike Issued): ${job.jobId}`);
+          }
         }
       }
     } catch (err) {
-      if (isDev) console.error('[Lifecycle] FILLED → IN_PROGRESS error:', err);
+      if (isDev) console.error('[Lifecycle] FILLED transitions error:', err);
     }
 
     // ── 3. IN_PROGRESS → COMPLETED (auto, 24 h after shift end) ───────────
