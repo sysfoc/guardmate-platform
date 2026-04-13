@@ -167,8 +167,63 @@ export async function POST(request: NextRequest) {
           const payment = await Payment.findOne({ paypalCaptureId: transactionId });
           if (payment) {
             payment.paymentStatus = EscrowPaymentStatus.DISPUTED;
-            payment.disputeId = resource.dispute_id;
             await payment.save();
+            
+            await Job.updateOne({ jobId: payment.jobId }, { $set: { paymentStatus: JobPaymentStatus.DISPUTED } });
+
+            const PlatformDispute = (await import('@/models/Dispute.model')).default;
+            const { sendDisputeRaisedAdmin } = await import('@/lib/email/emailTriggers');
+            const User = (await import('@/models/User.model')).default;
+            
+            let platformDispute = await PlatformDispute.findOne({ paymentId: payment._id });
+            
+            if (platformDispute) {
+              platformDispute.chargebackRaised = true;
+              platformDispute.chargebackId = resource.dispute_id;
+              await platformDispute.save();
+            } else {
+              const disputeDeadline = new Date(new Date().getTime() + 48 * 60 * 60 * 1000); // 48h
+              
+              platformDispute = await PlatformDispute.create({
+                jobId: payment.jobId,
+                paymentId: payment._id.toString(),
+                raisedByUid: payment.bossUid,
+                raisedByRole: 'BOSS',
+                againstUid: payment.guardUid,
+                againstRole: 'MATE',
+                jobTitle: payment.jobTitle,
+                bossUid: payment.bossUid,
+                guardUid: payment.guardUid,
+                reason: 'PAYMENT_DISPUTE',
+                description: 'PayPal chargeback filed by client.',
+                status: 'OPEN',
+                disputeDeadline,
+                chargebackRaised: true,
+                chargebackId: resource.dispute_id
+              });
+              payment.disputeId = platformDispute._id.toString();
+              await payment.save();
+            }
+
+            // Notify admins
+            const admins = await User.find({ role: 'ADMIN', status: 'ACTIVE' }).select('email').lean();
+            const boss = await User.findOne({ uid: payment.bossUid }).lean();
+            const guard = await User.findOne({ uid: payment.guardUid }).lean();
+            
+            for (const admin of admins) {
+              await sendDisputeRaisedAdmin(
+                admin.email,
+                boss ? `${boss.firstName} ${boss.lastName}` : 'Boss',
+                'BOSS',
+                guard ? `${guard.firstName} ${guard.lastName}` : 'Guard',
+                payment.jobTitle,
+                'PAYMENT_DISPUTE',
+                'PAYPAL CHARGEBACK ALSO FILED — 7 DAY RESPONSE DEADLINE',
+                payment.jobBudget,
+                payment.currency || 'AUD',
+                platformDispute._id.toString()
+              ).catch(console.error);
+            }
           }
         }
         break;

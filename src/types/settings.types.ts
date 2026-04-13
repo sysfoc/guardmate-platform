@@ -37,6 +37,11 @@ export interface IPlatformSettings {
   paypalWebhookId?: string;              // TODO: Future AES-256 encryption — server-only
   paypalMode: 'sandbox' | 'live';
 
+  // ─── Phase 7: Dispute Settings ───────────────────────────────────────────
+  disputeWindowHours: number;
+  autoReleaseWindowHours: number;
+  disputeDeadlineWarningHours: number;
+
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

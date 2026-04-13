@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { checkIn, checkOut, getShift, updateLocation } from '@/lib/api/shift.api';
 import { getSocket } from '@/lib/socket/socketClient';
 import IncidentReportModal from '@/components/shifts/IncidentReportModal';
+import { DisputeModal } from '@/components/disputes/DisputeModal';
 import type { IShift, Coordinates } from '@/types/shift.types';
 import { ShiftStatus } from '@/types/shift.types';
 import { calculateDistance } from '@/lib/utils/haversine';
@@ -43,6 +44,7 @@ export default function ActiveShiftCard({
   const [currentDistance, setCurrentDistance] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState('00:00:00');
   const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
 
   const status = getShiftStatus(todayShift);
@@ -293,9 +295,19 @@ export default function ActiveShiftCard({
                   <span className="text-[var(--color-text-muted)]">Check-out</span>
                   <p className="font-bold">{new Date(todayShift.checkOutTime as string).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
-                <div className="col-span-2">
-                  <span className="text-[var(--color-text-muted)]">Total Hours Worked</span>
-                  <p className="font-black text-lg">{todayShift.totalHoursWorked?.toFixed(2)} hrs</p>
+                <div className="col-span-2 flex justify-between items-end">
+                  <div>
+                    <span className="text-[var(--color-text-muted)]">Total Hours Worked</span>
+                    <p className="font-black text-lg">{todayShift.totalHoursWorked?.toFixed(2)} hrs</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-red-500 text-red-500 hover:bg-red-500/10"
+                    onClick={() => setShowDisputeModal(true)}
+                  >
+                    Raise Dispute
+                  </Button>
                 </div>
               </div>
             </div>
@@ -308,9 +320,19 @@ export default function ActiveShiftCard({
                 <CheckCircle2 className="h-5 w-5 text-[var(--color-success)]" />
                 <span className="text-sm font-bold text-[var(--color-success)]">Shift Approved</span>
               </div>
-              <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-                {todayShift.totalHoursWorked?.toFixed(2)} hours worked • Approved {todayShift.approvedAt ? new Date(todayShift.approvedAt as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}
-              </p>
+              <div className="flex justify-between items-center mt-1">
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {todayShift.totalHoursWorked?.toFixed(2)} hours worked • Approved {todayShift.approvedAt ? new Date(todayShift.approvedAt as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 text-xs border-red-500 text-red-500 hover:bg-red-500/10"
+                  onClick={() => setShowDisputeModal(true)}
+                >
+                  Raise Dispute
+                </Button>
+              </div>
             </div>
           )}
 
@@ -395,6 +417,15 @@ export default function ActiveShiftCard({
           jobId={jobId}
           onSuccess={() => {}}
           onClose={() => setShowIncidentModal(false)}
+        />
+      )}
+      
+      {showDisputeModal && (
+        <DisputeModal
+          jobId={jobId}
+          isOpen={showDisputeModal}
+          onClose={() => setShowDisputeModal(false)}
+          onSuccess={() => toast.success('Dispute raised successfully.')}
         />
       )}
     </>

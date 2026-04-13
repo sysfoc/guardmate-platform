@@ -17,6 +17,7 @@ import {
   Shield,
   Briefcase,
   DollarSign,
+  ShieldAlert
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
@@ -32,6 +33,7 @@ const adminNavItems = [
   { label: 'All Users', icon: Users, href: '/admin/users' },
   { label: 'Jobs', icon: Briefcase, href: '/admin/jobs' },
   { label: 'Incidents', icon: Shield, href: '/admin/incidents' },
+  { label: 'Disputes', icon: ShieldAlert, href: '/admin/disputes' },
   { label: 'Revenue & Escrow', icon: DollarSign, href: '/admin/payments' },
   { label: 'Activity Log', icon: History, href: '/admin/activity' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },

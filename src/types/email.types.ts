@@ -41,6 +41,13 @@ export enum NotificationEventType {
   SHIFT_ASSIGNED = 'shiftAssigned',
   ABN_VERIFIED = 'abnVerified',
   ABN_VERIFICATION_FAILED = 'abnVerificationFailed',
+
+  // ─── Phase 7: Disputes ────────────────────────────────────────────────
+  DISPUTE_RESPONSE_RECEIVED = 'disputeResponseReceived',
+  DISPUTE_RESPONSE_NOTIFICATION = 'disputeResponseNotification',
+  DISPUTE_RESOLVED_ADMIN = 'disputeResolvedAdmin',
+  SHIFT_AUTO_APPROVED = 'shiftAutoApproved',
+  DISPUTE_DEADLINE_WARNING = 'disputeDeadlineWarning',
 }
 
 export interface IEmailSettings {

@@ -10,9 +10,10 @@ import type { IShift, IIncidentReport, Coordinates } from '@/types/shift.types';
 import { ShiftStatus } from '@/types/shift.types';
 import {
   CheckCircle2, Clock, MapPin, Timer, User, Navigation,
-  AlertTriangle, Shield, Loader2, Eye, FileText
+  AlertTriangle, Shield, Loader2, Eye, FileText, FileWarning
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { DisputeModal } from '@/components/disputes/DisputeModal';
 
 interface ShiftMonitoringPanelProps {
   jobId: string;
@@ -43,6 +44,7 @@ export default function ShiftMonitoringPanel({ jobId, jobTitle, jobCoordinates }
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [guardLocation, setGuardLocation] = useState<{ lat: number; lng: number; timestamp: string } | null>(null);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
 
   // Status is now based on today's shift (or the overall state if no shifts exist)
   const status = getShiftStatus(todayShift);
@@ -152,7 +154,8 @@ export default function ShiftMonitoringPanel({ jobId, jobTitle, jobCoordinates }
   const unapprovedShifts = allShifts.filter(s => s.checkOutTime && !s.isApprovedByBoss);
 
   return (
-    <Card className="p-0 overflow-hidden">
+    <>
+      <Card className="p-0 overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 border-b border-[var(--color-border-default)] flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -268,17 +271,27 @@ export default function ShiftMonitoringPanel({ jobId, jobTitle, jobCoordinates }
                     {' '}• <span className="font-bold">{s.totalHoursWorked?.toFixed(2) || '0.00'} hrs</span>
                   </p>
                 </div>
-                
                 {s.checkOutTime && !s.isApprovedByBoss && (
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    disabled={approvingId !== null}
-                    onClick={() => handleApprove(s._id)}
-                    className="text-xs h-8 border-[var(--color-success)] text-[var(--color-success)] hover:bg-[var(--color-success-light)]"
-                  >
-                    {approvingId === s._id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Approve'}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      disabled={approvingId !== null}
+                      onClick={() => setShowDisputeModal(true)}
+                      className="text-xs h-8 border-red-500 text-red-500 hover:bg-red-500/10"
+                    >
+                      Dispute
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      disabled={approvingId !== null}
+                      onClick={() => handleApprove(s._id)}
+                      className="text-xs h-8 border-[var(--color-success)] text-[var(--color-success)] hover:bg-[var(--color-success-light)]"
+                    >
+                      {approvingId === s._id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Approve'}
+                    </Button>
+                  </div>
                 )}
               </div>
             ))}
@@ -330,5 +343,15 @@ export default function ShiftMonitoringPanel({ jobId, jobTitle, jobCoordinates }
         )}
       </div>
     </Card>
+      
+      {showDisputeModal && (
+        <DisputeModal
+          jobId={jobId}
+          isOpen={showDisputeModal}
+          onClose={() => setShowDisputeModal(false)}
+          onSuccess={() => toast.success('Dispute raised successfully. Escrow funds are now frozen.')}
+        />
+      )}
+    </>
   );
 }

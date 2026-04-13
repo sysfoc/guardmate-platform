@@ -92,6 +92,11 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
   // TODO: Future AES-256 encryption for paypalWebhookId
   paypalWebhookId: { type: String, default: null },
   paypalMode: { type: String, enum: ['sandbox', 'live'], default: 'sandbox' },
+
+  // ─── Phase 7: Dispute Settings ─────────────────────────────────────────
+  disputeWindowHours: { type: Number, default: 48 },
+  autoReleaseWindowHours: { type: Number, default: 48 },
+  disputeDeadlineWarningHours: { type: Number, default: 6 },
 }, {
   timestamps: true,
 });

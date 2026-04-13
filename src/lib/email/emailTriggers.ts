@@ -131,19 +131,69 @@ export const sendPaymentSent = async (guardEmail: string, guardName: string, amo
   });
 };
 
-export const sendDisputeRaised = async (guardEmail: string, guardName: string, bossEmail: string, bossName: string, adminEmail: string, jobName: string, reason: string) => {
+// ─── Phase 7: Dispute System Emails ────────────────────────────────────────
+
+export const sendDisputeRaised = async (againstEmail: string, againstName: string, raisedByName: string, raisedByRole: string, jobTitle: string, reason: string, description: string, disputeId: string) => {
   await sendEmail({
-    to: [guardEmail, bossEmail, adminEmail],
+    to: againstEmail,
     notificationType: NotificationEventType.DISPUTE_RAISED,
-    variables: { guardName, bossName, jobName, reason },
+    variables: { againstName, raisedByName, raisedByRole, jobTitle, reason, description, disputeId, dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/${raisedByRole === 'BOSS' ? 'mate' : 'boss'}/jobs` },
   });
 };
 
-export const sendDisputeResolved = async (guardEmail: string, guardName: string, bossEmail: string, bossName: string, jobName: string, resolution: string) => {
+export const sendDisputeRaisedAdmin = async (adminEmail: string, raisedByName: string, raisedByRole: string, againstName: string, jobTitle: string, reason: string, description: string, jobBudget: number, currency: string, disputeId: string) => {
   await sendEmail({
-    to: [guardEmail, bossEmail],
+    to: adminEmail,
+    notificationType: NotificationEventType.DISPUTE_RAISED_ADMIN,
+    variables: { adminEmail, raisedByName, raisedByRole, againstName, jobTitle, reason, description, jobBudget, currency, disputeId, adminUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/disputes/${disputeId}` },
+  });
+};
+
+export const sendDisputeResponseReceived = async (adminEmail: string, responderName: string, jobTitle: string, disputeId: string) => {
+  await sendEmail({
+    to: adminEmail,
+    notificationType: NotificationEventType.DISPUTE_RESPONSE_RECEIVED,
+    variables: { responderName, jobTitle, disputeId, adminUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/disputes/${disputeId}` },
+  });
+};
+
+export const sendDisputeResponseNotification = async (raisedByEmail: string, raisedByName: string, responderName: string, jobTitle: string, disputeId: string) => {
+  await sendEmail({
+    to: raisedByEmail,
+    notificationType: NotificationEventType.DISPUTE_RESPONSE_NOTIFICATION,
+    variables: { raisedByName, responderName, jobTitle, disputeId },
+  });
+};
+
+export const sendDisputeResolved = async (recipientEmail: string, recipientName: string, jobTitle: string, decision: string, amountReleased: number, amountRefunded: number, adminNotes: string, currency: string) => {
+  await sendEmail({
+    to: recipientEmail,
     notificationType: NotificationEventType.DISPUTE_RESOLVED,
-    variables: { guardName, bossName, jobName, resolution },
+    variables: { recipientName, jobTitle, decision, amountReleased, amountRefunded, adminNotes, currency },
+  });
+};
+
+export const sendDisputeResolvedAdmin = async (adminEmail: string, jobTitle: string, decision: string, resolvedBy: string, disputeId: string) => {
+  await sendEmail({
+    to: adminEmail,
+    notificationType: NotificationEventType.DISPUTE_RESOLVED_ADMIN,
+    variables: { jobTitle, decision, resolvedBy, disputeId },
+  });
+};
+
+export const sendShiftAutoApproved = async (bossEmail: string, bossName: string, guardEmail: string, guardName: string, jobTitle: string, amount: number, currency: string) => {
+  await sendEmail({
+    to: [bossEmail, guardEmail],
+    notificationType: NotificationEventType.SHIFT_AUTO_APPROVED,
+    variables: { bossName, guardName, jobTitle, amount, currency },
+  });
+};
+
+export const sendDisputeDeadlineWarning = async (adminEmail: string, jobTitle: string, hoursLeft: number, disputeId: string) => {
+  await sendEmail({
+    to: adminEmail,
+    notificationType: NotificationEventType.DISPUTE_DEADLINE_WARNING,
+    variables: { jobTitle, hoursLeft, disputeId, adminUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/disputes/${disputeId}` },
   });
 };
 

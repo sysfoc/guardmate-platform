@@ -15,6 +15,7 @@ import {
   calculateTotalScheduledHours,
 } from '@/lib/utils/shiftCalculations';
 import type { ShiftScheduleDay } from '@/types/job.types';
+import { processAutoReleases } from '@/lib/disputes/autoRelease';
 
 /**
  * POST /api/jobs
@@ -270,6 +271,9 @@ export async function GET(request: NextRequest) {
 
     // Run lifecycle transitions silently (OPEN→EXPIRED, FILLED→IN_PROGRESS, etc.)
     processJobLifecycle().catch(() => {});
+    
+    // Process Phase 7 auto-releases
+    processAutoReleases().catch(() => {});
 
     const url = new URL(request.url);
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));

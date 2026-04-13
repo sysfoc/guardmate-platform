@@ -105,6 +105,22 @@ export enum DisputeStatus {
   CLOSED     = 'CLOSED',
 }
 
+export enum DisputeReason {
+  NO_SHOW         = 'NO_SHOW',
+  PARTIAL_WORK    = 'PARTIAL_WORK',
+  MISCONDUCT      = 'MISCONDUCT',
+  PAYMENT_DISPUTE = 'PAYMENT_DISPUTE',
+  QUALITY_ISSUE   = 'QUALITY_ISSUE',
+  HOURS_DISPUTE   = 'HOURS_DISPUTE',
+  OTHER           = 'OTHER',
+}
+
+export enum AdminDecision {
+  RELEASE = 'RELEASE',
+  REFUND  = 'REFUND',
+  PARTIAL = 'PARTIAL',
+}
+
 export enum AdminLevel {
   SUPER   = 'SUPER',
   MANAGER = 'MANAGER',
@@ -149,6 +165,7 @@ export enum JobPaymentStatus {
   HELD     = 'HELD',
   RELEASED = 'RELEASED',
   REFUNDED = 'REFUNDED',
+  DISPUTED = 'DISPUTED',
 }
 
 export enum WithdrawalStatus {

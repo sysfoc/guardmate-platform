@@ -184,3 +184,41 @@ export async function getAdminRevenue(
 
   return apiGet<any>(`/api/admin/revenue?${queryParams.toString()}`);
 }
+
+// ─── Disputes ─────────────────────────────────────────────────────────────────
+
+export async function getAdminDisputes(
+  params: { status?: string; reason?: string; search?: string; page?: number; limit?: number } = {}
+): Promise<ApiResponse<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>> {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') query.append(key, String(value));
+  });
+  return apiGet(`/api/admin/disputes?${query.toString()}`);
+}
+
+export async function getAdminDisputeStats(): Promise<ApiResponse<{
+  total: number;
+  open: number;
+  underReview: number;
+  resolved: number;
+  closed: number;
+  averageResolutionHours: number;
+}>> {
+  return apiGet('/api/admin/disputes/stats');
+}
+
+export async function resolveDispute(
+  disputeId: string,
+  payload: { decision: string; adminDecisionAmount?: number; adminNotes: string }
+): Promise<ApiResponse<any>> {
+  return apiPatch(`/api/admin/disputes/${disputeId}/resolve`, payload);
+}
+
+export async function recordChargeback(
+  disputeId: string,
+  chargebackId?: string
+): Promise<ApiResponse<any>> {
+  return apiPost(`/api/disputes/${disputeId}/chargeback`, { chargebackId });
+}
+
