@@ -135,8 +135,16 @@ export async function POST(
     }
 
     const settings = await PlatformSettings.findOne().lean();
-    // Default to 1000, and if the DB has older settings (like 500), force it up to 1000.
-    const radiusMeters = Math.max(settings?.checkInRadiusMeters ?? 1000, 1000);
+    
+    // Per-job radius logic
+    // 1. First priority: the specific job's radius
+    // 2. Second priority: platform global default radius
+    // 3. Fallback: 1000m
+    const rawRadiusMeters = job.checkInRadiusMeters ?? settings?.checkInRadiusMeters ?? 1000;
+    
+    // Hard floor: absolute minimum of 30 meters to prevent GPS bounce blocking honest check-ins
+    const radiusMeters = Math.max(rawRadiusMeters, 30);
+    
     const distanceMiles = calculateDistance(
       coordinates.lat,
       coordinates.lng,

@@ -57,6 +57,7 @@ interface MapDisplayInnerProps {
   userLocation?: { lat: number; lng: number };
   height?: string;
   interactive?: boolean;
+  radiusMeters?: number | null;
 }
 
 // ─── Inner map component (client-only) ──────────────────────────────────────
@@ -68,10 +69,12 @@ export default function MapDisplayInner({
   userLocation,
   height = '400px',
   interactive = true,
+  radiusMeters,
 }: MapDisplayInnerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const radiusLayerRef = useRef<L.LayerGroup | null>(null);
 
   // Inject pulse CSS once
   useEffect(() => {
@@ -118,6 +121,7 @@ export default function MapDisplayInner({
     }
 
     markersLayerRef.current = L.layerGroup().addTo(map);
+    radiusLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
     // Force a resize after initial render
@@ -127,6 +131,7 @@ export default function MapDisplayInner({
       map.remove();
       mapRef.current = null;
       markersLayerRef.current = null;
+      radiusLayerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -142,6 +147,10 @@ export default function MapDisplayInner({
   useEffect(() => {
     if (!markersLayerRef.current || !mapRef.current) return;
     markersLayerRef.current.clearLayers();
+    
+    if (radiusLayerRef.current) {
+      radiusLayerRef.current.clearLayers();
+    }
 
     // Job markers
     markers.forEach((m) => {
@@ -189,7 +198,24 @@ export default function MapDisplayInner({
         .bindTooltip('You are here', { permanent: false })
         .addTo(markersLayerRef.current);
     }
-  }, [markers, showUserLocation, userLocation]);
+
+    // Draw Check-in Radius Circle if provided (draw around center)
+    if (radiusMeters && radiusMeters > 0 && radiusLayerRef.current && mapRef.current) {
+      L.circle([center.lat, center.lng], {
+        color: '#3b82f6',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.15,
+        weight: 2,
+        dashArray: '5, 5',
+      }).addTo(radiusLayerRef.current);
+      
+      // Auto-fit bounds if radius is large
+      if (radiusMeters > 500) {
+        const bounds = L.latLng([center.lat, center.lng]).toBounds(radiusMeters);
+        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      }
+    }
+  }, [markers, showUserLocation, userLocation, radiusMeters, center.lat, center.lng]);
 
   // Register global click handler for popups
   useEffect(() => {

@@ -23,6 +23,7 @@ interface MapDisplayProps {
   userLocation?: { lat: number; lng: number };
   height?: string;
   interactive?: boolean;
+  radiusMeters?: number | null;
 }
 
 export function MapDisplay({
@@ -33,6 +34,7 @@ export function MapDisplay({
   userLocation,
   height = '400px',
   interactive = true,
+  radiusMeters,
 }: MapDisplayProps) {
   return (
     <div style={{ height }}>
@@ -44,6 +46,7 @@ export function MapDisplay({
         userLocation={userLocation}
         height={height}
         interactive={interactive}
+        radiusMeters={radiusMeters}
       />
     </div>
   );

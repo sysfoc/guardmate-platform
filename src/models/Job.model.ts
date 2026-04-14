@@ -56,6 +56,7 @@ const JobSchema = new Schema<JobDocument>({
   locationCountry:    { type: String, default: '' },
   locationPostalCode: { type: String, default: '' },
   coordinates:        { type: CoordinatesSchema, default: null },
+  checkInRadiusMeters: { type: Number, default: null },
 
   // Schedule
   startDate:      { type: Date, required: true, index: true },

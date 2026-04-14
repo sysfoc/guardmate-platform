@@ -85,6 +85,7 @@ export interface IJob {
   locationCountry: string;
   locationPostalCode: string;
   coordinates: Coordinates | null;
+  checkInRadiusMeters?: number | null;
 
   // Schedule
   startDate: string | Date;
@@ -216,6 +217,7 @@ export interface CreateJobPayload {
   locationCountry: string;
   locationPostalCode: string;
   coordinates?: Coordinates | null;
+  checkInRadiusMeters?: number | null;
 
   startDate: string;
   endDate: string;

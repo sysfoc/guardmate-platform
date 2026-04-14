@@ -168,6 +168,7 @@ export async function POST(request: NextRequest) {
       locationCountry: body.locationCountry || '',
       locationPostalCode: body.locationPostalCode || '',
       coordinates: body.coordinates || null,
+      checkInRadiusMeters: body.checkInRadiusMeters ? Math.max(30, Number(body.checkInRadiusMeters)) : null,
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate),
       startTime: body.startTime || null,

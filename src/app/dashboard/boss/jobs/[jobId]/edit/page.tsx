@@ -55,6 +55,7 @@ export default function EditJobPage() {
             locationState: job.locationState,
             locationCountry: job.locationCountry,
             locationPostalCode: job.locationPostalCode,
+            checkInRadiusMeters: job.checkInRadiusMeters,
             startDate: new Date(job.startDate).toISOString().split('T')[0],
             endDate: new Date(job.endDate).toISOString().split('T')[0],
             startTime: job.startTime,
@@ -260,6 +261,22 @@ export default function EditJobPage() {
               <div><label className={labelCls}>State / County</label><input value={form.locationState || ''} onChange={(e) => update({ locationState: e.target.value })} placeholder="Greater London" className={inputCls} /></div>
               <div><label className={labelCls}>Country</label><input value={form.locationCountry || ''} onChange={(e) => update({ locationCountry: e.target.value })} placeholder="United Kingdom" className={inputCls} /></div>
               <div><label className={labelCls}>Postal Code</label><input value={form.locationPostalCode || ''} onChange={(e) => update({ locationPostalCode: e.target.value })} placeholder="EC2A 1NT" className={inputCls} /></div>
+              <div>
+                <label className={labelCls}>
+                  Check-in Radius (meters)
+                  <span className="text-[9px] font-normal text-[var(--color-text-muted)] ml-1 block">
+                    How close the guard must be to check in. Min recommended: 30m. Leave blank for global default.
+                  </span>
+                </label>
+                <input 
+                  type="number" 
+                  min={30} 
+                  value={form.checkInRadiusMeters || ''} 
+                  onChange={(e) => update({ checkInRadiusMeters: e.target.value ? Math.max(30, Number(e.target.value)) : null })} 
+                  placeholder="e.g. 50" 
+                  className={inputCls} 
+                />
+              </div>
             </div>
 
             <div className="border-t border-[var(--color-surface-border)] pt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
