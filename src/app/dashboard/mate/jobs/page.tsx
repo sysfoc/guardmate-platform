@@ -5,7 +5,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
 import { getJobs, getMyBids } from '@/lib/api/job.api';
+import { offerApi } from '@/lib/api/offer.api';
 import { checkDateOverlap } from '@/lib/jobs/overlapCheck';
+import type { IOffer } from '@/types/offer.types';
+import { DiscountType } from '@/types/enums';
 import { JobCard } from '@/components/jobs/JobCard';
 import { JobFilters } from '@/components/jobs/JobFilters';
 import { MapDisplay } from '@/components/maps/MapDisplay';
@@ -17,7 +20,7 @@ import type { IJob, JobFilters as JobFiltersType, BidWithJob, MapMarker } from '
 import type { MateProfile } from '@/types/user.types';
 import { UserStatus, LicenseStatus, UserRole } from '@/types/enums';
 import { calculateDistance } from '@/lib/utils/haversine';
-import { Briefcase, Loader2, Search, X, Map as MapIcon, List, AlertCircle, Building2, Lock } from 'lucide-react';
+import { Briefcase, Loader2, Search, X, Map as MapIcon, List, AlertCircle, Building2, Lock, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function MateJobsContent() {
@@ -35,6 +38,10 @@ function MateJobsContent() {
   // Geolocation and map state
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [geoRequested, setGeoRequested] = useState(false);
+
+  // Offer banner state
+  const [activeOffer, setActiveOffer] = useState<IOffer | null>(null);
+  const [offerDismissed, setOfferDismissed] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   // Read filters from URL
@@ -67,6 +74,29 @@ function MateJobsContent() {
       setViewMode(saved);
     }
   }, []);
+
+  // Fetch active guard offers for banner
+  useEffect(() => {
+    const dismissed = sessionStorage.getItem('guardmate-guard-offer-dismissed');
+    if (dismissed === 'true') {
+      setOfferDismissed(true);
+      return;
+    }
+    offerApi.getActiveOffers()
+      .then((offers) => {
+        // Find the first guard commission offer
+        const guardOffer = offers.find((o) =>
+          (o.offerType === 'GUARD_COMMISSION_REDUCTION' || o.offerType === 'GUARD_COMMISSION_WAIVER') && o.isActive
+        );
+        if (guardOffer) setActiveOffer(guardOffer);
+      })
+      .catch(() => {});
+  }, []);
+
+  const dismissOfferBanner = () => {
+    setOfferDismissed(true);
+    sessionStorage.setItem('guardmate-guard-offer-dismissed', 'true');
+  };
 
   const toggleViewMode = (mode: 'list' | 'map') => {
     setViewMode(mode);
@@ -312,6 +342,36 @@ function MateJobsContent() {
             </button>
           </div>
         </div>
+
+        {/* Guard Promotional Offer Banner */}
+        {activeOffer && !offerDismissed && (
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 bg-emerald-500/10 rounded-full shrink-0">
+                <Tag className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-emerald-800 truncate">
+                  🎉 {activeOffer.name} — Guard commission currently{' '}
+                  {activeOffer.discountType === DiscountType.FULL_WAIVER
+                    ? 'waived'
+                    : activeOffer.discountType === DiscountType.PERCENTAGE_OFF
+                      ? `${activeOffer.discountValue}% off`
+                      : `reduced to ${activeOffer.discountValue}%`
+                  }{' '}until {new Date(activeOffer.endDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+                <p className="text-[10px] text-emerald-600 font-medium mt-0.5">{activeOffer.description}</p>
+              </div>
+            </div>
+            <button
+              onClick={dismissOfferBanner}
+              className="p-1.5 hover:bg-emerald-500/10 rounded-full transition-colors shrink-0"
+              aria-label="Dismiss offer"
+            >
+              <X className="h-4 w-4 text-emerald-600" />
+            </button>
+          </div>
+        )}
 
         {/* Global Search */}
         <div className="relative max-w-2xl">

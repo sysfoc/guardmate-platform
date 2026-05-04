@@ -174,3 +174,32 @@ export enum WithdrawalStatus {
   COMPLETED  = 'COMPLETED',
   FAILED     = 'FAILED',
 }
+
+// ─── Phase 8: Subscription & Offers Enums ─────────────────────────────────────
+
+export enum SubscriptionStatus {
+  TRIAL     = 'TRIAL',
+  ACTIVE    = 'ACTIVE',
+  LAPSED    = 'LAPSED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum OfferType {
+  BOSS_COMMISSION_REDUCTION  = 'BOSS_COMMISSION_REDUCTION',
+  GUARD_COMMISSION_REDUCTION = 'GUARD_COMMISSION_REDUCTION',
+  BOSS_COMMISSION_WAIVER     = 'BOSS_COMMISSION_WAIVER',
+  GUARD_COMMISSION_WAIVER    = 'GUARD_COMMISSION_WAIVER',
+  SUBSCRIPTION_DISCOUNT      = 'SUBSCRIPTION_DISCOUNT',
+  SUBSCRIPTION_FREE_TRIAL    = 'SUBSCRIPTION_FREE_TRIAL',
+}
+
+export enum DiscountType {
+  PERCENTAGE_OFF = 'PERCENTAGE_OFF',
+  FIXED_RATE     = 'FIXED_RATE',
+  FULL_WAIVER    = 'FULL_WAIVER',
+}
+
+export enum OfferEligibility {
+  ALL_USERS      = 'ALL_USERS',
+  NEW_USERS_ONLY = 'NEW_USERS_ONLY',
+}

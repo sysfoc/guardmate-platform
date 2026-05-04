@@ -46,6 +46,13 @@ export default function AdminSettingsPage() {
   const [paypalWebhookId, setPaypalWebhookId] = useState<string>('');
   const [paypalMode, setPaypalMode] = useState<'sandbox' | 'live'>('sandbox');
 
+  // Phase 8: Subscription Settings State
+  const [bossSubscriptionEnabled, setBossSubscriptionEnabled] = useState<boolean>(false);
+  const [bossSubscriptionAmount, setBossSubscriptionAmount] = useState<number | null>(null);
+  const [bossSubscriptionCurrency, setBossSubscriptionCurrency] = useState<string>('AUD');
+  const [bossSubscriptionGracePeriodDays, setBossSubscriptionGracePeriodDays] = useState<number>(3);
+  const [bossSubscriptionTrialDays, setBossSubscriptionTrialDays] = useState<number>(0);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -90,6 +97,13 @@ export default function AdminSettingsPage() {
       setPaypalClientSecret(platformData.paypalClientSecret || '');
       setPaypalWebhookId(platformData.paypalWebhookId || '');
       setPaypalMode(platformData.paypalMode || 'sandbox');
+
+      // Phase 8: Load Subscription Settings
+      setBossSubscriptionEnabled(platformData.bossSubscriptionEnabled ?? false);
+      setBossSubscriptionAmount(platformData.bossSubscriptionAmount ?? null);
+      setBossSubscriptionCurrency(platformData.bossSubscriptionCurrency || 'AUD');
+      setBossSubscriptionGracePeriodDays(platformData.bossSubscriptionGracePeriodDays ?? 3);
+      setBossSubscriptionTrialDays(platformData.bossSubscriptionTrialDays ?? 0);
     } catch (err: any) {
       setErrorMsg('Failed to load settings');
     } finally {
@@ -177,6 +191,13 @@ export default function AdminSettingsPage() {
         paypalClientSecret,
         paypalWebhookId,
         paypalMode,
+
+        // Phase 8: Subscription Settings
+        bossSubscriptionEnabled,
+        bossSubscriptionAmount,
+        bossSubscriptionCurrency,
+        bossSubscriptionGracePeriodDays,
+        bossSubscriptionTrialDays,
       };
 
       const updated = await settingsApi.updatePlatformSettings(payload);
@@ -202,6 +223,12 @@ export default function AdminSettingsPage() {
       setPaypalClientSecret(updated.paypalClientSecret || '');
       setPaypalWebhookId(updated.paypalWebhookId || '');
       setPaypalMode(updated.paypalMode || 'sandbox');
+
+      setBossSubscriptionEnabled(updated.bossSubscriptionEnabled ?? false);
+      setBossSubscriptionAmount(updated.bossSubscriptionAmount ?? null);
+      setBossSubscriptionCurrency(updated.bossSubscriptionCurrency || 'AUD');
+      setBossSubscriptionGracePeriodDays(updated.bossSubscriptionGracePeriodDays ?? 3);
+      setBossSubscriptionTrialDays(updated.bossSubscriptionTrialDays ?? 0);
 
       await refreshSettings(); // Sync global context
       
@@ -290,6 +317,13 @@ export default function AdminSettingsPage() {
     'Dispute Notifications': [
       { id: NotificationEventType.DISPUTE_RAISED, label: 'Dispute Raised', desc: 'Alerts Admin, Boss, and Guard.' },
       { id: NotificationEventType.DISPUTE_RESOLVED, label: 'Dispute Resolved', desc: 'Alerts Boss and Guard with resolution details.' },
+    ],
+    'Subscription & Offer Notifications': [
+      { id: NotificationEventType.SUBSCRIPTION_ACTIVATED, label: 'Subscription Activated', desc: 'Alerts Boss when subscription is activated.' },
+      { id: NotificationEventType.SUBSCRIPTION_EXPIRING_SOON, label: 'Subscription Expiring Soon', desc: 'Warns Boss 3 days before subscription expiry.' },
+      { id: NotificationEventType.SUBSCRIPTION_LAPSED, label: 'Subscription Lapsed', desc: 'Alerts Boss when subscription expires.' },
+      { id: NotificationEventType.SUBSCRIPTION_CANCELLED, label: 'Subscription Cancelled', desc: 'Confirms cancellation to Boss.' },
+      { id: NotificationEventType.NEW_OFFER_AVAILABLE, label: 'New Offer Available', desc: 'Notifies users about new promotions.' },
     ],
   };
 
@@ -715,6 +749,31 @@ export default function AdminSettingsPage() {
                   <p className="text-xs text-[var(--color-text-muted)]">e.g. 5% on a $100 job = Guard receives $95.</p>
                 </div>
               </div>
+
+              {/* Live Commission Preview */}
+              <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
+                <h5 className="text-xs font-black text-indigo-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                  Live Preview — {platformCurrency}100 Job
+                </h5>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 bg-white rounded-lg border border-indigo-100">
+                    <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-wider">Boss Pays</p>
+                    <p className="text-lg font-black text-indigo-900">{platformCurrency}{(100 + (100 * platformCommissionBoss / 100)).toFixed(2)}</p>
+                    <p className="text-[9px] text-slate-400">Job + {platformCommissionBoss}% fee</p>
+                  </div>
+                  <div className="text-center p-3 bg-white rounded-lg border border-emerald-100">
+                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Guard Receives</p>
+                    <p className="text-lg font-black text-emerald-900">{platformCurrency}{(100 - (100 * platformCommissionGuard / 100)).toFixed(2)}</p>
+                    <p className="text-[9px] text-slate-400">Job - {platformCommissionGuard}% fee</p>
+                  </div>
+                  <div className="text-center p-3 bg-white rounded-lg border border-amber-100">
+                    <p className="text-[9px] font-bold text-amber-500 uppercase tracking-wider">Platform Earns</p>
+                    <p className="text-lg font-black text-amber-900">{platformCurrency}{((100 * platformCommissionBoss / 100) + (100 * platformCommissionGuard / 100)).toFixed(2)}</p>
+                    <p className="text-[9px] text-slate-400">{platformCommissionBoss}% + {platformCommissionGuard}% commission</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Withdrawals */}
@@ -828,6 +887,72 @@ export default function AdminSettingsPage() {
             <div className="flex gap-2 items-center text-xs text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
               <AlertTriangle className="h-4 w-4" />
               <span>Keys are saved as simple strings temporarily. (Encryption-at-rest integration deferred).</span>
+            </div>
+
+            {/* Phase 8: Boss Subscription Settings */}
+            <div className="space-y-4 pt-6 border-t border-[var(--color-border-primary)]">
+              <div className="flex items-center justify-between bg-purple-50 p-4 rounded-xl border border-purple-200">
+                <div>
+                  <h4 className="text-lg font-bold text-purple-800">Boss Monthly Subscription</h4>
+                  <p className="text-sm text-purple-700">Require Bosses to maintain a monthly subscription to post jobs.</p>
+                </div>
+                <Toggle checked={bossSubscriptionEnabled} onCheckedChange={setBossSubscriptionEnabled} />
+              </div>
+
+              {bossSubscriptionEnabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[var(--color-input-label)]">Subscription Amount</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">{bossSubscriptionCurrency}</span>
+                      <input
+                        type="number"
+                        min="0.01" step="0.01"
+                        value={bossSubscriptionAmount ?? ''}
+                        onChange={(e) => setBossSubscriptionAmount(e.target.value ? Number(e.target.value) : null)}
+                        placeholder="e.g. 49.99"
+                        className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 pl-14 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                      />
+                    </div>
+                    <p className="text-xs text-[var(--color-text-muted)]">Monthly fee charged to Bosses via Stripe or PayPal.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[var(--color-input-label)]">Currency</label>
+                    <select
+                      value={bossSubscriptionCurrency}
+                      onChange={(e) => setBossSubscriptionCurrency(e.target.value)}
+                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    >
+                      <option value="AUD">AUD</option>
+                      <option value="USD">USD</option>
+                      <option value="GBP">GBP</option>
+                      <option value="EUR">EUR</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[var(--color-input-label)]">Grace Period (days)</label>
+                    <input
+                      type="number"
+                      min="1" max="30"
+                      value={bossSubscriptionGracePeriodDays}
+                      onChange={(e) => setBossSubscriptionGracePeriodDays(Number(e.target.value))}
+                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                    <p className="text-xs text-[var(--color-text-muted)]">Days after expiry that Bosses can still post jobs before being blocked.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[var(--color-input-label)]">Free Trial (days)</label>
+                    <input
+                      type="number"
+                      min="0" max="90"
+                      value={bossSubscriptionTrialDays}
+                      onChange={(e) => setBossSubscriptionTrialDays(Number(e.target.value))}
+                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                    <p className="text-xs text-[var(--color-text-muted)]">Set to 0 for no trial. New Bosses automatically get this many days free.</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end pt-4 border-t border-[var(--color-border-primary)]">

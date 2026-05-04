@@ -58,6 +58,12 @@ interface MapDisplayInnerProps {
   height?: string;
   interactive?: boolean;
   radiusMeters?: number | null;
+  /** Path coordinates for guard movement trail */
+  path?: { lat: number; lng: number }[];
+  /** Live guard position marker */
+  liveMarker?: { lat: number; lng: number; label?: string } | null;
+  /** Job site location marker */
+  jobMarker?: { lat: number; lng: number; label?: string } | null;
 }
 
 // ─── Inner map component (client-only) ──────────────────────────────────────
@@ -70,11 +76,15 @@ export default function MapDisplayInner({
   height = '400px',
   interactive = true,
   radiusMeters,
+  path,
+  liveMarker,
+  jobMarker,
 }: MapDisplayInnerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const radiusLayerRef = useRef<L.LayerGroup | null>(null);
+  const trackingLayerRef = useRef<L.LayerGroup | null>(null);
 
   // Inject pulse CSS once
   useEffect(() => {
@@ -122,6 +132,7 @@ export default function MapDisplayInner({
 
     markersLayerRef.current = L.layerGroup().addTo(map);
     radiusLayerRef.current = L.layerGroup().addTo(map);
+    trackingLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
     // Force a resize after initial render
@@ -132,6 +143,7 @@ export default function MapDisplayInner({
       mapRef.current = null;
       markersLayerRef.current = null;
       radiusLayerRef.current = null;
+      trackingLayerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -142,6 +154,64 @@ export default function MapDisplayInner({
       mapRef.current.setView([center.lat, center.lng], zoom);
     }
   }, [center.lat, center.lng, zoom]);
+
+  // Update guard tracking (path, live marker, job marker)
+  useEffect(() => {
+    if (!trackingLayerRef.current || !mapRef.current) return;
+    trackingLayerRef.current.clearLayers();
+
+    // Draw path (location history trail)
+    if (path && path.length > 1) {
+      const latlngs = path.map((p) => [p.lat, p.lng] as L.LatLngExpression);
+      L.polyline(latlngs, {
+        color: '#10b981', // emerald-500
+        weight: 3,
+        opacity: 0.7,
+        dashArray: '5, 10',
+        lineCap: 'round',
+      }).addTo(trackingLayerRef.current);
+    }
+
+    // Job site marker
+    if (jobMarker) {
+      const jobIcon = L.divIcon({
+        html: `
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+            <svg width="32" height="32" viewBox="0 0 32 32">
+              <circle cx="16" cy="16" r="12" fill="#f59e0b" stroke="white" stroke-width="3"/>
+              <text x="16" y="20" text-anchor="middle" fill="white" font-size="14" font-weight="bold">J</text>
+            </svg>
+          </div>`,
+        className: 'guardmate-marker',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      });
+
+      L.marker([jobMarker.lat, jobMarker.lng], { icon: jobIcon })
+        .bindTooltip(jobMarker.label || 'Job Site', { permanent: false })
+        .addTo(trackingLayerRef.current);
+    }
+
+    // Live guard marker with pulse animation
+    if (liveMarker) {
+      const guardIcon = L.divIcon({
+        html: `
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+            <svg width="28" height="28" viewBox="0 0 28 28">
+              <circle cx="14" cy="14" r="10" fill="#10b981" stroke="white" stroke-width="3"/>
+            </svg>
+            <div style="position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.3);animation:guardmate-pulse 1.5s infinite;"></div>
+          </div>`,
+        className: 'guardmate-marker',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      });
+
+      L.marker([liveMarker.lat, liveMarker.lng], { icon: guardIcon })
+        .bindTooltip(liveMarker.label || 'Guard Location', { permanent: false })
+        .addTo(trackingLayerRef.current);
+    }
+  }, [path, liveMarker, jobMarker]);
 
   // Update markers
   useEffect(() => {

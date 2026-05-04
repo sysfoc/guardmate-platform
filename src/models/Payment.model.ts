@@ -55,6 +55,10 @@ const PaymentSchema = new Schema<PaymentDocument>(
     refundedAt:   { type: Date, default: null },
     refundReason: { type: String, default: null },
     disputeId:    { type: String, default: null },
+
+    // ─── Phase 8: Applied Offers ─────────────────────────────────────────────
+    appliedBossOfferId:  { type: String, default: null },
+    appliedGuardOfferId: { type: String, default: null },
   },
   {
     timestamps: true,

@@ -17,7 +17,10 @@ import {
   Shield,
   Briefcase,
   DollarSign,
-  ShieldAlert
+  ShieldAlert,
+  BarChart2,
+  Tag,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
@@ -28,6 +31,7 @@ import type { UserProfile } from '@/types/user.types';
 
 const adminNavItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
+  { label: 'Analytics', icon: BarChart2, href: '/admin/analytics' },
   { label: 'Guard Approvals', icon: ShieldCheck, href: '/admin/guards' },
   { label: 'Boss Approvals', icon: Building2, href: '/admin/bosses' },
   { label: 'All Users', icon: Users, href: '/admin/users' },
@@ -35,6 +39,8 @@ const adminNavItems = [
   { label: 'Incidents', icon: Shield, href: '/admin/incidents' },
   { label: 'Disputes', icon: ShieldAlert, href: '/admin/disputes' },
   { label: 'Revenue & Escrow', icon: DollarSign, href: '/admin/payments' },
+  { label: 'Subscriptions', icon: CreditCard, href: '/admin/subscriptions' },
+  { label: 'Offers', icon: Tag, href: '/admin/offers' },
   { label: 'Activity Log', icon: History, href: '/admin/activity' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];

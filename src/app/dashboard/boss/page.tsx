@@ -6,7 +6,7 @@ import { useUser } from '@/context/UserContext';
 import { 
   TrendingUp, FileText, ChevronRight, AlertTriangle, 
   Building2, MapPin, Star, Users, Briefcase, Plus, AlertCircle,
-  CheckCircle2, Clock, Calendar, Search, ArrowUpRight, MoreHorizontal, Shield, X
+  CheckCircle2, Clock, Calendar, Search, ArrowUpRight, MoreHorizontal, Shield, X, CreditCard
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -21,13 +21,18 @@ import { getMyPendingReviews } from '@/lib/api/review.api';
 import type { BossActivityItem } from '@/lib/api/job.api';
 import type { BossProfile } from '@/types/user.types';
 import { VerificationStatus, LicenseStatus } from '@/types/enums';
+import { subscriptionApi } from '@/lib/api/subscription.api';
+import type { ISubscriptionStatus } from '@/types/subscription.types';
+import { usePlatformContext } from '@/context/PlatformContext';
 
 export default function BossDashboard() {
   const { user, isLoading } = useUser();
+  const { platformSettings } = usePlatformContext();
   const [activity, setActivity] = useState<BossActivityItem[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [hideReviewBanner, setHideReviewBanner] = useState(false);
+  const [subStatus, setSubStatus] = useState<ISubscriptionStatus | null>(null);
 
   useEffect(() => {
     const fetchActivity = async () => {
@@ -43,6 +48,13 @@ export default function BossDashboard() {
     };
     fetchActivity();
   }, []);
+
+  // Fetch subscription status
+  useEffect(() => {
+    if (platformSettings?.bossSubscriptionEnabled) {
+      subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
+    }
+  }, [platformSettings?.bossSubscriptionEnabled]);
 
   if (isLoading) return <DashboardSkeleton />;
   if (!user) return null;
@@ -190,6 +202,43 @@ export default function BossDashboard() {
                 <p className="text-[10px] font-medium opacity-80 mt-0.5">Frequent cancellations negatively affect your employer reputation.</p>
               </div>
             </div>
+          )}
+
+          {/* Phase 8: Subscription Status Card */}
+          {platformSettings?.bossSubscriptionEnabled && subStatus && (
+            <Card className={`p-4 border ${
+              subStatus.isSubscribed
+                ? subStatus.status === 'ACTIVE' ? 'border-emerald-200 bg-emerald-50/30' : subStatus.status === 'TRIAL' ? 'border-blue-200 bg-blue-50/30' : 'border-amber-200 bg-amber-50/30'
+                : 'border-red-200 bg-red-50/30'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl ${
+                    subStatus.isSubscribed
+                      ? subStatus.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'
+                      : 'bg-red-500/10 text-red-500'
+                  }`}>
+                    <CreditCard className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-0.5">Subscription</p>
+                    <h3 className={`text-sm font-black ${
+                      subStatus.isSubscribed ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-danger)]'
+                    }`}>
+                      {subStatus.status === 'ACTIVE' ? 'ACTIVE' : subStatus.status === 'TRIAL' ? 'FREE TRIAL' : subStatus.status === 'CANCELLED' ? 'CANCELLED' : subStatus.status === 'LAPSED' && subStatus.isInGracePeriod ? 'GRACE PERIOD' : 'SUBSCRIBE NOW'}
+                    </h3>
+                    {subStatus.daysRemaining !== null && subStatus.daysRemaining > 0 && (
+                      <p className="text-[9px] text-[var(--color-text-tertiary)] font-medium">{subStatus.daysRemaining} day{subStatus.daysRemaining !== 1 ? 's' : ''} remaining</p>
+                    )}
+                  </div>
+                </div>
+                <Link href="/dashboard/boss/subscription">
+                  <Button size="sm" variant={subStatus.isSubscribed ? 'ghost' : 'primary'} className="text-[10px] font-bold">
+                    {subStatus.isSubscribed ? 'Manage' : 'Subscribe'}
+                  </Button>
+                </Link>
+              </div>
+            </Card>
           )}
         </div>
 

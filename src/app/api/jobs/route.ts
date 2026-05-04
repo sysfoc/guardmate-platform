@@ -5,7 +5,7 @@ import Job from '@/models/Job.model';
 import User from '@/models/User.model';
 import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { JobStatus, UserRole, UserStatus, BudgetType, HiringStatus } from '@/types/enums';
+import { JobStatus, UserRole, UserStatus, BudgetType, HiringStatus, SubscriptionStatus } from '@/types/enums';
 import { processJobLifecycle } from '@/lib/jobs/jobLifecycle';
 import { calculateDistance } from '@/lib/utils/haversine';
 import {
@@ -16,6 +16,8 @@ import {
 } from '@/lib/utils/shiftCalculations';
 import type { ShiftScheduleDay } from '@/types/job.types';
 import { processAutoReleases } from '@/lib/disputes/autoRelease';
+import BossSubscription from '@/models/BossSubscription.model';
+import { checkSubscriptionExpiries } from '@/lib/subscriptions/subscriptionChecker';
 
 /**
  * POST /api/jobs
@@ -96,6 +98,56 @@ export async function POST(request: NextRequest) {
       }
     }
     // ─── END MINIMUM RATE ENFORCEMENT ─────────────────────────────────────────
+
+    // ─── SUBSCRIPTION ENFORCEMENT ────────────────────────────────────────────
+    if (platformSettings?.bossSubscriptionEnabled) {
+      const subscription = await BossSubscription.findOne({ bossUid: user.uid });
+      const now = new Date();
+      const gracePeriodDays = platformSettings.bossSubscriptionGracePeriodDays ?? 3;
+      const trialDays = platformSettings.bossSubscriptionTrialDays ?? 0;
+      let isSubscribed = false;
+      let isInGracePeriod = false;
+      let graceDaysRemaining = 0;
+
+      if (subscription) {
+        if (subscription.status === SubscriptionStatus.ACTIVE) {
+          const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+          isSubscribed = endDate ? now < endDate : false;
+        } else if (subscription.status === SubscriptionStatus.CANCELLED) {
+          const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+          isSubscribed = endDate ? now < endDate : false;
+        } else if (subscription.status === SubscriptionStatus.LAPSED) {
+          const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+          const graceEnd = endDate ? new Date(endDate.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000) : null;
+          isInGracePeriod = graceEnd ? now < graceEnd : false;
+          isSubscribed = isInGracePeriod;
+          graceDaysRemaining = graceEnd ? Math.max(0, Math.ceil((graceEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))) : 0;
+        } else if (subscription.status === SubscriptionStatus.TRIAL) {
+          const trialEnd = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
+          isSubscribed = trialEnd ? now < trialEnd : false;
+        }
+      } else if (trialDays > 0 && user.createdAt) {
+        // No subscription record — check implicit trial from registration date
+        const registeredAt = new Date(user.createdAt as string);
+        const trialEnd = new Date(registeredAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
+        isSubscribed = now < trialEnd;
+      }
+
+      if (!isSubscribed) {
+        return createApiResponse(false, {
+          code: 'SUBSCRIPTION_REQUIRED',
+          message: 'A monthly subscription is required to post jobs. Please subscribe to continue.',
+          subscriptionAmount: platformSettings.bossSubscriptionAmount,
+          currency: platformSettings.bossSubscriptionCurrency || currency,
+        }, 'A monthly subscription is required to post jobs. Please subscribe to continue.', 400);
+      }
+
+      // If in grace period, we allow but will add a warning header
+      if (isInGracePeriod) {
+        // Boss can still post, but they should be warned (handled in response below)
+      }
+    }
+    // ─── END SUBSCRIPTION ENFORCEMENT ────────────────────────────────────────
 
     // Process shiftSchedule — enrich each slot with computed fields
     let shiftSchedule: ShiftScheduleDay[] = [];
@@ -275,6 +327,11 @@ export async function GET(request: NextRequest) {
     
     // Process Phase 7 auto-releases
     processAutoReleases().catch(() => {});
+
+    // Phase 8: Check subscription expiries (non-blocking)
+    if (user.role === UserRole.BOSS) {
+      checkSubscriptionExpiries().catch(() => {});
+    }
 
     const url = new URL(request.url);
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));

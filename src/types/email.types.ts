@@ -48,6 +48,13 @@ export enum NotificationEventType {
   DISPUTE_RESOLVED_ADMIN = 'disputeResolvedAdmin',
   SHIFT_AUTO_APPROVED = 'shiftAutoApproved',
   DISPUTE_DEADLINE_WARNING = 'disputeDeadlineWarning',
+
+  // ─── Phase 8: Subscriptions & Offers ──────────────────────────────────
+  SUBSCRIPTION_ACTIVATED = 'subscriptionActivated',
+  SUBSCRIPTION_EXPIRING_SOON = 'subscriptionExpiringSoon',
+  SUBSCRIPTION_LAPSED = 'subscriptionLapsed',
+  SUBSCRIPTION_CANCELLED = 'subscriptionCancelled',
+  NEW_OFFER_AVAILABLE = 'newOfferAvailable',
 }
 
 export interface IEmailSettings {

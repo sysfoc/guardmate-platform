@@ -128,3 +128,158 @@ export interface AdminJobFilters {
   page?: number;
   limit?: number;
 }
+
+// ─── Analytics Types ────────────────────────────────────────────────────────
+
+export interface AnalyticsPeriod {
+  dateFrom: string;
+  dateTo: string;
+  label: string;
+}
+
+export interface PlatformOverviewStats {
+  totalUsers: number;
+  totalBosses: number;
+  totalGuards: number;
+  newUsersThisPeriod: number;
+  newBossesThisPeriod: number;
+  newGuardsThisPeriod: number;
+  activeUsers: number;
+  pendingApprovals: number;
+  suspendedUsers: number;
+  bannedUsers: number;
+}
+
+export interface JobsMarketplaceStats {
+  totalJobsPosted: number;
+  jobsPostedThisPeriod: number;
+  totalJobsCompleted: number;
+  jobsCompletedThisPeriod: number;
+  totalJobsCancelled: number;
+  totalJobsExpired: number;
+  jobCompletionRate: number;
+  averageGuardsPerJob: number;
+  totalBidsSubmitted: number;
+  averageBidsPerJob: number;
+  jobsByStatus: {
+    open: number;
+    filled: number;
+    inProgress: number;
+    completed: number;
+    cancelled: number;
+    expired: number;
+  };
+  jobsByType: {
+    oneTime: number;
+    recurring: number;
+    contract: number;
+  };
+}
+
+export interface RevenueByPeriodItem {
+  date: string;
+  revenue: number;
+  transactions: number;
+}
+
+export interface RevenueFinanceStats {
+  totalPlatformRevenue: number;
+  revenueThisPeriod: number;
+  totalBossCommission: number;
+  totalGuardCommission: number;
+  totalEscrowHeld: number;
+  totalPaidOut: number;
+  totalWithdrawals: number;
+  averageJobValue: number;
+  revenueByMethod: {
+    stripe: number;
+    paypal: number;
+  };
+  revenueByPeriod: RevenueByPeriodItem[];
+}
+
+export interface TopRatedGuard {
+  uid: string;
+  name: string;
+  photo: string | null;
+  rating: number;
+  totalReviews: number;
+  totalJobsCompleted: number;
+}
+
+export interface GuardPerformanceStats {
+  totalActiveGuards: number;
+  averageGuardRating: number;
+  topRatedGuards: TopRatedGuard[];
+  averageReliabilityScore: number;
+  guardsWithCancellationStrikes: number;
+  totalIncidentsReported: number;
+  incidentsBySeverity: {
+    low: number;
+    medium: number;
+    high: number;
+    critical: number;
+  };
+  shiftsCheckedInOnTime: number;
+  shiftCompletionRate: number;
+}
+
+export interface TopBoss {
+  uid: string;
+  name: string;
+  company: string;
+  totalJobsPosted: number;
+  completionRate: number;
+  averageRating: number;
+}
+
+export interface BossActivityStats {
+  totalActiveBosses: number;
+  averageBossRating: number;
+  topBosses: TopBoss[];
+  bossesWithCancellationStrikes: number;
+  averageJobPostingFrequency: number;
+}
+
+export interface DisputeStats {
+  totalDisputes: number;
+  disputesThisPeriod: number;
+  openDisputes: number;
+  underReviewDisputes: number;
+  resolvedDisputes: number;
+  disputeResolutionRate: number;
+  averageResolutionHours: number;
+  disputesByReason: {
+    noShow: number;
+    partialWork: number;
+    misconduct: number;
+    paymentDispute: number;
+    qualityIssue: number;
+    hoursDispute: number;
+    other: number;
+  };
+  disputesByOutcome: {
+    release: number;
+    refund: number;
+    partial: number;
+  };
+  chargebacksRaised: number;
+}
+
+export interface AdminAnalyticsOverview {
+  period: AnalyticsPeriod;
+  platformOverview: PlatformOverviewStats;
+  jobsMarketplace: JobsMarketplaceStats;
+  revenueFinance: RevenueFinanceStats;
+  guardPerformance: GuardPerformanceStats;
+  bossActivity: BossActivityStats;
+  disputes: DisputeStats;
+  currency: string;
+  generatedAt: string;
+}
+
+export interface AnalyticsFilters {
+  period?: 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+  dateFrom?: string;
+  dateTo?: string;
+}

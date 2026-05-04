@@ -17,9 +17,13 @@ import {
   ChevronRight,
   Activity,
   Briefcase,
+  BarChart2,
+  TrendingUp,
+  Users,
+  ShieldAlert,
 } from 'lucide-react';
-import { getAdminStats } from '@/lib/api/admin.api';
-import type { AdminDashboardStats, AdminActivity } from '@/types/admin.types';
+import { getAdminStats, getAdminAnalyticsOverview } from '@/lib/api/admin.api';
+import type { AdminDashboardStats, AdminActivity, AdminAnalyticsOverview } from '@/types/admin.types';
 
 // ─── Action Type Display Map ──────────────────────────────────────────────────
 
@@ -38,20 +42,26 @@ const actionTypeLabels: Record<string, { label: string; color: string }> = {
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
+  const [analytics, setAnalytics] = useState<AdminAnalyticsOverview | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchData() {
       try {
-        const resp = await getAdminStats();
-        if (resp.success) setStats(resp.data);
+        const [statsResp, analyticsResp] = await Promise.all([
+          getAdminStats(),
+          getAdminAnalyticsOverview({ period: 'month' }),
+        ]);
+        
+        if (statsResp.success) setStats(statsResp.data);
+        if (analyticsResp.success) setAnalytics(analyticsResp.data);
       } catch (err) {
-        console.error('Failed to fetch admin stats:', err);
+        console.error('Failed to fetch admin data:', err);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchStats();
+    fetchData();
   }, []);
 
   if (isLoading) return <DashboardSkeleton />;
@@ -168,7 +178,73 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* ── Two-column: Recent Approvals + Activity ────────────── */}
+      {/* ─── Analytics Summary ─────────────────────────────────── */}
+      <Card className="p-4 sm:p-5 bg-white">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm sm:text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+            <BarChart2 className="h-4 w-4 text-[var(--color-primary)]" />
+            Analytics Summary
+          </h2>
+          <Link
+            href="/admin/analytics"
+            className="text-[10px] sm:text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1 uppercase tracking-wider bg-[var(--color-primary)]/5 px-2 py-1 rounded-md"
+          >
+            View Full Analytics <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </div>
+        
+        {analytics ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="p-3 rounded-lg bg-[var(--color-bg-subtle)]">
+              <div className="flex items-center gap-2 mb-1">
+                <DollarSign className="h-3.5 w-3.5 text-[var(--color-success)]" />
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Revenue This Month</span>
+              </div>
+              <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">
+                ${analytics.revenueFinance.revenueThisPeriod.toLocaleString()}
+              </p>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-[var(--color-bg-subtle)]">
+              <div className="flex items-center gap-2 mb-1">
+                <Briefcase className="h-3.5 w-3.5 text-[var(--color-info)]" />
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Jobs Completed</span>
+              </div>
+              <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">
+                {analytics.jobsMarketplace.jobsCompletedThisPeriod.toLocaleString()}
+              </p>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-[var(--color-bg-subtle)]">
+              <div className="flex items-center gap-2 mb-1">
+                <Users className="h-3.5 w-3.5 text-[var(--color-primary)]" />
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">New Users</span>
+              </div>
+              <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">
+                {analytics.platformOverview.newUsersThisPeriod.toLocaleString()}
+              </p>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-[var(--color-danger-light)]">
+              <div className="flex items-center gap-2 mb-1">
+                <ShieldAlert className="h-3.5 w-3.5 text-[var(--color-danger)]" />
+                <span className="text-[10px] text-[var(--color-danger)] uppercase tracking-wider">Open Disputes</span>
+              </div>
+              <p className="text-base sm:text-lg font-bold text-[var(--color-danger)]">
+                {analytics.disputes.openDisputes.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-16 bg-[var(--color-bg-subtle)] rounded-lg animate-pulse" />
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* ─── Two-column: Recent Approvals + Activity ────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Recent Pending Approvals */}
         <Card className="p-5 space-y-5 bg-white">

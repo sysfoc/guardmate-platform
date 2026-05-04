@@ -11,7 +11,7 @@ export function ChatInput({ onSend, onTypingStart, isLoading = false }: ChatInpu
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const maxChars = 1000;
-
+  
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';

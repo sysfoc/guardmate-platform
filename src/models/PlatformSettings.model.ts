@@ -97,6 +97,13 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
   disputeWindowHours: { type: Number, default: 48 },
   autoReleaseWindowHours: { type: Number, default: 48 },
   disputeDeadlineWarningHours: { type: Number, default: 6 },
+
+  // ─── Phase 8: Boss Subscription Settings ───────────────────────────────
+  bossSubscriptionEnabled: { type: Boolean, default: false },
+  bossSubscriptionAmount: { type: Number, default: null },
+  bossSubscriptionCurrency: { type: String, default: 'AUD' },
+  bossSubscriptionGracePeriodDays: { type: Number, default: 3, min: 1, max: 30 },
+  bossSubscriptionTrialDays: { type: Number, default: 0, min: 0, max: 90 },
 }, {
   timestamps: true,
 });

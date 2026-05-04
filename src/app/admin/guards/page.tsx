@@ -381,10 +381,10 @@ function GuardsPageInner() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[var(--color-table-header-bg)] border-b border-[var(--color-table-border)]">
-                  <th className="px-4 py-3">
+                  <th className="px-4 py-3 text-left w-12">
                     <input
                       type="checkbox"
                       checked={selectedUids.length === users.length && users.length > 0}
@@ -392,15 +392,14 @@ function GuardsPageInner() {
                       className="h-4 w-4 rounded accent-[var(--color-primary)]"
                     />
                   </th>
-                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Guard / Contact</th>
-                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Location / Address</th>
-                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">License Info</th>
-                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">Expiry</th>
-                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden lg:table-cell">ABN Status</th>
-                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Verification</th>
-                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Status</th>
-                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell">Strikes</th>
-                  <th className="px-3 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-right">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider w-[220px]">Guard</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider w-[140px] hidden lg:table-cell">Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider w-[140px] hidden lg:table-cell">License</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider w-[100px] hidden lg:table-cell">Expires</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider w-[100px] hidden xl:table-cell">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider w-[80px]">Account</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider w-[70px] hidden xl:table-cell">Strikes</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider w-[160px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-table-border)]">
@@ -408,7 +407,7 @@ function GuardsPageInner() {
                   const mate = user as MateProfile;
                   return (
                     <tr key={user._id} className="hover:bg-[var(--color-table-row-hover)] transition-colors">
-                      <td className="px-3 py-2">
+                      <td className="px-4 py-4 align-middle">
                         <input
                           type="checkbox"
                           checked={selectedUids.includes(user.uid)}
@@ -416,107 +415,57 @@ function GuardsPageInner() {
                           className="h-4 w-4 rounded accent-[var(--color-primary)]"
                         />
                       </td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center gap-2.5">
-                          <Avatar src={user.profilePhoto || undefined} name={user.fullName} size="sm" />
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-semibold text-xs text-[var(--color-text-primary)] truncate max-w-[140px]">
+                      <td className="px-4 py-4 align-middle">
+                        <div className="flex items-center gap-3">
+                          <Avatar src={user.profilePhoto || undefined} name={user.fullName} size="md" />
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm text-[var(--color-text-primary)] leading-tight">
                               {user.fullName}
                             </span>
-                            <span className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[140px]">
+                            <span className="text-xs text-[var(--color-text-muted)] leading-tight">
                               {user.email}
                             </span>
-                            <span className="text-[10px] text-[var(--color-text-muted)] font-medium">
+                            <span className="text-xs text-[var(--color-text-secondary)] leading-tight">
                               {formatPhoneNumber(user.phone, user.phoneCountryCode)}
                             </span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-2 hidden lg:table-cell">
-                        <div className="flex flex-col min-w-0 max-w-[160px]">
-                          <span className="text-xs font-medium text-[var(--color-text-secondary)] truncate">
-                            {[(user.city || user.state), user.country].filter(Boolean).join(', ') || '—'}
-                          </span>
-                          <span className="text-[10px] text-[var(--color-text-muted)] truncate italic">
-                            {user.address || 'No address'}
-                          </span>
-                        </div>
+                      <td className="px-4 py-4 align-middle hidden lg:table-cell">
+                        <span className="text-sm text-[var(--color-text-primary)] truncate block max-w-[140px]">
+                          {[(user.city || user.state), user.country].filter(Boolean).join(', ') || '—'}
+                        </span>
                       </td>
-                      <td className="px-3 py-2 hidden lg:table-cell">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-mono font-semibold text-[var(--color-text-primary)] uppercase">
-                            {mate.licenseNumber || '—'}
-                          </span>
-                          <span className="text-[10px] text-[var(--color-text-tertiary)] font-medium">
-                            {mate.licenseType || '—'}
-                          </span>
-                        </div>
+                      <td className="px-4 py-4 align-middle hidden lg:table-cell">
+                        <span className="text-sm font-mono text-[var(--color-text-primary)] truncate block max-w-[140px]">
+                          {mate.licenseNumber || '—'}
+                        </span>
                       </td>
-                      <td className="px-3 py-2 hidden lg:table-cell">
-                        <div className="flex flex-col gap-0.5">
-                          <div className="flex items-center gap-1">
-                            <span className="text-[9px] font-bold text-[var(--color-text-muted)]">LIC:</span>
-                            <ExpiryBadge expiry={mate.licenseExpiry} />
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-[9px] font-bold text-[var(--color-text-muted)]">ID:</span>
-                            <ExpiryBadge expiry={mate.idExpiry} />
-                          </div>
-                        </div>
+                      <td className="px-4 py-4 align-middle hidden lg:table-cell">
+                        <ExpiryBadge expiry={mate.licenseExpiry} />
                       </td>
-                      <td className="px-3 py-2 hidden lg:table-cell">
-                        <ABNStatusBadge
-                          status={mate.abnStatus}
-                          abn={mate.abn}
-                          state={mate.abnState}
-                        />
+                      <td className="px-4 py-4 align-middle hidden xl:table-cell">
+                        <LicenseStatusBadge status={mate.licenseStatus} />
                       </td>
-                      <td className="px-3 py-2 hidden xl:table-cell">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-[var(--color-text-muted)] uppercase">License:</span>
-                            <LicenseStatusBadge status={mate.licenseStatus} />
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-[var(--color-text-muted)] uppercase">ID:</span>
-                            <VerificationBadge status={mate.idVerificationStatus} />
-                          </div>
-                          {mate.licenseDocument && (
-                            <a
-                              href={mate.licenseDocument}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[var(--color-link)] hover:text-[var(--color-link-hover)] inline-flex items-center gap-1 text-[10px] font-bold mt-0.5"
-                            >
-                              <FileText className="h-3 w-3" /> View Document
-                            </a>
-                          )}
-                        </div>
+                      <td className="px-4 py-4 align-middle">
+                        <StatusBadge status={user.status} />
                       </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-col gap-1">
-                          <StatusBadge status={user.status} />
-                          <span className="text-[9px] text-[var(--color-text-muted)]">
-                            Reg: {new Date(user.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 hidden xl:table-cell">
+                      <td className="px-4 py-4 align-middle hidden xl:table-cell">
                         {(mate.cancellationStrikes || 0) > 0 ? (
-                          <Badge variant={(mate.cancellationStrikes || 0) >= 3 ? 'danger' : 'warning'} size="sm" className="text-[9px]">
-                            <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+                          <Badge variant={(mate.cancellationStrikes || 0) >= 3 ? 'danger' : 'warning'} size="sm" className="text-xs">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
                             {mate.cancellationStrikes}
                           </Badge>
                         ) : (
-                          <span className="text-[10px] text-[var(--color-text-muted)]">0</span>
+                          <span className="text-sm text-[var(--color-text-muted)]">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="px-4 py-4 align-middle">
+                        <div className="flex items-center justify-center gap-0.5">
                           <button
                             onClick={() => setProfileUid(user.uid)}
                             title="View Profile"
-                            className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                            className="p-1.5 rounded-md hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -525,7 +474,7 @@ function GuardsPageInner() {
                               onClick={() => handleApprove(user.uid)}
                               title="Approve"
                               disabled={actionLoading}
-                              className="p-1.5 rounded-lg hover:bg-[var(--color-success-light)] text-[var(--color-success)] transition-colors"
+                              className="p-1.5 rounded-md hover:bg-[var(--color-success-light)] text-[var(--color-success)] transition-colors"
                             >
                               <CheckCircle2 className="h-4 w-4" />
                             </button>
@@ -534,7 +483,7 @@ function GuardsPageInner() {
                             <button
                               onClick={() => setRejectModal({ uid: user.uid, name: user.fullName, action: 'reject' })}
                               title="Reject / Ban"
-                              className="p-1.5 rounded-lg hover:bg-[var(--color-danger-light)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
+                              className="p-1.5 rounded-md hover:bg-[var(--color-danger-light)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
                             >
                               <XCircle className="h-4 w-4" />
                             </button>
@@ -543,7 +492,7 @@ function GuardsPageInner() {
                             <button
                               onClick={() => setRejectModal({ uid: user.uid, name: user.fullName, action: 'suspend' })}
                               title="Suspend"
-                              className="p-1.5 rounded-lg hover:bg-[var(--color-warning-light)] text-[var(--color-text-muted)] hover:text-[var(--color-warning)] transition-colors"
+                              className="p-1.5 rounded-md hover:bg-[var(--color-warning-light)] text-[var(--color-text-muted)] hover:text-[var(--color-warning)] transition-colors"
                             >
                               <Ban className="h-4 w-4" />
                             </button>
@@ -553,7 +502,7 @@ function GuardsPageInner() {
                               onClick={() => handleRestore(user.uid)}
                               title="Restore"
                               disabled={actionLoading}
-                              className="p-1.5 rounded-lg hover:bg-[var(--color-success-light)] text-[var(--color-text-muted)] hover:text-[var(--color-success)] transition-colors"
+                              className="p-1.5 rounded-md hover:bg-[var(--color-success-light)] text-[var(--color-text-muted)] hover:text-[var(--color-success)] transition-colors"
                             >
                               <RefreshCw className="h-4 w-4" />
                             </button>
@@ -562,7 +511,7 @@ function GuardsPageInner() {
                             <button
                               onClick={() => setPromoteConfirm({ uid: user.uid, name: user.fullName })}
                               title="Promote to Admin"
-                              className="p-1.5 rounded-lg hover:bg-[var(--color-role-admin-light)] text-[var(--color-text-muted)] hover:text-[var(--color-role-admin)] transition-colors"
+                              className="p-1.5 rounded-md hover:bg-[var(--color-role-admin-light)] text-[var(--color-text-muted)] hover:text-[var(--color-role-admin)] transition-colors"
                             >
                               <Crown className="h-4 w-4" />
                             </button>

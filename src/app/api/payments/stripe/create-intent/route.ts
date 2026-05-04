@@ -6,7 +6,8 @@ import Bid from "@/models/Bid.model";
 import Payment from "@/models/Payment.model";
 import PlatformSettings from "@/models/PlatformSettings.model";
 import { JobStatus, HiringStatus, UserRole, PaymentMethod, EscrowPaymentStatus } from "@/types/enums";
-import { getStripeInstance, calculatePaymentBreakdown } from "@/lib/payments/stripeClient";
+import { getStripeInstance } from "@/lib/payments/stripeClient";
+import { calculateCommission } from "@/lib/payments/commissionCalculator";
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,12 +66,15 @@ export async function POST(request: NextRequest) {
       return createApiResponse(false, null, "Stripe payments are not enabled on this platform.", 400);
     }
 
-    const bossCommissionRate = settings.platformCommissionBoss || 0;
-    const guardCommissionRate = settings.platformCommissionGuard || 0;
     const currency = settings.platformCurrency || "AUD";
 
-    // 4. Calculate Amounts using the BID amount (not job budget)
-    const breakdown = calculatePaymentBreakdown(baseAmount, bossCommissionRate, guardCommissionRate);
+    // 4. Calculate Amounts via centralized commission calculator (with offer support)
+    const breakdown = await calculateCommission({
+      jobBudget: baseAmount,
+      bossUid: user.uid,
+      guardUid: guard.guardUid,
+      platformSettings: settings as unknown as import('@/types/settings.types').IPlatformSettings,
+    });
 
     // 5. Create/Update Payment Record
     let paymentDoc;
@@ -78,8 +82,8 @@ export async function POST(request: NextRequest) {
       paymentDoc = existingPayment;
       // Update amounts in case settings/budget changed
       paymentDoc.jobBudget = baseAmount;
-      paymentDoc.bossCommissionRate = bossCommissionRate;
-      paymentDoc.guardCommissionRate = guardCommissionRate;
+      paymentDoc.bossCommissionRate = breakdown.bossCommissionRate;
+      paymentDoc.guardCommissionRate = breakdown.guardCommissionRate;
       paymentDoc.bossCommissionAmount = breakdown.bossCommissionAmount;
       paymentDoc.guardCommissionAmount = breakdown.guardCommissionAmount;
       paymentDoc.totalChargedToBoss = breakdown.totalChargedToBoss;
@@ -87,6 +91,8 @@ export async function POST(request: NextRequest) {
       paymentDoc.platformRevenue = breakdown.platformRevenue;
       paymentDoc.currency = currency;
       paymentDoc.paymentMethod = PaymentMethod.STRIPE;
+      paymentDoc.appliedBossOfferId = breakdown.appliedBossOffer?.offerId || null;
+      paymentDoc.appliedGuardOfferId = breakdown.appliedGuardOffer?.offerId || null;
       await paymentDoc.save();
     } else {
       paymentDoc = await Payment.create({
@@ -96,8 +102,8 @@ export async function POST(request: NextRequest) {
         guardUid: guard.guardUid,
         jobTitle: job.title,
         jobBudget: baseAmount,
-        bossCommissionRate,
-        guardCommissionRate,
+        bossCommissionRate: breakdown.bossCommissionRate,
+        guardCommissionRate: breakdown.guardCommissionRate,
         bossCommissionAmount: breakdown.bossCommissionAmount,
         guardCommissionAmount: breakdown.guardCommissionAmount,
         totalChargedToBoss: breakdown.totalChargedToBoss,
@@ -106,6 +112,8 @@ export async function POST(request: NextRequest) {
         currency,
         paymentMethod: PaymentMethod.STRIPE,
         paymentStatus: EscrowPaymentStatus.PENDING,
+        appliedBossOfferId: breakdown.appliedBossOffer?.offerId || null,
+        appliedGuardOfferId: breakdown.appliedGuardOffer?.offerId || null,
       });
     }
 
@@ -173,14 +181,23 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         clientSecret: paymentIntent.client_secret,
-        breakdown,
+        breakdown: {
+          bossCommissionAmount: breakdown.bossCommissionAmount,
+          guardCommissionAmount: breakdown.guardCommissionAmount,
+          totalChargedToBoss: breakdown.totalChargedToBoss,
+          guardPayout: breakdown.guardPayout,
+          platformRevenue: breakdown.platformRevenue,
+        },
+        appliedBossOffer: breakdown.appliedBossOffer,
+        appliedGuardOffer: breakdown.appliedGuardOffer,
         currency,
       },
       message: "Payment Intent created."
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : "Failed to create payment intent.";
     console.error("Stripe Create Intent Error:", error);
-    return createApiResponse(false, null, error.message || "Failed to create payment intent.", 500);
+    return createApiResponse(false, null, errMsg, 500);
   }
 }

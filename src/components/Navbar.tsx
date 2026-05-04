@@ -106,6 +106,10 @@ export function Navbar() {
                         <CreditCard className="h-4 w-4 mr-2" />
                         Payments & Escrow
                       </DropdownItem>
+                      <DropdownItem onClick={() => router.push('/dashboard/boss/subscription')}>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Subscription
+                      </DropdownItem>
                       <DropdownItem onClick={() => router.push('/dashboard/boss/disputes')}>
                         <ShieldAlert className="h-4 w-4 mr-2" />
                         Disputes

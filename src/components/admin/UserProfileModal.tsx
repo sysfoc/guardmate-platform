@@ -85,10 +85,12 @@ function RoleBadge({ role }: { role: string }) {
 
 function Field({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon?: React.ComponentType<{ className?: string }> }) {
   return (
-    <div className="flex items-start gap-2.5 py-1.5">
-      {Icon && <Icon className="h-4 w-4 text-[var(--color-text-muted)] mt-0.5 shrink-0" />}
+    <div className="flex items-start gap-3 py-2">
+      <div className="w-5 h-5 flex items-center justify-center shrink-0 mt-0.5">
+        {Icon ? <Icon className="h-4 w-4 text-[var(--color-text-muted)]" /> : <div className="w-4 h-4" />}
+      </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider leading-tight">{label}</p>
+        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider leading-tight">{label}</p>
         <p className="text-sm text-[var(--color-text-primary)] mt-0.5 break-words leading-snug">{value || '—'}</p>
       </div>
     </div>

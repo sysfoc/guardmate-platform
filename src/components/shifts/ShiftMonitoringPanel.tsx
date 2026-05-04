@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { MapDisplay } from '@/components/maps/MapDisplay';
 import { getShift, approveShift, getIncidentReports } from '@/lib/api/shift.api';
 import { getSocket, disconnectSocket } from '@/lib/socket/socketClient';
 import type { IShift, IIncidentReport, Coordinates } from '@/types/shift.types';
@@ -234,17 +235,37 @@ export default function ShiftMonitoringPanel({ jobId, jobTitle, jobCoordinates }
           </div>
         )}
 
-        {/* Live Guard Location */}
-        {status === ShiftStatus.CHECKED_IN && guardLocation && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <Navigation className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              Guard location: {guardLocation.lat.toFixed(5)}, {guardLocation.lng.toFixed(5)}
-            </span>
-            <span className="text-[10px] text-[var(--color-text-muted)] ml-auto">
-              {new Date(guardLocation.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </span>
+        {/* Live Guard Location Map */}
+        {status === ShiftStatus.CHECKED_IN && jobCoordinates && (
+          <div className="space-y-2">
+            {/* Live Location Text */}
+            {guardLocation && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <Navigation className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  Guard location: {guardLocation.lat.toFixed(5)}, {guardLocation.lng.toFixed(5)}
+                </span>
+                <span className="text-[10px] text-[var(--color-text-muted)] ml-auto">
+                  {new Date(guardLocation.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              </div>
+            )}
+            {/* Live Map */}
+            <div className="rounded-lg overflow-hidden border border-[var(--color-border-default)]">
+              <MapDisplay
+                center={guardLocation || jobCoordinates}
+                zoom={15}
+                height="250px"
+                interactive={true}
+                jobMarker={jobCoordinates ? { lat: jobCoordinates.lat, lng: jobCoordinates.lng, label: 'Job Site' } : null}
+                liveMarker={guardLocation ? { lat: guardLocation.lat, lng: guardLocation.lng, label: 'Guard Location' } : null}
+                path={todayShift?.locationHistory?.map((entry) => ({ lat: entry.lat, lng: entry.lng })) || []}
+              />
+            </div>
+            <p className="text-[10px] text-[var(--color-text-muted)] text-center">
+              Green dot = Guard • Orange J = Job Site • Dashed line = Movement trail
+            </p>
           </div>
         )}
 

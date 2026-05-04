@@ -50,35 +50,3 @@ export async function getStripeWebhookSecret(): Promise<string> {
 
   return settings.stripeWebhookSecret as string;
 }
-
-/**
- * Calculate payment amounts with dual commission model.
- * Boss pays: jobBudget + (jobBudget * bossCommission%)
- * Guard receives: jobBudget - (jobBudget * guardCommission%)
- * Platform revenue: bossCommissionAmount + guardCommissionAmount
- */
-export function calculatePaymentBreakdown(
-  jobBudget: number,
-  bossCommissionRate: number,
-  guardCommissionRate: number
-): {
-  bossCommissionAmount: number;
-  guardCommissionAmount: number;
-  totalChargedToBoss: number;
-  guardPayout: number;
-  platformRevenue: number;
-} {
-  const bossCommissionAmount = Math.round(jobBudget * (bossCommissionRate / 100) * 100) / 100;
-  const guardCommissionAmount = Math.round(jobBudget * (guardCommissionRate / 100) * 100) / 100;
-  const totalChargedToBoss = Math.round((jobBudget + bossCommissionAmount) * 100) / 100;
-  const guardPayout = Math.round((jobBudget - guardCommissionAmount) * 100) / 100;
-  const platformRevenue = Math.round((bossCommissionAmount + guardCommissionAmount) * 100) / 100;
-
-  return {
-    bossCommissionAmount,
-    guardCommissionAmount,
-    totalChargedToBoss,
-    guardPayout,
-    platformRevenue,
-  };
-}

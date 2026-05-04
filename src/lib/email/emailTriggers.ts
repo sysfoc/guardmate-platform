@@ -376,12 +376,26 @@ export const sendEscrowFunded = async (
   to: string,
   bossName: string,
   jobTitle: string,
-  amount: string
+  amount: string,
+  commissionOptions?: { commissionRate: number; offerName?: string; savedAmount?: number; currency?: string }
 ) => {
+  let commissionSection = '';
+  if (commissionOptions) {
+    const { commissionRate, offerName, savedAmount, currency = '£' } = commissionOptions;
+    commissionSection += `<p><strong>Commission rate:</strong> ${commissionRate}%`;
+    if (offerName) {
+      commissionSection += ` (Promotional rate — ${offerName})`;
+    }
+    commissionSection += `</p>`;
+    if (savedAmount && savedAmount > 0) {
+      commissionSection += `<p style="color: #059669; font-weight: bold;">You saved ${currency}${savedAmount.toFixed(2)} with our ${offerName} promotion!</p>`;
+    }
+  }
+
   await sendEmail({
     to,
     notificationType: NotificationEventType.ESCROW_FUNDED,
-    variables: { bossName, jobTitle, amount, platformName: PLATFORM_NAME }
+    variables: { bossName, jobTitle, amount, commissionSection, platformName: PLATFORM_NAME }
   });
 };
 
@@ -389,25 +403,53 @@ export const sendPaymentReleasedGuard = async (
   to: string,
   guardName: string,
   jobTitle: string,
-  amount: string
+  amount: string,
+  commissionOptions?: { commissionRate: number; offerName?: string; savedAmount?: number; currency?: string }
 ) => {
+  let commissionSection = '';
+  if (commissionOptions) {
+    const { commissionRate, offerName, savedAmount, currency = '£' } = commissionOptions;
+    commissionSection += `<p><strong>Commission rate:</strong> ${commissionRate}%`;
+    if (offerName) {
+      commissionSection += ` (Promotional rate — ${offerName})`;
+    }
+    commissionSection += `</p>`;
+    if (savedAmount && savedAmount > 0) {
+      commissionSection += `<p style="color: #059669; font-weight: bold;">You saved ${currency}${savedAmount.toFixed(2)} with our ${offerName} promotion!</p>`;
+    }
+  }
+
   const walletUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/mate/wallet`;
   await sendEmail({
     to,
     notificationType: NotificationEventType.PAYMENT_RELEASED,
-    variables: { guardName, jobTitle, amount, walletUrl, platformName: PLATFORM_NAME }
+    variables: { guardName, jobTitle, amount, commissionSection, walletUrl, platformName: PLATFORM_NAME }
   });
 };
 
 export const sendPaymentReleasedBoss = async (
   to: string,
   bossName: string,
-  jobTitle: string
+  jobTitle: string,
+  commissionOptions?: { commissionRate: number; offerName?: string; savedAmount?: number; currency?: string }
 ) => {
+  let commissionSection = '';
+  if (commissionOptions) {
+    const { commissionRate, offerName, savedAmount, currency = '£' } = commissionOptions;
+    commissionSection += `<p><strong>Commission rate:</strong> ${commissionRate}%`;
+    if (offerName) {
+      commissionSection += ` (Promotional rate — ${offerName})`;
+    }
+    commissionSection += `</p>`;
+    if (savedAmount && savedAmount > 0) {
+      commissionSection += `<p style="color: #059669; font-weight: bold;">You saved ${currency}${savedAmount.toFixed(2)} with our ${offerName} promotion!</p>`;
+    }
+  }
+
   await sendEmail({
     to,
     notificationType: NotificationEventType.PAYMENT_RELEASED_BOSS,
-    variables: { bossName, jobTitle, platformName: PLATFORM_NAME }
+    variables: { bossName, jobTitle, commissionSection, platformName: PLATFORM_NAME }
   });
 };
 
@@ -434,5 +476,108 @@ export const sendWithdrawalCompleted = async (
     to,
     notificationType: NotificationEventType.WITHDRAWAL_COMPLETED,
     variables: { guardName, amount, method, platformName: PLATFORM_NAME }
+  });
+};
+
+// ─── Phase 8: Subscription & Offer Email Triggers ───────────────────────────
+
+export const sendSubscriptionActivated = async (
+  to: string,
+  bossName: string,
+  amount: number,
+  currency: string,
+  periodStart: string,
+  periodEnd: string
+) => {
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/boss`;
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.SUBSCRIPTION_ACTIVATED,
+    variables: {
+      bossName,
+      amount: amount.toFixed(2),
+      currency,
+      periodStart,
+      periodEnd,
+      dashboardUrl,
+    }
+  });
+};
+
+export const sendSubscriptionExpiringSoon = async (
+  to: string,
+  bossName: string,
+  daysRemaining: number,
+  amount: number,
+  currency: string,
+  renewUrl: string
+) => {
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.SUBSCRIPTION_EXPIRING_SOON,
+    variables: {
+      bossName,
+      daysRemaining: String(daysRemaining),
+      amount: amount.toFixed(2),
+      currency,
+      renewUrl,
+    }
+  });
+};
+
+export const sendSubscriptionLapsed = async (
+  to: string,
+  bossName: string,
+  gracePeriodDays: number,
+  subscribeUrl: string
+) => {
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.SUBSCRIPTION_LAPSED,
+    variables: {
+      bossName,
+      gracePeriodDays: String(gracePeriodDays),
+      subscribeUrl,
+    }
+  });
+};
+
+export const sendSubscriptionCancelled = async (
+  to: string,
+  bossName: string,
+  activeUntil: string
+) => {
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/boss`;
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.SUBSCRIPTION_CANCELLED,
+    variables: {
+      bossName,
+      activeUntil,
+      dashboardUrl,
+    }
+  });
+};
+
+export const sendNewOfferAvailable = async (
+  to: string,
+  userName: string,
+  offerName: string,
+  offerDescription: string,
+  startDate: string,
+  endDate: string
+) => {
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.NEW_OFFER_AVAILABLE,
+    variables: {
+      userName,
+      offerName,
+      offerDescription,
+      startDate,
+      endDate,
+      dashboardUrl,
+    }
   });
 };

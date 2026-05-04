@@ -42,6 +42,13 @@ export interface IPlatformSettings {
   autoReleaseWindowHours: number;
   disputeDeadlineWarningHours: number;
 
+  // ─── Phase 8: Boss Subscription Settings ────────────────────────────────
+  bossSubscriptionEnabled: boolean;
+  bossSubscriptionAmount: number | null;
+  bossSubscriptionCurrency: string;
+  bossSubscriptionGracePeriodDays: number;
+  bossSubscriptionTrialDays: number;
+
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

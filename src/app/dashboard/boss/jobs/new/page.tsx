@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
 import { createJob } from '@/lib/api/job.api';
+import { offerApi } from '@/lib/api/offer.api';
+import type { IOffer } from '@/types/offer.types';
+import { DiscountType } from '@/types/enums';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -27,7 +30,7 @@ import {
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Briefcase, MapPin,
   PoundSterling, Plus, Zap, Clock, Calendar, Users, ShieldCheck,
-  FileText, Repeat, HandshakeIcon, X, AlertTriangle, Moon,
+  FileText, Repeat, HandshakeIcon, X, AlertTriangle, Moon, Tag,
 } from 'lucide-react';
 
 const STEPS = ['Job Basics', 'Location & Schedule', 'Requirements & Budget'];
@@ -55,6 +58,9 @@ export default function NewJobPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdJobId, setCreatedJobId] = useState('');
+
+  // Boss offer state
+  const [bossOffer, setBossOffer] = useState<IOffer | null>(null);
 
   const [form, setForm] = useState<Partial<CreateJobPayload>>({
     title: '', description: '', jobType: JobType.ONE_TIME,
@@ -99,6 +105,18 @@ export default function NewJobPage() {
   useEffect(() => {
     regenerateSchedule();
   }, [regenerateSchedule]);
+
+  // Fetch active boss offers
+  useEffect(() => {
+    offerApi.getActiveOffers()
+      .then((offers) => {
+        const offer = offers.find((o) =>
+          (o.offerType === 'BOSS_COMMISSION_REDUCTION' || o.offerType === 'BOSS_COMMISSION_WAIVER') && o.isActive
+        );
+        if (offer) setBossOffer(offer);
+      })
+      .catch(() => {});
+  }, []);
 
   if (isLoading) return <DashboardSkeleton />;
   if (!user) return null;
@@ -639,6 +657,39 @@ export default function NewJobPage() {
                 <input type="number" min={0} step="0.01" value={form.budgetMax ?? ''} onChange={(e) => update({ budgetMax: e.target.value ? Number(e.target.value) : undefined })} className={`${inputCls} pl-12`} placeholder="—" /></div>
               </div>
             </div>
+
+            {/* Boss Commission Offer Banner */}
+            {bossOffer && (
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl px-4 py-3 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-500/10 rounded-full shrink-0">
+                    <Tag className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-emerald-800">
+                      🎉 Special Offer Active: {bossOffer.name} — Your commission rate is{' '}
+                      {bossOffer.discountType === DiscountType.FULL_WAIVER
+                        ? 'waived'
+                        : bossOffer.discountType === DiscountType.PERCENTAGE_OFF
+                          ? `${bossOffer.discountValue}% off`
+                          : `reduced to ${bossOffer.discountValue}%`
+                      }{' '}until {new Date(bossOffer.endDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                    {form.budgetAmount && form.budgetAmount > 0 && bossOffer.discountValue != null && (
+                      <p className="text-xs text-emerald-700 font-medium mt-1">
+                        💰 Estimated savings on this job: {platformCurrency}
+                        {bossOffer.discountType === DiscountType.FULL_WAIVER
+                          ? (form.budgetAmount * 0.10).toFixed(2)
+                          : bossOffer.discountType === DiscountType.PERCENTAGE_OFF
+                            ? (form.budgetAmount * 0.10 * (bossOffer.discountValue / 100)).toFixed(2)
+                            : ((0.10 - bossOffer.discountValue / 100) * form.budgetAmount).toFixed(2)
+                        }
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className={labelCls}>Required Skills</label>

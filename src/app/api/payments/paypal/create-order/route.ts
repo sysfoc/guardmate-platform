@@ -6,7 +6,7 @@ import Bid from "@/models/Bid.model";
 import Payment from "@/models/Payment.model";
 import PlatformSettings from "@/models/PlatformSettings.model";
 import { JobStatus, HiringStatus, UserRole, PaymentMethod, EscrowPaymentStatus } from "@/types/enums";
-import { calculatePaymentBreakdown } from "@/lib/payments/stripeClient";
+import { calculateCommission } from "@/lib/payments/commissionCalculator";
 import { createPayPalOrder } from "@/lib/payments/paypalClient";
 
 export async function POST(request: NextRequest) {
@@ -65,20 +65,23 @@ export async function POST(request: NextRequest) {
       return createApiResponse(false, null, "PayPal payments are not enabled on this platform.", 400);
     }
 
-    const bossCommissionRate = settings.platformCommissionBoss || 0;
-    const guardCommissionRate = settings.platformCommissionGuard || 0;
     const currency = settings.platformCurrency || "AUD";
 
-    // 4. Calculate Amounts using the BID amount (not job budget)
-    const breakdown = calculatePaymentBreakdown(baseAmount, bossCommissionRate, guardCommissionRate);
+    // 4. Calculate Amounts via centralized commission calculator (with offer support)
+    const breakdown = await calculateCommission({
+      jobBudget: baseAmount,
+      bossUid: user.uid,
+      guardUid: guard.guardUid,
+      platformSettings: settings as unknown as import('@/types/settings.types').IPlatformSettings,
+    });
 
     // 5. Create/Update Payment Record
     let paymentDoc;
     if (existingPayment) {
       paymentDoc = existingPayment;
       paymentDoc.jobBudget = baseAmount;
-      paymentDoc.bossCommissionRate = bossCommissionRate;
-      paymentDoc.guardCommissionRate = guardCommissionRate;
+      paymentDoc.bossCommissionRate = breakdown.bossCommissionRate;
+      paymentDoc.guardCommissionRate = breakdown.guardCommissionRate;
       paymentDoc.bossCommissionAmount = breakdown.bossCommissionAmount;
       paymentDoc.guardCommissionAmount = breakdown.guardCommissionAmount;
       paymentDoc.totalChargedToBoss = breakdown.totalChargedToBoss;
@@ -86,6 +89,8 @@ export async function POST(request: NextRequest) {
       paymentDoc.platformRevenue = breakdown.platformRevenue;
       paymentDoc.currency = currency;
       paymentDoc.paymentMethod = PaymentMethod.PAYPAL;
+      paymentDoc.appliedBossOfferId = breakdown.appliedBossOffer?.offerId || null;
+      paymentDoc.appliedGuardOfferId = breakdown.appliedGuardOffer?.offerId || null;
       await paymentDoc.save();
     } else {
       paymentDoc = await Payment.create({
@@ -95,8 +100,8 @@ export async function POST(request: NextRequest) {
         guardUid: guard.guardUid,
         jobTitle: job.title,
         jobBudget: baseAmount,
-        bossCommissionRate,
-        guardCommissionRate,
+        bossCommissionRate: breakdown.bossCommissionRate,
+        guardCommissionRate: breakdown.guardCommissionRate,
         bossCommissionAmount: breakdown.bossCommissionAmount,
         guardCommissionAmount: breakdown.guardCommissionAmount,
         totalChargedToBoss: breakdown.totalChargedToBoss,
@@ -105,6 +110,8 @@ export async function POST(request: NextRequest) {
         currency,
         paymentMethod: PaymentMethod.PAYPAL,
         paymentStatus: EscrowPaymentStatus.PENDING,
+        appliedBossOfferId: breakdown.appliedBossOffer?.offerId || null,
+        appliedGuardOfferId: breakdown.appliedGuardOffer?.offerId || null,
       });
     }
 
@@ -125,14 +132,23 @@ export async function POST(request: NextRequest) {
       data: {
         orderId,
         approvalUrl,
-        breakdown,
+        breakdown: {
+          bossCommissionAmount: breakdown.bossCommissionAmount,
+          guardCommissionAmount: breakdown.guardCommissionAmount,
+          totalChargedToBoss: breakdown.totalChargedToBoss,
+          guardPayout: breakdown.guardPayout,
+          platformRevenue: breakdown.platformRevenue,
+        },
+        appliedBossOffer: breakdown.appliedBossOffer,
+        appliedGuardOffer: breakdown.appliedGuardOffer,
         currency,
       },
       message: "PayPal Order created."
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : "Failed to create PayPal order.";
     console.error("PayPal Create Order Error:", error);
-    return createApiResponse(false, null, error.message || "Failed to create PayPal order.", 500);
+    return createApiResponse(false, null, errMsg, 500);
   }
 }

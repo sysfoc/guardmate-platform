@@ -24,6 +24,12 @@ interface MapDisplayProps {
   height?: string;
   interactive?: boolean;
   radiusMeters?: number | null;
+  /** Path coordinates for guard movement trail */
+  path?: { lat: number; lng: number }[];
+  /** Live guard position marker */
+  liveMarker?: { lat: number; lng: number; label?: string } | null;
+  /** Job site location marker */
+  jobMarker?: { lat: number; lng: number; label?: string } | null;
 }
 
 export function MapDisplay({
@@ -35,6 +41,9 @@ export function MapDisplay({
   height = '400px',
   interactive = true,
   radiusMeters,
+  path,
+  liveMarker,
+  jobMarker,
 }: MapDisplayProps) {
   return (
     <div style={{ height }}>
@@ -47,6 +56,9 @@ export function MapDisplay({
         height={height}
         interactive={interactive}
         radiusMeters={radiusMeters}
+        path={path}
+        liveMarker={liveMarker}
+        jobMarker={jobMarker}
       />
     </div>
   );

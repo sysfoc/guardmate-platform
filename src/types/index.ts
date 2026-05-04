@@ -6,3 +6,6 @@ export type { BaseUser, BossProfile, MateProfile, ProfileUpdatePayload } from '.
 export type { ApiResponse, ApiError, PaginatedResponse } from './api.types';
 export { JobStatus, BidStatus, JobType, BudgetType } from './enums';
 export type { IJob, IBid, JobFilters, BidFilters, CreateJobPayload, UpdateJobPayload, SubmitBidPayload, JobWithBids, BidWithJob } from './job.types';
+export type { IBossSubscription, ISubscriptionStatus, SubscriptionFilters } from './subscription.types';
+export type { IOffer, CreateOfferPayload, UpdateOfferPayload, AppliedOffer, OfferFilters } from './offer.types';
+export { SubscriptionStatus, OfferType, DiscountType, OfferEligibility } from './enums';

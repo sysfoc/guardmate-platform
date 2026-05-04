@@ -45,6 +45,10 @@ export interface IPayment {
   refundReason: string | null;
   disputeId: string | null;
 
+  // Phase 8: Applied Offers
+  appliedBossOfferId: string | null;
+  appliedGuardOfferId: string | null;
+
   createdAt: string | Date;
   updatedAt: string | Date;
 }

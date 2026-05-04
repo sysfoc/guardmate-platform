@@ -8,7 +8,7 @@
 import { apiGet, apiPatch, apiPost } from '@/lib/apiClient';
 import type { ApiResponse } from '@/types/api.types';
 import type { UserProfile } from '@/types/user.types';
-import type { AdminDashboardStats, AdminActivity, AdminUserFilters, AdminActivityFilters, AdminJobFilters } from '@/types/admin.types';
+import type { AdminDashboardStats, AdminActivity, AdminUserFilters, AdminActivityFilters, AdminJobFilters, AdminAnalyticsOverview, AnalyticsFilters } from '@/types/admin.types';
 import type { IJob } from '@/types/job.types';
 import type { IIncidentReport } from '@/types/shift.types';
 
@@ -222,3 +222,31 @@ export async function recordChargeback(
   return apiPost(`/api/disputes/${disputeId}/chargeback`, { chargebackId });
 }
 
+// ─── Analytics ────────────────────────────────────────────────────────────────
+
+export async function getAdminAnalyticsOverview(
+  filters: AnalyticsFilters = {}
+): Promise<ApiResponse<AdminAnalyticsOverview>> {
+  const query = new URLSearchParams();
+  if (filters.period) query.append('period', filters.period);
+  if (filters.dateFrom) query.append('dateFrom', filters.dateFrom);
+  if (filters.dateTo) query.append('dateTo', filters.dateTo);
+  
+  const queryString = query.toString();
+  const url = `/api/admin/analytics/overview${queryString ? `?${queryString}` : ''}`;
+  
+  return apiGet<AdminAnalyticsOverview>(url);
+}
+
+export async function getAdminSubscriptions(filters?: { status?: string; dateFrom?: string; dateTo?: string; page?: number; limit?: number }) {
+  const query = new URLSearchParams();
+  if (filters?.status) query.append('status', filters.status);
+  if (filters?.dateFrom) query.append('dateFrom', filters.dateFrom);
+  if (filters?.dateTo) query.append('dateTo', filters.dateTo);
+  if (filters?.page) query.append('page', String(filters.page));
+  if (filters?.limit) query.append('limit', String(filters.limit));
+
+  const queryString = query.toString();
+  const url = `/api/admin/subscriptions${queryString ? `?${queryString}` : ''}`;
+  return apiGet(url);
+}
