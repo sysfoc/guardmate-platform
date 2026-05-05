@@ -5,7 +5,7 @@ import Conversation from '@/models/Conversation.model';
 import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
-import { UserRole } from '@/types/enums';
+import { UserRole, JobStatus } from '@/types/enums';
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,6 +31,16 @@ export async function POST(req: NextRequest) {
     const job = await Job.findOne({ jobId }).lean();
     if (!job) {
       return createApiResponse(false, null, 'Job not found', 404);
+    }
+
+    // Block new conversations for completed or cancelled jobs
+    if (job.status === JobStatus.COMPLETED || job.status === JobStatus.CANCELLED) {
+      return createApiResponse(
+        false,
+        null,
+        'Cannot start a conversation for a completed or cancelled job.',
+        403
+      );
     }
 
     // Verify requesting user authorization

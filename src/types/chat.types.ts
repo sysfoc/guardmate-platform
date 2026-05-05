@@ -1,4 +1,4 @@
-import { UserRole } from '@/types/enums';
+import { LockReason, UserRole } from '@/types/enums';
 
 export interface UnreadCounts {
   [uid: string]: number;
@@ -20,6 +20,9 @@ export interface IConversation {
   lastMessageAt: Date | string | null;
   unreadCounts: UnreadCounts;
   isActive: boolean;
+  isLocked: boolean;
+  lockedAt: Date | string | null;
+  lockReason: LockReason | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 }

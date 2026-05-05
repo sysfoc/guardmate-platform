@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getSocket } from '@/lib/socket/socketClient';
 import { getConversationMessages } from '@/lib/api/chat.api';
-import { IMessage } from '@/types/chat.types';
+import { IMessage, ConversationParticipant } from '@/types/chat.types';
+import { LockReason } from '@/types/enums';
 import { Socket } from 'socket.io-client';
 
 export function useChat(conversationId: string | null) {
@@ -12,10 +13,14 @@ export function useChat(conversationId: string | null) {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState<{ userId: string; userName: string } | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  
+
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  // Lock state from the messages API / real-time events
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockReason, setLockReason] = useState<LockReason | null>(null);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -34,6 +39,12 @@ export function useChat(conversationId: string | null) {
 
     return () => { mounted = false; };
   }, []);
+
+  // Reset lock state when conversation changes
+  useEffect(() => {
+    setIsLocked(false);
+    setLockReason(null);
+  }, [conversationId]);
 
   // Handle Conversation Lifecycle & Events
   useEffect(() => {
@@ -77,16 +88,45 @@ export function useChat(conversationId: string | null) {
       }
     };
 
+    const handleMessageError = (data: { conversationId: string; error: string }) => {
+      if (data.conversationId === conversationId) {
+        // If the error indicates conversation is locked, update local lock state
+        if (data.error.toLowerCase().includes('locked')) {
+          setIsLocked(true);
+        }
+
+        // Remove optimistic messages (those without a real DB _id)
+        setMessages(prev => prev.filter(m => m._id !== ''));
+
+        // Dispatch a custom event so ChatWindow can show a toast
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('chat-message-error', { detail: data }));
+        }
+      }
+    };
+
+    // Real-time lock notification: server emits this when a job is completed/cancelled
+    const handleConversationLocked = (data: { conversationId: string; lockReason: LockReason }) => {
+      if (data.conversationId === conversationId) {
+        setIsLocked(true);
+        setLockReason(data.lockReason);
+      }
+    };
+
     socket.on('new-message', handleNewMessage);
     socket.on('user-typing', handleUserTyping);
     socket.on('user-stopped-typing', handleUserStoppedTyping);
     socket.on('messages-read-update', handleMessagesRead);
+    socket.on('message-error', handleMessageError);
+    socket.on('conversation-locked', handleConversationLocked);
 
     return () => {
       socket.off('new-message', handleNewMessage);
       socket.off('user-typing', handleUserTyping);
       socket.off('user-stopped-typing', handleUserStoppedTyping);
       socket.off('messages-read-update', handleMessagesRead);
+      socket.off('message-error', handleMessageError);
+      socket.off('conversation-locked', handleConversationLocked);
     };
   }, [socket, conversationId]);
 
@@ -100,6 +140,12 @@ export function useChat(conversationId: string | null) {
         setMessages(res.data.data);
         setHasMore(res.data.hasNextPage);
         setPage(1);
+
+        // Extract lock state from the messages API response
+        if (res.data.isLocked) {
+          setIsLocked(true);
+          setLockReason(res.data.lockReason);
+        }
       }
     }).finally(() => setIsLoadingMessages(false));
   }, [conversationId]);
@@ -122,7 +168,7 @@ export function useChat(conversationId: string | null) {
     setIsLoadingMessages(false);
   }, [conversationId, hasMore, isLoadingMessages, page]);
 
-  const sendMessage = useCallback((text: string, senderObj: any) => {
+  const sendMessage = useCallback((text: string, senderObj: ConversationParticipant) => {
     if (!socket || !conversationId) return;
 
     // Optimistically update
@@ -170,6 +216,8 @@ export function useChat(conversationId: string | null) {
     loadMoreMessages,
     hasMore,
     isLoadingMessages,
-    emitTypingStart
+    emitTypingStart,
+    isLocked,
+    lockReason,
   };
 }

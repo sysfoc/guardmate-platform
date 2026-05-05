@@ -1,13 +1,15 @@
 import React, { useState, KeyboardEvent, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Lock } from 'lucide-react';
 
 interface ChatInputProps {
   onSend: (text: string) => void;
   onTypingStart: () => void;
   isLoading?: boolean;
+  isLocked?: boolean;
+  lockReason?: string | null;
 }
 
-export function ChatInput({ onSend, onTypingStart, isLoading = false }: ChatInputProps) {
+export function ChatInput({ onSend, onTypingStart, isLoading = false, isLocked = false, lockReason }: ChatInputProps) {
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const maxChars = 1000;
@@ -30,6 +32,7 @@ export function ChatInput({ onSend, onTypingStart, isLoading = false }: ChatInpu
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isLocked) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -37,6 +40,19 @@ export function ChatInput({ onSend, onTypingStart, isLoading = false }: ChatInpu
       onTypingStart();
     }
   };
+
+  const lockReasonText = lockReason === 'JOB_COMPLETED' ? 'completed' : 'cancelled';
+
+  if (isLocked) {
+    return (
+      <div className="flex shrink-0 items-center justify-center gap-2 border-t border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3">
+        <Lock className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
+        <span className="text-sm text-[var(--color-text-muted)] text-center">
+          This conversation is closed — the job has been {lockReasonText}.
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex shrink-0 items-end gap-2 border-t border-[var(--color-border-primary)] bg-[var(--color-bg-primary)] px-3 py-2">

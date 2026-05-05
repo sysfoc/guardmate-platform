@@ -11,12 +11,13 @@
  *   3. IN_PROGRESS → COMPLETED  (endDate + endTime + 24 h passed, not yet completed)
  */
 
-import { JobStatus, BidStatus, JobPaymentStatus } from '@/types/enums';
+import { JobStatus, BidStatus, JobPaymentStatus, LockReason } from '@/types/enums';
 import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
 import { sendShiftApproved } from '@/lib/email/emailTriggers';
 import connectDB from '@/lib/mongodb';
+import { lockConversations } from '@/lib/chat/lockConversations';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -125,6 +126,9 @@ export async function processJobLifecycle(): Promise<void> {
           if (isDev) {
             console.log(`[Lifecycle] FILLED → CANCELLED (Strike Issued): ${job.jobId}`);
           }
+
+          // Lock conversations for this cancelled job
+          await lockConversations(job.jobId, LockReason.JOB_CANCELLED);
         }
       }
     } catch (err) {
@@ -186,6 +190,9 @@ export async function processJobLifecycle(): Promise<void> {
               }
             }
           }
+
+          // Lock conversations for this completed job
+          await lockConversations(job.jobId, LockReason.JOB_COMPLETED);
         }
       }
     } catch (err) {

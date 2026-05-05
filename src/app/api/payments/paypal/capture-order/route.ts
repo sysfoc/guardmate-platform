@@ -3,6 +3,7 @@ import { verifyAndGetUser, createApiResponse } from "@/lib/serverAuth";
 import connectDB from "@/lib/mongodb";
 import Job from "@/models/Job.model";
 import Payment from "@/models/Payment.model";
+import User from "@/models/User.model";
 import { UserRole, EscrowPaymentStatus, JobPaymentStatus } from "@/types/enums";
 import { capturePayPalOrder } from "@/lib/payments/paypalClient";
 
@@ -46,6 +47,12 @@ export async function POST(request: NextRequest) {
       await Job.findOneAndUpdate(
         { jobId: payment.jobId },
         { $set: { paymentStatus: JobPaymentStatus.HELD } }
+      );
+
+      // Update Boss's totalSpent
+      await User.findOneAndUpdate(
+        { uid: payment.bossUid },
+        { $inc: { totalSpent: payment.totalChargedToBoss } }
       );
 
       // Notify Boss that funds are held

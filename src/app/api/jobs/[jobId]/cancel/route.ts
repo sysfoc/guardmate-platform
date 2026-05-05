@@ -4,11 +4,12 @@ import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { JobStatus, UserRole, BidStatus } from '@/types/enums';
+import { JobStatus, UserRole, BidStatus, LockReason } from '@/types/enums';
 import {
   sendBidRejected,
   sendJobCancelledByBoss,
 } from '@/lib/email/emailTriggers';
+import { lockConversations } from '@/lib/chat/lockConversations';
 
 /**
  * POST /api/jobs/[jobId]/cancel
@@ -116,6 +117,13 @@ export async function POST(
         }
       }
 
+      // Lock conversations for this cancelled job (non-blocking)
+      try {
+        await lockConversations(jobId, LockReason.JOB_CANCELLED);
+      } catch {
+        // Conversation locking failures must not block job cancellation
+      }
+
       return createApiResponse(true, updatedJob, 'Job cancelled successfully.', 200);
     }
 
@@ -165,6 +173,13 @@ export async function POST(
             // Email failure non-critical
           }
         }
+      }
+
+      // Lock conversations for this cancelled job (non-blocking)
+      try {
+        await lockConversations(jobId, LockReason.JOB_CANCELLED);
+      } catch {
+        // Conversation locking failures must not block job cancellation
       }
 
       return createApiResponse(

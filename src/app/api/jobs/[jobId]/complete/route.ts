@@ -4,9 +4,10 @@ import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { JobStatus, UserRole, BidStatus } from '@/types/enums';
+import { JobStatus, UserRole, BidStatus, LockReason } from '@/types/enums';
 import { sendShiftApproved, sendPaymentSent } from '@/lib/email/emailTriggers';
 import { updateGuardReliabilityScore } from '@/lib/jobs/reliabilityScore';
+import { lockConversations } from '@/lib/chat/lockConversations';
 
 /**
  * POST /api/jobs/[jobId]/complete
@@ -107,6 +108,13 @@ export async function POST(
           // Email failures must not crash the completion
         }
       }
+    }
+
+    // Lock conversations for this completed job (non-blocking)
+    try {
+      await lockConversations(jobId, LockReason.JOB_COMPLETED);
+    } catch {
+      // Conversation locking failures must not block job completion
     }
 
     return createApiResponse(true, updatedJob, 'Job marked as completed.', 200);

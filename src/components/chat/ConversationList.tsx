@@ -3,7 +3,7 @@ import { IConversation } from '@/types/chat.types';
 import { UnreadBadge } from './UnreadBadge';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types/enums';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Lock } from 'lucide-react';
 
 interface ConversationListProps {
   conversations: IConversation[];
@@ -48,9 +48,11 @@ export function ConversationList({ conversations, activeId, currentUserId, onSel
 
         const unread = conv.unreadCounts?.[currentUserId] || 0;
         const isActive = conv._id === activeId;
-        const lastTime = conv.lastMessageAt
-          ? new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : '';
+        const lastTime = conv.isLocked
+          ? 'Closed'
+          : conv.lastMessageAt
+            ? new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '';
 
         return (
           <button
@@ -83,9 +85,19 @@ export function ConversationList({ conversations, activeId, currentUserId, onSel
                 <span className="truncate text-[13px] font-bold text-[var(--color-text-primary)]">
                   {other.name}
                 </span>
-                <span className="shrink-0 text-[10px] text-[var(--color-text-muted)]">
-                  {lastTime}
-                </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  {conv.isLocked && (
+                    <Lock className="h-3 w-3 text-[var(--color-text-muted)]" />
+                  )}
+                  <span className={cn(
+                    "text-[10px] shrink-0",
+                    conv.isLocked
+                      ? "text-[var(--color-text-muted)] font-medium"
+                      : "text-[var(--color-text-muted)]"
+                  )}>
+                    {lastTime}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className={cn(

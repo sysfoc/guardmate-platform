@@ -2,6 +2,9 @@
 // GuardMate — Generic API Response Types
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { LockReason } from '@/types/enums';
+import { IMessage } from '@/types/chat.types';
+
 // ─── API Error ────────────────────────────────────────────────────────────────
 
 export interface ApiError {
@@ -44,6 +47,14 @@ export interface PaginatedResponse<T> {
   totalPages: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+}
+
+// ─── Messages Paginated Response (includes conversation lock state) ───────────
+
+export interface MessagesPaginatedResponse extends PaginatedResponse<IMessage> {
+  isLocked: boolean;
+  lockedAt: Date | string | null;
+  lockReason: LockReason | null;
 }
 
 // ─── Paginated API Response ───────────────────────────────────────────────────

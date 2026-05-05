@@ -3,6 +3,7 @@ import { verifyAndGetUser, createApiResponse } from "@/lib/serverAuth";
 import connectDB from "@/lib/mongodb";
 import Payment from "@/models/Payment.model";
 import Job from "@/models/Job.model";
+import User from "@/models/User.model";
 import { getStripeInstance } from "@/lib/payments/stripeClient";
 import { EscrowPaymentStatus, JobPaymentStatus, UserRole } from "@/types/enums";
 
@@ -54,6 +55,12 @@ export async function POST(request: NextRequest) {
       await Job.findOneAndUpdate(
         { jobId: payment.jobId },
         { $set: { paymentStatus: JobPaymentStatus.HELD } }
+      );
+
+      // Update Boss's totalSpent
+      await User.findOneAndUpdate(
+        { uid: payment.bossUid },
+        { $inc: { totalSpent: payment.totalChargedToBoss } }
       );
 
       return createApiResponse(true, { 

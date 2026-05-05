@@ -6,6 +6,17 @@ import Conversation from '@/models/Conversation.model';
 import Message from '@/models/Message.model';
 import { UserStatus } from '@/types/enums';
 
+// Store the io instance globally so other server-side modules can emit events
+let ioInstance: Server | null = null;
+
+/**
+ * Returns the Socket.io Server instance, if initialized.
+ * Used by lockConversations to emit real-time lock notifications.
+ */
+export function getIO(): Server | null {
+  return ioInstance;
+}
+
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(uid: string): boolean {
@@ -21,6 +32,8 @@ function checkRateLimit(uid: string): boolean {
 }
 
 export function initSocketServer(io: Server) {
+  // Save the instance for use by lockConversations and other server-side modules
+  ioInstance = io;
   // Middleware: Authentication & Active Account Check
   io.use(async (socket, next) => {
     try {
@@ -80,7 +93,7 @@ export function initSocketServer(io: Server) {
 
         const { conversationId, text } = data;
         const cleanText = text?.trim();
-        
+
         if (!cleanText || cleanText.length === 0 || cleanText.length > 1000) {
           socket.emit('error', { message: 'Invalid message length' });
           return;
@@ -88,6 +101,15 @@ export function initSocketServer(io: Server) {
 
         const conv = await Conversation.findById(conversationId);
         if (!conv) return;
+
+        // Check if conversation is locked before allowing message send
+        if (conv.isLocked) {
+          socket.emit('message-error', {
+            conversationId,
+            error: 'This conversation has been locked because the job has been completed or cancelled. No new messages can be sent.'
+          });
+          return;
+        }
 
         const isParticipant = conv.participants.some(p => p.uid === user.uid);
         if (!isParticipant) return;

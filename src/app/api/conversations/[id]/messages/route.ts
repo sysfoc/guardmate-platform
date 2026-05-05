@@ -58,6 +58,9 @@ export async function GET(
       totalPages,
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
+      isLocked: conversation.isLocked,
+      lockedAt: conversation.lockedAt,
+      lockReason: conversation.lockReason,
     }, 'Messages fetched', 200);
   } catch (error: any) {
     console.error('Fetch Messages Error:', error);

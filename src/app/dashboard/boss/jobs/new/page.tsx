@@ -495,7 +495,7 @@ export default function NewJobPage() {
                 <label className={labelCls}>
                   Check-in Radius (meters)
                   <span className="text-[9px] font-normal text-[var(--color-text-muted)] ml-1 block">
-                    How close the guard must be to check in. Min recommended: 30m. Leave blank for global default.
+                    How close the guard must be to check in. Min recommended: 30m.
                   </span>
                 </label>
                 <input 
@@ -510,7 +510,7 @@ export default function NewJobPage() {
             </div>
 
             {/* Date Selection */}
-            <div className="border-t border-[var(--color-surface-border)] pt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className=" pt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className={labelCls}>Start Date *</label><input type="date" value={form.startDate || ''} onChange={(e) => update({ startDate: e.target.value })} className={inputCls} />{errors.startDate && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.startDate}</p>}</div>
               <div><label className={labelCls}>End Date *</label><input type="date" value={form.endDate || ''} onChange={(e) => update({ endDate: e.target.value })} className={inputCls} />{errors.endDate && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.endDate}</p>}</div>
             </div>

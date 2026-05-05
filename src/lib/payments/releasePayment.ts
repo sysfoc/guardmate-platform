@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Payment from "@/models/Payment.model";
 import Job from "@/models/Job.model";
 import GuardWallet from "@/models/GuardWallet.model";
+import User from "@/models/User.model";
 import { EscrowPaymentStatus, JobPaymentStatus } from "@/types/enums";
 
 /**
@@ -58,6 +59,13 @@ export async function releasePayment(jobId: string): Promise<{ success: boolean;
     wallet.availableBalance += payment.guardPayout;
     wallet.totalEarned += payment.guardPayout;
     await wallet.save({ session });
+
+    // 5. Update Guard User Profile Earnings
+    await User.findOneAndUpdate(
+      { uid: payment.guardUid },
+      { $inc: { totalEarnings: payment.guardPayout } },
+      { session }
+    );
 
     // All three writes succeeded — commit atomically
     await session.commitTransaction();

@@ -1,11 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { IConversation } from '@/types/chat.types';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { TypingIndicator } from './TypingIndicator';
-import { Loader2, MessageSquare, ChevronLeft } from 'lucide-react';
-import { UserRole } from '@/types/enums';
+import { Loader2, MessageSquare, ChevronLeft, Lock, X } from 'lucide-react';
+import { UserRole, LockReason } from '@/types/enums';
+import { toast } from 'react-hot-toast';
 
 interface ChatWindowProps {
   conversation: IConversation | null;
@@ -17,26 +18,46 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ conversation, currentUserId, currentUserRole, currentUserName, currentUserPhoto, onBack }: ChatWindowProps) {
-  const { 
-    messages, 
-    sendMessage, 
-    isTyping, 
-    typingUser, 
-    loadMoreMessages, 
-    hasMore, 
+  const {
+    messages,
+    sendMessage,
+    isTyping,
+    typingUser,
+    loadMoreMessages,
+    hasMore,
     isLoadingMessages,
-    emitTypingStart 
+    emitTypingStart,
+    isLocked: hookIsLocked,
+    lockReason: hookLockReason,
   } = useChat(conversation ? conversation._id : null);
+
+  // Merge lock state: prefer hook state (real-time) over conversation prop (stale from list fetch)
+  const isLocked = hookIsLocked || conversation?.isLocked || false;
+  const effectiveLockReason = hookLockReason || conversation?.lockReason || null;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const pageScrollLock = useRef(false);
+  const [showLockBanner, setShowLockBanner] = useState(true);
 
   useEffect(() => {
     if (bottomRef.current && pageScrollLock.current === false) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  // Listen for message errors from socket (e.g., conversation locked)
+  useEffect(() => {
+    const handleMessageError = (e: Event) => {
+      const customEvent = e as CustomEvent<{ conversationId: string; error: string }>;
+      if (customEvent.detail?.conversationId === conversation?._id) {
+        toast.error(customEvent.detail.error);
+      }
+    };
+
+    window.addEventListener('chat-message-error', handleMessageError);
+    return () => window.removeEventListener('chat-message-error', handleMessageError);
+  }, [conversation?._id]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop } = e.currentTarget;
@@ -106,8 +127,27 @@ export function ChatWindow({ conversation, currentUserId, currentUserRole, curre
         </div>
       </div>
 
+      {/* Lock Banner */}
+      {isLocked && showLockBanner && (
+        <div className="flex shrink-0 items-center justify-between gap-3 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border-primary)] px-4 py-2">
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
+            <span className="text-xs text-[var(--color-text-muted)]">
+              This conversation is read-only. The job has been {effectiveLockReason === LockReason.JOB_COMPLETED ? 'completed' : 'cancelled'} and no new messages can be sent.
+            </span>
+          </div>
+          <button
+            onClick={() => setShowLockBanner(false)}
+            className="shrink-0 p-1 rounded-full hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] transition-colors"
+            aria-label="Dismiss lock notice"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Messages Area */}
-      <div 
+      <div
         ref={scrollRef}
         onScroll={handleScroll}
         className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--color-bg-secondary)]/20 px-4 py-3"
@@ -138,10 +178,12 @@ export function ChatWindow({ conversation, currentUserId, currentUserRole, curre
       </div>
 
       {/* Input */}
-      <ChatInput 
+      <ChatInput
         onSend={(text) => sendMessage(text, { uid: currentUserId, name: currentUserName, photo: currentUserPhoto, role: currentUserRole })}
         onTypingStart={emitTypingStart}
         isLoading={false}
+        isLocked={isLocked}
+        lockReason={effectiveLockReason}
       />
     </div>
   );

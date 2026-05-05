@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { UserRole } from '@/types/enums';
+import { LockReason, UserRole } from '@/types/enums';
 
 export interface IConversationDocument extends Document {
   participants: {
@@ -14,6 +14,9 @@ export interface IConversationDocument extends Document {
   lastMessageAt: Date | null;
   unreadCounts: Record<string, number>;
   isActive: boolean;
+  isLocked: boolean;
+  lockedAt: Date | null;
+  lockReason: LockReason | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +37,9 @@ const ConversationSchema = new Schema<IConversationDocument>(
     lastMessageAt: { type: Date, default: null },
     unreadCounts: { type: Schema.Types.Mixed, default: {} },
     isActive: { type: Boolean, default: true },
+    isLocked: { type: Boolean, default: false },
+    lockedAt: { type: Date, default: null },
+    lockReason: { type: String, enum: Object.values(LockReason), default: null },
   },
   { timestamps: true }
 );

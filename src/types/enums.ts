@@ -203,3 +203,10 @@ export enum OfferEligibility {
   ALL_USERS      = 'ALL_USERS',
   NEW_USERS_ONLY = 'NEW_USERS_ONLY',
 }
+
+// ─── Phase 9: Conversation Locking ─────────────────────────────────────────────
+
+export enum LockReason {
+  JOB_COMPLETED  = 'JOB_COMPLETED',
+  JOB_CANCELLED  = 'JOB_CANCELLED',
+}

@@ -512,7 +512,7 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setSelectedCountryCode(e.target.value)}
                 className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-focus-ring)]"
               >
-                <option value="none">🌍 No Restriction (Global Access)</option>
+                <option value="none">No Restriction (Global Access)</option>
                 {countries.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.flag} {c.name} ({c.dialCode})

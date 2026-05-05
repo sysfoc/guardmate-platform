@@ -265,7 +265,7 @@ export default function EditJobPage() {
                 <label className={labelCls}>
                   Check-in Radius (meters)
                   <span className="text-[9px] font-normal text-[var(--color-text-muted)] ml-1 block">
-                    How close the guard must be to check in. Min recommended: 30m. Leave blank for global default.
+                    How close the guard must be to check in. Min recommended: 30m.
                   </span>
                 </label>
                 <input 

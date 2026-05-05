@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiPatch } from '@/lib/apiClient';
-import { IConversation, IMessage } from '@/types/chat.types';
-import { ApiResponse, PaginatedResponse } from '@/types/api.types';
+import { IConversation } from '@/types/chat.types';
+import { ApiResponse, PaginatedResponse, MessagesPaginatedResponse } from '@/types/api.types';
 
 /**
  * Creates a new conversation or retrieves an existing one for a specific job and participant.
@@ -28,6 +28,7 @@ export async function getMyConversations(
 
 /**
  * Retrieves a paginated list of chat messages for a specific conversation.
+ * Also returns conversation lock state (isLocked, lockedAt, lockReason).
  * @param conversationId The ID of the conversation.
  * @param page The page number.
  * @param limit The maximum number of messages per page (defaults to 20).
@@ -36,8 +37,8 @@ export async function getConversationMessages(
   conversationId: string,
   page: number = 1,
   limit: number = 20
-): Promise<ApiResponse<PaginatedResponse<IMessage>>> {
-  return await apiGet<PaginatedResponse<IMessage>>(`/api/conversations/${conversationId}/messages?page=${page}&limit=${limit}`);
+): Promise<ApiResponse<MessagesPaginatedResponse>> {
+  return await apiGet<MessagesPaginatedResponse>(`/api/conversations/${conversationId}/messages?page=${page}&limit=${limit}`);
 }
 
 /**
