@@ -18,8 +18,6 @@ const OFFER_TYPE_LABELS: Record<string, string> = {
   [OfferType.GUARD_COMMISSION_REDUCTION]: 'Guard Commission Reduction',
   [OfferType.BOSS_COMMISSION_WAIVER]: 'Boss Commission Waiver',
   [OfferType.GUARD_COMMISSION_WAIVER]: 'Guard Commission Waiver',
-  [OfferType.SUBSCRIPTION_DISCOUNT]: 'Subscription Discount',
-  [OfferType.SUBSCRIPTION_FREE_TRIAL]: 'Subscription Free Trial',
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {

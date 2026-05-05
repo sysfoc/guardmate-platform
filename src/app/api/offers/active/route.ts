@@ -25,8 +25,6 @@ export async function GET(request: NextRequest) {
       relevantTypes = [
         OfferType.BOSS_COMMISSION_REDUCTION,
         OfferType.BOSS_COMMISSION_WAIVER,
-        OfferType.SUBSCRIPTION_DISCOUNT,
-        OfferType.SUBSCRIPTION_FREE_TRIAL,
       ];
     } else {
       relevantTypes = [

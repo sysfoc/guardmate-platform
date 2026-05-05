@@ -31,7 +31,6 @@ export async function PATCH(request: NextRequest) {
     // Build update payload
     const updatePayload: Record<string, unknown> = {
       platformCountry: body.platformCountry,
-      checkInRadiusMeters: body.checkInRadiusMeters,
       platformCurrency: body.platformCurrency,
       abrGuid: body.abrGuid,
       abrVerificationEnabled: body.abrVerificationEnabled,

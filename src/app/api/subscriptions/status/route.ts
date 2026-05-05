@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
         status: 'NOT_REQUIRED',
         expiresAt: null,
         daysRemaining: null,
-        isInGracePeriod: false,
         amount: 0,
         currency: settings?.platformCurrency || 'AUD',
       };
@@ -38,38 +37,17 @@ export async function GET(request: NextRequest) {
 
     const subscription = await BossSubscription.findOne({ bossUid: user.uid });
     const now = new Date();
-    const gracePeriodDays = settings.bossSubscriptionGracePeriodDays ?? 3;
-    const trialDays = settings.bossSubscriptionTrialDays ?? 0;
     const amount = settings.bossSubscriptionAmount ?? 0;
     const currency = settings.bossSubscriptionCurrency || settings.platformCurrency || 'AUD';
 
-    // No subscription record — check trial eligibility
+    // No subscription
     if (!subscription) {
-      if (trialDays > 0 && user.createdAt) {
-        const registeredAt = new Date(user.createdAt as string);
-        const trialEnd = new Date(registeredAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
-        if (now < trialEnd) {
-          const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
-          const result: ISubscriptionStatus = {
-            isSubscribed: true,
-            status: SubscriptionStatus.TRIAL,
-            expiresAt: trialEnd.toISOString(),
-            daysRemaining,
-            isInGracePeriod: false,
-            amount,
-            currency,
-          };
-          return createApiResponse(true, result, "In trial period.", 200);
-        }
-      }
 
-      // No subscription, no trial
       const result: ISubscriptionStatus = {
         isSubscribed: false,
         status: 'NONE',
         expiresAt: null,
         daysRemaining: null,
-        isInGracePeriod: false,
         amount,
         currency,
       };
@@ -86,7 +64,6 @@ export async function GET(request: NextRequest) {
         status: SubscriptionStatus.ACTIVE,
         expiresAt: endDate?.toISOString() || null,
         daysRemaining,
-        isInGracePeriod: false,
         amount: subscription.amount || amount,
         currency: subscription.currency || currency,
       };
@@ -104,48 +81,23 @@ export async function GET(request: NextRequest) {
         status: SubscriptionStatus.CANCELLED,
         expiresAt: endDate?.toISOString() || null,
         daysRemaining: isStillActive ? daysRemaining : 0,
-        isInGracePeriod: false,
         amount: subscription.amount || amount,
         currency: subscription.currency || currency,
       };
       return createApiResponse(true, result, isStillActive ? "Cancelled but active until period end." : "Subscription cancelled.", 200);
     }
 
-    // Lapsed — check grace period
+    // Lapsed
     if (subscription.status === SubscriptionStatus.LAPSED) {
-      const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
-      const graceEnd = endDate ? new Date(endDate.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000) : null;
-      const isInGracePeriod = graceEnd ? now < graceEnd : false;
-      const daysUntilGraceEnd = graceEnd ? Math.max(0, Math.ceil((graceEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))) : 0;
-
       const result: ISubscriptionStatus = {
-        isSubscribed: isInGracePeriod,
+        isSubscribed: false,
         status: SubscriptionStatus.LAPSED,
-        expiresAt: graceEnd?.toISOString() || null,
-        daysRemaining: isInGracePeriod ? daysUntilGraceEnd : 0,
-        isInGracePeriod,
+        expiresAt: null,
+        daysRemaining: 0,
         amount: subscription.amount || amount,
         currency: subscription.currency || currency,
       };
-      return createApiResponse(true, result, isInGracePeriod ? "In grace period." : "Subscription lapsed.", 200);
-    }
-
-    // Trial status from subscription record
-    if (subscription.status === SubscriptionStatus.TRIAL) {
-      const trialEnd = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
-      const isInTrial = trialEnd ? now < trialEnd : false;
-      const daysRemaining = trialEnd ? Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))) : 0;
-
-      const result: ISubscriptionStatus = {
-        isSubscribed: isInTrial,
-        status: SubscriptionStatus.TRIAL,
-        expiresAt: trialEnd?.toISOString() || null,
-        daysRemaining,
-        isInGracePeriod: false,
-        amount,
-        currency,
-      };
-      return createApiResponse(true, result, isInTrial ? "In trial." : "Trial ended.", 200);
+      return createApiResponse(true, result, "Subscription lapsed.", 200);
     }
 
     // Fallback
@@ -154,7 +106,6 @@ export async function GET(request: NextRequest) {
       status: subscription.status,
       expiresAt: null,
       daysRemaining: null,
-      isInGracePeriod: false,
       amount,
       currency,
     };

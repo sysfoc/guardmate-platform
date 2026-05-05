@@ -11,37 +11,49 @@ export const subscriptionApi = {
    * Create a Stripe PaymentIntent for Boss subscription.
    */
   async createStripeSubscription(): Promise<{
-    clientSecret: string;
+    subscriptionId: string;
+    clientSecret: string | null;
     amount: number;
     currency: string;
     periodEnd: string;
+    requiresPayment: boolean;
   }> {
     const res = await apiPost<{
-      clientSecret: string;
+      subscriptionId: string;
+      clientSecret: string | null;
       amount: number;
       currency: string;
       periodEnd: string;
+      requiresPayment: boolean;
     }>('/api/subscriptions/create-stripe', {});
     return res.data;
   },
 
   /**
-   * Create a PayPal order for Boss subscription.
+   * Create a PayPal subscription for Boss.
    */
   async createPaypalSubscription(): Promise<{
-    orderId: string;
+    subscriptionId: string;
     approvalUrl: string;
     amount: number;
     currency: string;
     periodEnd: string;
   }> {
     const res = await apiPost<{
-      orderId: string;
+      subscriptionId: string;
       approvalUrl: string;
       amount: number;
       currency: string;
       periodEnd: string;
     }>('/api/subscriptions/create-paypal', {});
+    return res.data;
+  },
+
+  /**
+   * Capture and confirm a PayPal subscription after Boss approval.
+   */
+  async capturePaypalSubscription(subscriptionId: string): Promise<any> {
+    const res = await apiPost<any>('/api/subscriptions/paypal-capture', { subscriptionId });
     return res.data;
   },
 
@@ -60,6 +72,29 @@ export const subscriptionApi = {
     const res = await apiPost<{ status: string; cancelledAt: string; activeUntil: string }>(
       '/api/subscriptions/cancel', {}
     );
+    return res.data;
+  },
+
+  /**
+   * Get Boss's saved payment method from Stripe.
+   */
+  async getPaymentMethod(): Promise<{
+    hasPaymentMethod: boolean;
+    paymentMethodId?: string;
+    brand?: string;
+    last4?: string;
+    expMonth?: number;
+    expYear?: number;
+  }> {
+    const res = await apiGet<any>('/api/subscriptions/payment-method');
+    return res.data;
+  },
+
+  /**
+   * Update Boss's default payment method in Stripe.
+   */
+  async updatePaymentMethod(paymentMethodId: string): Promise<any> {
+    const res = await apiPost<any>('/api/subscriptions/payment-method', { paymentMethodId });
     return res.data;
   },
 };

@@ -21,6 +21,7 @@ import {
   BarChart2,
   Tag,
   CreditCard,
+  ArrowDownToLine,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
@@ -39,6 +40,7 @@ const adminNavItems = [
   { label: 'Incidents', icon: Shield, href: '/admin/incidents' },
   { label: 'Disputes', icon: ShieldAlert, href: '/admin/disputes' },
   { label: 'Revenue & Escrow', icon: DollarSign, href: '/admin/payments' },
+  { label: 'Withdrawals', icon: ArrowDownToLine, href: '/admin/withdrawals' },
   { label: 'Subscriptions', icon: CreditCard, href: '/admin/subscriptions' },
   { label: 'Offers', icon: Tag, href: '/admin/offers' },
   { label: 'Activity Log', icon: History, href: '/admin/activity' },

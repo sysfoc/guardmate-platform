@@ -8,8 +8,9 @@ import Shift from '@/models/Shift.model';
 import Payment from '@/models/Payment.model';
 import { UserRole } from '@/types/enums';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const params = await context.params;
     const authResult = await verifyAndGetUser(request);
     if (!authResult) {
       return createApiResponse(false, null, 'Unauthorized.', 401);

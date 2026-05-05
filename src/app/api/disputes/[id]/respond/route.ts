@@ -16,8 +16,9 @@ export const config = {
   },
 };
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const params = await context.params;
     const authResult = await verifyAndGetUser(request);
     if (!authResult) {
       return createApiResponse(false, null, 'Unauthorized.', 401);

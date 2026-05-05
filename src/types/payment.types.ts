@@ -3,7 +3,7 @@
 // Phase 6: Payments & Escrow System
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { PaymentMethod, EscrowPaymentStatus, WithdrawalStatus } from './enums';
+import { PaymentMethod, EscrowPaymentStatus, WithdrawalStatus, WithdrawalMethod } from './enums';
 
 // ─── Payment Interface ────────────────────────────────────────────────────────
 
@@ -71,6 +71,13 @@ export interface IGuardWallet {
   paypalEmail: string | null;
   paypalVerified: boolean;
 
+  // Direct Bank Transfer
+  bankAccountName: string | null;
+  bankBSB: string | null;
+  bankAccountNumber: string | null;
+  bankAccountVerified: boolean;
+  bankAccountSavedAt: string | Date | null;
+
   currency: string;
   lastPayoutAt: string | Date | null;
 
@@ -85,8 +92,9 @@ export interface IWithdrawal {
   guardUid: string;
   amount: number;
   currency: string;
-  withdrawalMethod: PaymentMethod;
+  withdrawalMethod: WithdrawalMethod;
   status: WithdrawalStatus;
+  requiresManualProcessing: boolean;
 
   stripePayoutId: string | null;
   paypalPayoutId: string | null;
@@ -143,7 +151,7 @@ export interface CreatePaymentPayload {
 
 export interface WithdrawalRequestPayload {
   amount: number;
-  method: PaymentMethod;
+  method: WithdrawalMethod;
 }
 
 // ─── Filter Interfaces ───────────────────────────────────────────────────────

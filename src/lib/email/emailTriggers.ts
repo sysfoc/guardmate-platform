@@ -528,7 +528,6 @@ export const sendSubscriptionExpiringSoon = async (
 export const sendSubscriptionLapsed = async (
   to: string,
   bossName: string,
-  gracePeriodDays: number,
   subscribeUrl: string
 ) => {
   await sendEmail({
@@ -536,7 +535,6 @@ export const sendSubscriptionLapsed = async (
     notificationType: NotificationEventType.SUBSCRIPTION_LAPSED,
     variables: {
       bossName,
-      gracePeriodDays: String(gracePeriodDays),
       subscribeUrl,
     }
   });
@@ -581,3 +579,52 @@ export const sendNewOfferAvailable = async (
     }
   });
 };
+
+
+export const sendSubscriptionPaymentFailed = async (
+  to: string,
+  bossName: string,
+  amount: number,
+  currency: string,
+  failureReason: string,
+  updateUrl: string
+) => {
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.SUBSCRIPTION_PAYMENT_FAILED,
+    variables: {
+      bossName,
+      amount: amount.toFixed(2),
+      currency,
+      failureReason,
+      updateUrl,
+    }
+  });
+};
+
+export const sendManualWithdrawalRequested = async (
+  to: string,
+  guardName: string,
+  amount: number,
+  accountName: string,
+  bsb: string,
+  accountNumber: string,
+  withdrawalId: string
+) => {
+  const adminDashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/withdrawals`;
+  await sendEmail({
+    to,
+    notificationType: NotificationEventType.MANUAL_WITHDRAWAL_REQUESTED,
+    variables: {
+      guardName,
+      amount: amount.toFixed(2),
+      accountName,
+      bsb,
+      accountNumber,
+      withdrawalId,
+      adminDashboardUrl,
+    }
+  });
+};
+
+

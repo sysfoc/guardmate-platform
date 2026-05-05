@@ -208,14 +208,14 @@ export default function BossDashboard() {
           {platformSettings?.bossSubscriptionEnabled && subStatus && (
             <Card className={`p-4 border ${
               subStatus.isSubscribed
-                ? subStatus.status === 'ACTIVE' ? 'border-emerald-200 bg-emerald-50/30' : subStatus.status === 'TRIAL' ? 'border-blue-200 bg-blue-50/30' : 'border-amber-200 bg-amber-50/30'
+                ? subStatus.status === 'ACTIVE' ? 'border-emerald-200 bg-emerald-50/30' : 'border-amber-200 bg-amber-50/30'
                 : 'border-red-200 bg-red-50/30'
             }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`p-2.5 rounded-xl ${
                     subStatus.isSubscribed
-                      ? subStatus.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'
+                      ? subStatus.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
                       : 'bg-red-500/10 text-red-500'
                   }`}>
                     <CreditCard className="h-5 w-5" />
@@ -225,7 +225,7 @@ export default function BossDashboard() {
                     <h3 className={`text-sm font-black ${
                       subStatus.isSubscribed ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-danger)]'
                     }`}>
-                      {subStatus.status === 'ACTIVE' ? 'ACTIVE' : subStatus.status === 'TRIAL' ? 'FREE TRIAL' : subStatus.status === 'CANCELLED' ? 'CANCELLED' : subStatus.status === 'LAPSED' && subStatus.isInGracePeriod ? 'GRACE PERIOD' : 'SUBSCRIBE NOW'}
+                      {subStatus.status === 'ACTIVE' ? 'ACTIVE' : subStatus.status === 'CANCELLED' ? 'CANCELLED' : 'SUBSCRIBE NOW'}
                     </h3>
                     {subStatus.daysRemaining !== null && subStatus.daysRemaining > 0 && (
                       <p className="text-[9px] text-[var(--color-text-tertiary)] font-medium">{subStatus.daysRemaining} day{subStatus.daysRemaining !== 1 ? 's' : ''} remaining</p>

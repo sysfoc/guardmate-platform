@@ -20,7 +20,7 @@ const BossSubscriptionSchema = new Schema<BossSubscriptionDocument>(
     status: {
       type: String,
       enum: Object.values(SubscriptionStatus),
-      default: SubscriptionStatus.TRIAL,
+      default: SubscriptionStatus.LAPSED,
       index: true,
     },
     currentPeriodStart: { type: Date, default: null },
@@ -31,13 +31,13 @@ const BossSubscriptionSchema = new Schema<BossSubscriptionDocument>(
     // ─── Stripe ──────────────────────────────────────────────────────────────
     stripeSubscriptionId: { type: String, default: null },
     stripeCustomerId:     { type: String, default: null },
+    stripePriceId:        { type: String, default: null },
 
     // ─── PayPal ──────────────────────────────────────────────────────────────
     paypalSubscriptionId: { type: String, default: null },
     paypalOrderId:        { type: String, default: null },
 
-    // ─── Trial & Cancellation ────────────────────────────────────────────────
-    trialEndsAt:  { type: Date, default: null },
+    // ─── Cancellation ────────────────────────────────────────────────
     cancelledAt:  { type: Date, default: null },
 
     // ─── Payment Tracking ────────────────────────────────────────────────────

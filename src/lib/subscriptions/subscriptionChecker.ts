@@ -42,13 +42,11 @@ export async function checkSubscriptionExpiries(): Promise<void> {
       try {
         const boss = await User.findOne({ uid: sub.bossUid }).select('email firstName').lean();
         if (boss?.email) {
-          const gracePeriodDays = settings.bossSubscriptionGracePeriodDays ?? 3;
           const subscribeLink = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/boss/subscription`;
           const { sendSubscriptionLapsed } = await import('@/lib/email/emailTriggers');
           await sendSubscriptionLapsed(
             boss.email,
             boss.firstName || 'Boss',
-            gracePeriodDays,
             subscribeLink
           );
         }

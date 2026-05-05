@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { apiGet, apiPost } from '../apiClient';
-import type { PaymentMethod } from '@/types/enums';
+import type { WithdrawalMethod } from '@/types/enums';
 
 // ─── Boss - Escrow Funding ──────────────────────────────────────────────────
 
@@ -33,6 +33,10 @@ export const getWalletBalance = async () => {
   return apiGet<any>('/api/wallet/balance');
 };
 
+export const getWalletDetails = async () => {
+  return apiGet<any>('/api/wallet/balance');
+};
+
 export const getEarnings = async (page = 1, limit = 10) => {
   return apiGet<any>(`/api/wallet/earnings?page=${page}&limit=${limit}`);
 };
@@ -41,7 +45,7 @@ export const getWithdrawals = async (page = 1, limit = 10) => {
   return apiGet<any>(`/api/wallet/withdrawals?page=${page}&limit=${limit}`);
 };
 
-export const requestWithdrawal = async (amount: number, method: PaymentMethod) => {
+export const requestWithdrawal = async (amount: number, method: WithdrawalMethod) => {
   return apiPost<any>('/api/wallet/withdraw', { amount, method });
 };
 
@@ -57,4 +61,8 @@ export const checkStripeConnectStatus = async () => {
 
 export const setPaypalEmail = async (email: string) => {
   return apiPost<any>('/api/wallet/paypal-email', { email });
+};
+
+export const saveBankDetails = async (payload: { accountName: string; bsb: string; accountNumber: string }) => {
+  return apiPost<any>('/api/wallet/bank-details', payload);
 };

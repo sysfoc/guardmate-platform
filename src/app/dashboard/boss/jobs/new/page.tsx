@@ -53,7 +53,7 @@ interface DayScheduleInput {
 export default function NewJobPage() {
   const router = useRouter();
   const { user, isLoading } = useUser();
-  const { platformCurrency, minimumHourlyRate, minimumFixedRate, minimumRateEnforced } = usePlatformContext();
+  const { platformCurrency, minimumHourlyRate, minimumFixedRate, minimumRateEnforced, platformCommissionBoss } = usePlatformContext();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -679,10 +679,10 @@ export default function NewJobPage() {
                       <p className="text-xs text-emerald-700 font-medium mt-1">
                         💰 Estimated savings on this job: {platformCurrency}
                         {bossOffer.discountType === DiscountType.FULL_WAIVER
-                          ? (form.budgetAmount * 0.10).toFixed(2)
+                          ? (form.budgetAmount * (platformCommissionBoss / 100)).toFixed(2)
                           : bossOffer.discountType === DiscountType.PERCENTAGE_OFF
-                            ? (form.budgetAmount * 0.10 * (bossOffer.discountValue / 100)).toFixed(2)
-                            : ((0.10 - bossOffer.discountValue / 100) * form.budgetAmount).toFixed(2)
+                            ? (form.budgetAmount * (platformCommissionBoss / 100) * (bossOffer.discountValue / 100)).toFixed(2)
+                            : (((platformCommissionBoss / 100) - bossOffer.discountValue / 100) * form.budgetAmount).toFixed(2)
                         }
                       </p>
                     )}

@@ -35,6 +35,10 @@ export interface ApiResponse<T> {
   message: string;
   errors?: ApiError[];
   statusCode: number;
+  /** Present on paginated list endpoints (earnings, withdrawals, etc.) */
+  meta?: { total: number; page: number; limit: number; totalPages: number };
+  /** Present on admin withdrawals endpoint */
+  pagination?: { total: number; page: number; limit: number; pages: number };
 }
 
 // ─── Paginated Response ───────────────────────────────────────────────────────

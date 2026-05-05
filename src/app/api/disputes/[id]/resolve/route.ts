@@ -14,8 +14,10 @@ import { getStripeInstance } from '@/lib/payments/stripeClient';
 import { getPayPalConfig, getPayPalAccessToken } from '@/lib/payments/paypalClient';
 import { updateGuardReliabilityScore } from '@/lib/jobs/reliabilityScore';
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const { id: disputeId } = await context.params;
+    const params = { id: disputeId };
     const authResult = await verifyAndGetUser(request);
     if (!authResult) {
       return createApiResponse(false, null, 'Unauthorized.', 401);

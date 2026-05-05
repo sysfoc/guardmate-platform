@@ -66,7 +66,6 @@ export async function GET(request: NextRequest) {
       active: allSubs.filter((s) => s.status === "ACTIVE").length,
       lapsed: allSubs.filter((s) => s.status === "LAPSED").length,
       cancelled: allSubs.filter((s) => s.status === "CANCELLED").length,
-      trial: allSubs.filter((s) => s.status === "TRIAL").length,
       monthlyRecurringRevenue: allSubs
         .filter((s) => s.status === "ACTIVE")
         .reduce((sum, s) => sum + (s.amount || 0), 0),

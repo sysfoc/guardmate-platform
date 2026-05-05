@@ -248,5 +248,30 @@ export async function getAdminSubscriptions(filters?: { status?: string; dateFro
 
   const queryString = query.toString();
   const url = `/api/admin/subscriptions${queryString ? `?${queryString}` : ''}`;
-  return apiGet(url);
+  return apiGet<{
+    data: any[];
+    stats: { total: number; active: number; lapsed: number; cancelled: number; monthlyRecurringRevenue: number };
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>(url);
 }
+
+// ─── Withdrawals ──────────────────────────────────────────────────────────────
+
+export const getAdminWithdrawals = async (filters?: { status?: string; method?: string; page?: number; limit?: number }) => {
+  const query = new URLSearchParams();
+  if (filters?.status) query.append('status', filters.status);
+  if (filters?.method) query.append('method', filters.method);
+  if (filters?.page) query.append('page', String(filters.page));
+  if (filters?.limit) query.append('limit', String(filters.limit));
+
+  const queryString = query.toString();
+  const url = `/api/admin/withdrawals${queryString ? `?${queryString}` : ''}`;
+  return apiGet<any>(url);
+};
+
+export const completeWithdrawal = async (id: string) => {
+  return apiPatch<any>(`/api/admin/withdrawals/${id}/complete`, {});
+};

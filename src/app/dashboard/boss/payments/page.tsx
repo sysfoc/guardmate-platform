@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { usePlatformContext } from '@/context/PlatformContext';
 import { apiGet } from '@/lib/apiClient';
+import { capturePaypalOrder } from '@/lib/api/payment.api';
 import { CreditCard, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -18,8 +19,26 @@ function BossPaymentsContent() {
   useEffect(() => {
     // Check callback status from URL for PayPal
     const statusParam = searchParams.get('status');
+    const paypalToken = searchParams.get('token'); // PayPal appends token=ORDER_ID on return
+
     if (statusParam === 'success') {
-      toast.success('Payment successfully approved. Escrow is now funded.');
+      if (paypalToken) {
+        // Capture the PayPal order to move funds into escrow
+        capturePaypalOrder(paypalToken).then((res) => {
+          if (res.success) {
+            toast.success('Payment captured successfully. Escrow is now funded.');
+          } else {
+            toast.error(res.message || 'Failed to capture PayPal payment.');
+          }
+          loadHistory();
+        }).catch((err) => {
+          toast.error(err.message || 'Failed to capture PayPal payment.');
+          loadHistory();
+        });
+        return; // loadHistory called inside the promise above
+      } else {
+        toast.success('Payment successfully approved. Escrow is now funded.');
+      }
     } else if (statusParam === 'cancelled') {
       toast('Payment was cancelled.', { icon: 'ℹ️' });
     }

@@ -20,7 +20,6 @@ export default function AdminSettingsPage() {
   
   const [platformSettings, setPlatformSettings] = useState<IPlatformSettings | null>(null);
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>('none');
-  const [checkInRadiusMeters, setCheckInRadiusMeters] = useState<number>(500);
   const [abrGuid, setAbrGuid] = useState<string>('');
   const [abrVerificationEnabled, setAbrVerificationEnabled] = useState<boolean>(false);
   const [platformSaving, setPlatformSaving] = useState(false);
@@ -49,9 +48,6 @@ export default function AdminSettingsPage() {
   // Phase 8: Subscription Settings State
   const [bossSubscriptionEnabled, setBossSubscriptionEnabled] = useState<boolean>(false);
   const [bossSubscriptionAmount, setBossSubscriptionAmount] = useState<number | null>(null);
-  const [bossSubscriptionCurrency, setBossSubscriptionCurrency] = useState<string>('AUD');
-  const [bossSubscriptionGracePeriodDays, setBossSubscriptionGracePeriodDays] = useState<number>(3);
-  const [bossSubscriptionTrialDays, setBossSubscriptionTrialDays] = useState<number>(0);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -74,7 +70,6 @@ export default function AdminSettingsPage() {
       setSettings(emailData);
       setPlatformSettings(platformData);
       setSelectedCountryCode(platformData.platformCountry?.countryCode || 'none');
-      setCheckInRadiusMeters(platformData.checkInRadiusMeters ?? 500);
       setAbrGuid(platformData.abrGuid || '');
       setAbrVerificationEnabled(platformData.abrVerificationEnabled ?? false);
       // Load minimum rate enforcement settings
@@ -101,9 +96,7 @@ export default function AdminSettingsPage() {
       // Phase 8: Load Subscription Settings
       setBossSubscriptionEnabled(platformData.bossSubscriptionEnabled ?? false);
       setBossSubscriptionAmount(platformData.bossSubscriptionAmount ?? null);
-      setBossSubscriptionCurrency(platformData.bossSubscriptionCurrency || 'AUD');
-      setBossSubscriptionGracePeriodDays(platformData.bossSubscriptionGracePeriodDays ?? 3);
-      setBossSubscriptionTrialDays(platformData.bossSubscriptionTrialDays ?? 0);
+      // bossSubscriptionCurrency is hardcoded to AUD
     } catch (err: any) {
       setErrorMsg('Failed to load settings');
     } finally {
@@ -170,7 +163,6 @@ export default function AdminSettingsPage() {
           dialCode: targetCountry.dialCode,
           flag: targetCountry.flag
         } as IPlatformCountry : null,
-        checkInRadiusMeters,
         abrGuid: abrGuid || undefined,
         abrVerificationEnabled,
         minimumRateEnforced,
@@ -195,9 +187,7 @@ export default function AdminSettingsPage() {
         // Phase 8: Subscription Settings
         bossSubscriptionEnabled,
         bossSubscriptionAmount,
-        bossSubscriptionCurrency,
-        bossSubscriptionGracePeriodDays,
-        bossSubscriptionTrialDays,
+        bossSubscriptionCurrency: 'AUD',
       };
 
       const updated = await settingsApi.updatePlatformSettings(payload);
@@ -226,9 +216,7 @@ export default function AdminSettingsPage() {
 
       setBossSubscriptionEnabled(updated.bossSubscriptionEnabled ?? false);
       setBossSubscriptionAmount(updated.bossSubscriptionAmount ?? null);
-      setBossSubscriptionCurrency(updated.bossSubscriptionCurrency || 'AUD');
-      setBossSubscriptionGracePeriodDays(updated.bossSubscriptionGracePeriodDays ?? 3);
-      setBossSubscriptionTrialDays(updated.bossSubscriptionTrialDays ?? 0);
+      // bossSubscriptionCurrency is hardcoded to AUD
 
       await refreshSettings(); // Sync global context
       
@@ -313,6 +301,7 @@ export default function AdminSettingsPage() {
     ],
     'Payment Notifications': [
       { id: NotificationEventType.PAYMENT_SENT, label: 'Payment Sent', desc: 'Alerts Guard when a payout is processed.' },
+      { id: NotificationEventType.MANUAL_WITHDRAWAL_REQUESTED, label: 'Manual Withdrawal Requested', desc: 'Alerts Admin when a guard requests a manual bank transfer.' },
     ],
     'Dispute Notifications': [
       { id: NotificationEventType.DISPUTE_RAISED, label: 'Dispute Raised', desc: 'Alerts Admin, Boss, and Guard.' },
@@ -323,6 +312,7 @@ export default function AdminSettingsPage() {
       { id: NotificationEventType.SUBSCRIPTION_EXPIRING_SOON, label: 'Subscription Expiring Soon', desc: 'Warns Boss 3 days before subscription expiry.' },
       { id: NotificationEventType.SUBSCRIPTION_LAPSED, label: 'Subscription Lapsed', desc: 'Alerts Boss when subscription expires.' },
       { id: NotificationEventType.SUBSCRIPTION_CANCELLED, label: 'Subscription Cancelled', desc: 'Confirms cancellation to Boss.' },
+      { id: NotificationEventType.SUBSCRIPTION_PAYMENT_FAILED, label: 'Subscription Payment Failed', desc: 'Alerts Boss when subscription payment fails.' },
       { id: NotificationEventType.NEW_OFFER_AVAILABLE, label: 'New Offer Available', desc: 'Notifies users about new promotions.' },
     ],
   };
@@ -519,32 +509,6 @@ export default function AdminSettingsPage() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="pt-6 border-t border-[var(--color-border-primary)]">
-              <h3 className="text-lg font-bold text-[var(--color-text-primary)]">GPS Geofence Settings</h3>
-              <p className="text-sm text-[var(--color-text-secondary)] mt-1 mb-4">
-                Define the maximum distance a guard can be from the job location to successfully check in.
-              </p>
-              
-              <div className="space-y-2 max-w-sm">
-                <label className="text-sm font-medium text-[var(--color-input-label)]">
-                  Check-in Radius (meters)
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="50"
-                    max="5000"
-                    value={checkInRadiusMeters}
-                    onChange={(e) => setCheckInRadiusMeters(Number(e.target.value))}
-                    className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[var(--color-text-muted)] font-medium pointer-events-none">
-                    meters
-                  </span>
-                </div>
-              </div>
             </div>
 
             <div className="pt-6 border-t border-[var(--color-border-primary)]">
@@ -904,7 +868,7 @@ export default function AdminSettingsPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-[var(--color-input-label)]">Subscription Amount</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">{bossSubscriptionCurrency}</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">AUD</span>
                       <input
                         type="number"
                         min="0.01" step="0.01"
@@ -914,42 +878,14 @@ export default function AdminSettingsPage() {
                         className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 pl-14 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                       />
                     </div>
-                    <p className="text-xs text-[var(--color-text-muted)]">Monthly fee charged to Bosses via Stripe or PayPal.</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">Monthly fee charged to Bosses via Stripe or PayPal. Currency is locked to AUD.</p>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-[var(--color-input-label)]">Currency</label>
-                    <select
-                      value={bossSubscriptionCurrency}
-                      onChange={(e) => setBossSubscriptionCurrency(e.target.value)}
-                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                    >
-                      <option value="AUD">AUD</option>
-                      <option value="USD">USD</option>
-                      <option value="GBP">GBP</option>
-                      <option value="EUR">EUR</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-[var(--color-input-label)]">Grace Period (days)</label>
-                    <input
-                      type="number"
-                      min="1" max="30"
-                      value={bossSubscriptionGracePeriodDays}
-                      onChange={(e) => setBossSubscriptionGracePeriodDays(Number(e.target.value))}
-                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                    />
-                    <p className="text-xs text-[var(--color-text-muted)]">Days after expiry that Bosses can still post jobs before being blocked.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-[var(--color-input-label)]">Free Trial (days)</label>
-                    <input
-                      type="number"
-                      min="0" max="90"
-                      value={bossSubscriptionTrialDays}
-                      onChange={(e) => setBossSubscriptionTrialDays(Number(e.target.value))}
-                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                    />
-                    <p className="text-xs text-[var(--color-text-muted)]">Set to 0 for no trial. New Bosses automatically get this many days free.</p>
+                    <div className="flex items-center h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-bg-tertiary)] px-4 text-base text-[var(--color-text-primary)] font-bold">
+                      AUD — Australian Dollar
+                    </div>
+                    <p className="text-xs text-[var(--color-text-muted)]">Subscription currency is locked to AUD platform-wide.</p>
                   </div>
                 </div>
               )}

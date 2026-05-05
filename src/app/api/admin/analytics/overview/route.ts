@@ -538,9 +538,9 @@ export async function GET(request: NextRequest) {
       uid: g.uid,
       name: `${g.firstName} ${g.lastName}`,
       photo: g.profilePhoto,
-      rating: g.averageRating,
-      totalReviews: g.totalReviews,
-      totalJobsCompleted: g.totalJobsCompleted,
+      rating: g.averageRating || 0,
+      totalReviews: g.totalReviews || 0,
+      totalJobsCompleted: g.totalJobsCompleted || 0,
     }));
 
     const incidentsBySeverity = {

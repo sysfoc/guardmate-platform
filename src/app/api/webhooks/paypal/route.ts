@@ -285,6 +285,140 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      // ─── Subscription: Subscription Activated/Renewed ────────────────────
+      case "BILLING.SUBSCRIPTION.ACTIVATED":
+      case "BILLING.SUBSCRIPTION.RENEWED": {
+        const resource = event.resource;
+        const paypalSubId = resource.id;
+        const customId = resource.custom_id; // bossUid
+
+        if (paypalSubId) {
+          const BossSubscription = (await import('@/models/BossSubscription.model')).default;
+          const { SubscriptionStatus } = await import('@/types/enums');
+
+          const sub = await BossSubscription.findOne({
+            $or: [
+              { paypalSubscriptionId: paypalSubId },
+              ...(customId ? [{ bossUid: customId }] : []),
+            ],
+          });
+
+          if (sub) {
+            const nextBilling = resource.billing_info?.next_billing_time
+              ? new Date(resource.billing_info.next_billing_time)
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+            sub.status = SubscriptionStatus.ACTIVE;
+            sub.paypalSubscriptionId = paypalSubId;
+            sub.currentPeriodStart = new Date();
+            sub.currentPeriodEnd = nextBilling;
+            sub.lastPaymentAt = new Date();
+            sub.lastPaymentAmount = sub.amount;
+            sub.failedPaymentAt = null;
+            sub.failureReason = null;
+            await sub.save();
+
+            console.log(`PayPal Subscription ACTIVE for boss ${sub.bossUid}`);
+
+            // Send activation email
+            try {
+              const { sendSubscriptionActivated } = await import('@/lib/email/emailTriggers');
+              const User = (await import('@/models/User.model')).default;
+              const boss = await User.findOne({ uid: sub.bossUid }).lean();
+              if (boss?.email) {
+                await sendSubscriptionActivated(
+                  boss.email,
+                  boss.firstName,
+                  sub.amount || 0,
+                  'AUD',
+                  new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
+                  nextBilling.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+                );
+              }
+            } catch (e) {
+              console.warn('Failed to send subscription activation email:', e);
+            }
+          }
+        }
+        break;
+      }
+
+      // ─── Subscription: Payment Failed ──────────────────────────────────
+      case "BILLING.SUBSCRIPTION.PAYMENT.FAILED": {
+        const resource = event.resource;
+        const paypalSubId = resource.id;
+
+        if (paypalSubId) {
+          const BossSubscription = (await import('@/models/BossSubscription.model')).default;
+          const { SubscriptionStatus } = await import('@/types/enums');
+
+          const sub = await BossSubscription.findOne({ paypalSubscriptionId: paypalSubId });
+          if (sub) {
+            sub.status = SubscriptionStatus.LAPSED;
+            sub.failedPaymentAt = new Date();
+            sub.failureReason = 'PayPal payment failed';
+            await sub.save();
+
+            console.log(`PayPal Subscription LAPSED for boss ${sub.bossUid}`);
+
+            try {
+              const { sendSubscriptionPaymentFailed } = await import('@/lib/email/emailTriggers');
+              const User = (await import('@/models/User.model')).default;
+              const boss = await User.findOne({ uid: sub.bossUid }).lean();
+              if (boss?.email) {
+                await sendSubscriptionPaymentFailed(
+                  boss.email,
+                  boss.firstName,
+                  sub.amount || 0,
+                  'AUD',
+                  'PayPal payment declined',
+                  `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/boss/subscription`
+                );
+              }
+            } catch (e) {
+              console.warn('Failed to send payment failed email:', e);
+            }
+          }
+        }
+        break;
+      }
+
+      // ─── Subscription: Cancelled/Suspended ─────────────────────────────
+      case "BILLING.SUBSCRIPTION.CANCELLED":
+      case "BILLING.SUBSCRIPTION.SUSPENDED": {
+        const resource = event.resource;
+        const paypalSubId = resource.id;
+
+        if (paypalSubId) {
+          const BossSubscription = (await import('@/models/BossSubscription.model')).default;
+          const { SubscriptionStatus } = await import('@/types/enums');
+
+          const sub = await BossSubscription.findOne({ paypalSubscriptionId: paypalSubId });
+          if (sub && sub.status !== SubscriptionStatus.CANCELLED) {
+            sub.status = SubscriptionStatus.CANCELLED;
+            sub.cancelledAt = new Date();
+            await sub.save();
+
+            console.log(`PayPal Subscription CANCELLED for boss ${sub.bossUid}`);
+
+            try {
+              const { sendSubscriptionCancelled } = await import('@/lib/email/emailTriggers');
+              const User = (await import('@/models/User.model')).default;
+              const boss = await User.findOne({ uid: sub.bossUid }).lean();
+              if (boss?.email) {
+                const activeUntil = sub.currentPeriodEnd
+                  ? new Date(sub.currentPeriodEnd).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+                  : 'N/A';
+                await sendSubscriptionCancelled(boss.email, boss.firstName, activeUntil);
+              }
+            } catch (e) {
+              console.warn('Failed to send cancellation email:', e);
+            }
+          }
+        }
+        break;
+      }
+
       default:
         console.log(`Unhandled PayPal event type: ${event.event_type}`);
     }

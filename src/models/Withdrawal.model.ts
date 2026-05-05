@@ -1,5 +1,5 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
-import { PaymentMethod, WithdrawalStatus } from '@/types/enums';
+import { WithdrawalMethod, WithdrawalStatus } from '@/types/enums';
 import type { IWithdrawal } from '@/types/payment.types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ const WithdrawalSchema = new Schema<WithdrawalDocument>(
 
     withdrawalMethod: {
       type: String,
-      enum: Object.values(PaymentMethod),
+      enum: Object.values(WithdrawalMethod),
       required: true,
     },
     status: {
@@ -26,6 +26,7 @@ const WithdrawalSchema = new Schema<WithdrawalDocument>(
       default: WithdrawalStatus.PROCESSING,
       index: true,
     },
+    requiresManualProcessing: { type: Boolean, default: false },
 
     // ─── Payout IDs ─────────────────────────────────────────────────────────
     stripePayoutId: { type: String, default: null },

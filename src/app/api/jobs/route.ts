@@ -103,11 +103,7 @@ export async function POST(request: NextRequest) {
     if (platformSettings?.bossSubscriptionEnabled) {
       const subscription = await BossSubscription.findOne({ bossUid: user.uid });
       const now = new Date();
-      const gracePeriodDays = platformSettings.bossSubscriptionGracePeriodDays ?? 3;
-      const trialDays = platformSettings.bossSubscriptionTrialDays ?? 0;
       let isSubscribed = false;
-      let isInGracePeriod = false;
-      let graceDaysRemaining = 0;
 
       if (subscription) {
         if (subscription.status === SubscriptionStatus.ACTIVE) {
@@ -117,20 +113,8 @@ export async function POST(request: NextRequest) {
           const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
           isSubscribed = endDate ? now < endDate : false;
         } else if (subscription.status === SubscriptionStatus.LAPSED) {
-          const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
-          const graceEnd = endDate ? new Date(endDate.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000) : null;
-          isInGracePeriod = graceEnd ? now < graceEnd : false;
-          isSubscribed = isInGracePeriod;
-          graceDaysRemaining = graceEnd ? Math.max(0, Math.ceil((graceEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))) : 0;
-        } else if (subscription.status === SubscriptionStatus.TRIAL) {
-          const trialEnd = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
-          isSubscribed = trialEnd ? now < trialEnd : false;
+          isSubscribed = false;
         }
-      } else if (trialDays > 0 && user.createdAt) {
-        // No subscription record — check implicit trial from registration date
-        const registeredAt = new Date(user.createdAt as string);
-        const trialEnd = new Date(registeredAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
-        isSubscribed = now < trialEnd;
       }
 
       if (!isSubscribed) {
@@ -140,11 +124,6 @@ export async function POST(request: NextRequest) {
           subscriptionAmount: platformSettings.bossSubscriptionAmount,
           currency: platformSettings.bossSubscriptionCurrency || currency,
         }, 'A monthly subscription is required to post jobs. Please subscribe to continue.', 400);
-      }
-
-      // If in grace period, we allow but will add a warning header
-      if (isInGracePeriod) {
-        // Boss can still post, but they should be warned (handled in response below)
       }
     }
     // ─── END SUBSCRIPTION ENFORCEMENT ────────────────────────────────────────

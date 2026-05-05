@@ -31,7 +31,6 @@ interface SubscriptionStats {
   active: number;
   lapsed: number;
   cancelled: number;
-  trial: number;
   monthlyRecurringRevenue: number;
 }
 
@@ -43,7 +42,6 @@ function formatDate(d: string | Date | null): string {
 const statusVariant = (status: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' => {
   switch (status) {
     case 'ACTIVE': return 'success';
-    case 'TRIAL': return 'info';
     case 'LAPSED': return 'danger';
     case 'CANCELLED': return 'warning';
     default: return 'neutral';
@@ -106,7 +104,6 @@ export default function AdminSubscriptionsPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <StatCard label="Total" value={stats.total} icon={<Users />} variant="blue" />
           <StatCard label="Active" value={stats.active} icon={<CreditCard />} variant="emerald" />
-          <StatCard label="Trial" value={stats.trial} icon={<CreditCard />} variant="blue" />
           <StatCard label="Lapsed" value={stats.lapsed} icon={<AlertTriangle />} variant="rose" />
           <StatCard label="Cancelled" value={stats.cancelled} icon={<X />} variant="amber" />
           <StatCard
@@ -132,7 +129,6 @@ export default function AdminSubscriptionsPage() {
           >
             <option value="">All Statuses</option>
             <option value={SubscriptionStatus.ACTIVE}>Active</option>
-            <option value={SubscriptionStatus.TRIAL}>Trial</option>
             <option value={SubscriptionStatus.LAPSED}>Lapsed</option>
             <option value={SubscriptionStatus.CANCELLED}>Cancelled</option>
           </select>

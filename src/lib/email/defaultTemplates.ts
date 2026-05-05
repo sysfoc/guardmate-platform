@@ -268,7 +268,7 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
   },
   [NotificationEventType.INCIDENT_REPORTED]: {
     notificationType: NotificationEventType.INCIDENT_REPORTED,
-    subject: '⚠️ Incident Report: {{jobTitle}}',
+    subject: 'Incident Report: {{jobTitle}}',
     htmlBody: BASE_HTML('Incident Report Filed', '<p>Hi {{bossName}},</p><p>An incident has been reported by <strong>{{guardName}}</strong> on the job <strong>{{jobTitle}}</strong>.</p><p><strong>Type:</strong> {{incidentType}}<br/><strong>Severity:</strong> {{severity}}</p><p>Please log in to review the full details and take any necessary action.</p><a href="{{dashboardUrl}}" class="btn">View Incident</a>'),
     textBody: 'Hi {{bossName}}, {{guardName}} reported an incident on {{jobTitle}}. Type: {{incidentType}}, Severity: {{severity}}. Review at {{dashboardUrl}}',
     variables: ['bossName', 'guardName', 'jobTitle', 'incidentType', 'severity', 'dashboardUrl'],
@@ -319,7 +319,7 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
   },
   [NotificationEventType.PAYMENT_RELEASED]: {
     notificationType: NotificationEventType.PAYMENT_RELEASED,
-    subject: '💰 You got paid! Payment released for {{jobTitle}}',
+    subject: 'You got paid! Payment released for {{jobTitle}}',
     htmlBody: BASE_HTML('Payment Released', '<p>Hi {{guardName}},</p><p>Great job! The boss has approved your shift for <strong>{{jobTitle}}</strong>.</p><p>A payment of <strong>{{amount}}</strong> has been released to your GuardMate Wallet. {{commissionSection}} You can withdraw these funds to your linked Stripe account or PayPal email at any time.</p><p><a href="{{walletUrl}}" class="btn">View My Wallet</a></p>'),
     textBody: 'Hi {{guardName}}, Great job! The boss approved your shift for {{jobTitle}}. A payment of {{amount}} has been released to your GuardMate Wallet.',
     variables: ['guardName', 'jobTitle', 'amount', 'commissionSection', 'walletUrl', 'platformName'],
@@ -343,7 +343,7 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
   },
   [NotificationEventType.WITHDRAWAL_COMPLETED]: {
     notificationType: NotificationEventType.WITHDRAWAL_COMPLETED,
-    subject: '✅ Withdrawal Completed',
+    subject: 'Withdrawal Completed',
     htmlBody: BASE_HTML('Funds on the way!', '<p>Hi {{guardName}},</p><p>Your withdrawal of <strong>{{amount}}</strong> via {{method}} has been processed successfully.</p><p>Please note that depending on your bank and the withdrawal method, it may take 1-3 business days for the funds to appear in your account.</p>'),
     textBody: 'Hi {{guardName}}, Your withdrawal of {{amount}} via {{method}} has been processed successfully.',
     variables: ['guardName', 'amount', 'method', 'platformName'],
@@ -354,7 +354,7 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
 
   [NotificationEventType.SUBSCRIPTION_ACTIVATED]: {
     notificationType: NotificationEventType.SUBSCRIPTION_ACTIVATED,
-    subject: '🎉 Subscription Activated — Welcome to GuardMate Pro',
+    subject: 'Subscription Activated — Welcome to GuardMate Pro',
     htmlBody: BASE_HTML('Subscription Activated', '<p>Hi {{bossName}},</p><p>Your monthly subscription to GuardMate has been activated successfully.</p><p><strong>Plan:</strong> Monthly Subscription<br/><strong>Amount:</strong> {{amount}} {{currency}}/month<br/><strong>Period:</strong> {{periodStart}} to {{periodEnd}}</p><p>You now have full access to post and manage jobs on the platform. Thank you for choosing GuardMate!</p><a href="{{dashboardUrl}}" class="btn">Go to Dashboard</a>'),
     textBody: 'Hi {{bossName}}, Your GuardMate monthly subscription of {{amount}} {{currency}}/month has been activated. Period: {{periodStart}} to {{periodEnd}}.',
     variables: ['bossName', 'amount', 'currency', 'periodStart', 'periodEnd', 'dashboardUrl'],
@@ -362,7 +362,7 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
   },
   [NotificationEventType.SUBSCRIPTION_EXPIRING_SOON]: {
     notificationType: NotificationEventType.SUBSCRIPTION_EXPIRING_SOON,
-    subject: '⚠️ Subscription Expiring in {{daysRemaining}} Days',
+    subject: 'Subscription Expiring in {{daysRemaining}} Days',
     htmlBody: BASE_HTML('Subscription Expiring Soon', '<p>Hi {{bossName}},</p><p>Your GuardMate subscription will expire in <strong>{{daysRemaining}} day(s)</strong>.</p><p>To avoid losing access to job posting and management features, please renew your subscription before it expires.</p><p><strong>Current Amount:</strong> {{amount}} {{currency}}/month</p><a href="{{renewUrl}}" class="btn">Renew Now</a>'),
     textBody: 'Hi {{bossName}}, Your GuardMate subscription expires in {{daysRemaining}} day(s). Renew at {{renewUrl}} to avoid losing access.',
     variables: ['bossName', 'daysRemaining', 'amount', 'currency', 'renewUrl'],
@@ -371,9 +371,9 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
   [NotificationEventType.SUBSCRIPTION_LAPSED]: {
     notificationType: NotificationEventType.SUBSCRIPTION_LAPSED,
     subject: '🔴 Subscription Expired — Action Required',
-    htmlBody: BASE_HTML('Subscription Expired', '<p>Hi {{bossName}},</p><p>Your GuardMate subscription has expired. You have a <strong>{{gracePeriodDays}}-day grace period</strong> to renew before you lose the ability to post new jobs.</p><p>Your existing jobs and data are safe, but new postings will be blocked after the grace period ends.</p><a href="{{subscribeUrl}}" class="btn">Resubscribe Now</a>'),
-    textBody: 'Hi {{bossName}}, Your GuardMate subscription has expired. You have {{gracePeriodDays}} days to renew before losing job posting access. Resubscribe at {{subscribeUrl}}.',
-    variables: ['bossName', 'gracePeriodDays', 'subscribeUrl'],
+    htmlBody: BASE_HTML('Subscription Expired', '<p>Hi {{bossName}},</p><p>Your GuardMate subscription has expired and you can no longer post new jobs.</p><p>Your existing jobs and data are safe. Resubscribe now to restore full access.</p><a href="{{subscribeUrl}}" class="btn">Resubscribe Now</a>'),
+    textBody: 'Hi {{bossName}}, Your GuardMate subscription has expired and you can no longer post new jobs. Resubscribe at {{subscribeUrl}}.',
+    variables: ['bossName', 'subscribeUrl'],
     isActive: true,
   },
   [NotificationEventType.SUBSCRIPTION_CANCELLED]: {
@@ -386,10 +386,27 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
   },
   [NotificationEventType.NEW_OFFER_AVAILABLE]: {
     notificationType: NotificationEventType.NEW_OFFER_AVAILABLE,
-    subject: '🎁 New Promotion Available on GuardMate!',
+    subject: 'New Promotion Available on GuardMate!',
     htmlBody: BASE_HTML('New Offer Available', '<p>Hi {{userName}},</p><p>Great news! A new promotion is now available on GuardMate:</p><p><strong>{{offerName}}</strong></p><p>{{offerDescription}}</p><p><strong>Valid:</strong> {{startDate}} to {{endDate}}</p><p>Log in to take advantage of this offer before it expires!</p><a href="{{dashboardUrl}}" class="btn">View Offer</a>'),
     textBody: 'Hi {{userName}}, A new promotion is available: {{offerName}} — {{offerDescription}}. Valid from {{startDate}} to {{endDate}}. Log in to your dashboard.',
     variables: ['userName', 'offerName', 'offerDescription', 'startDate', 'endDate', 'dashboardUrl'],
+    isActive: true,
+  },
+
+  [NotificationEventType.SUBSCRIPTION_PAYMENT_FAILED]: {
+    notificationType: NotificationEventType.SUBSCRIPTION_PAYMENT_FAILED,
+    subject: 'Subscription Payment Failed',
+    htmlBody: BASE_HTML('Payment Failed', '<p>Hi {{bossName}},</p><p>We were unable to process the payment for your GuardMate subscription.</p><p><strong>Reason:</strong> {{reason}}</p><p><strong>Amount:</strong> {{amount}} {{currency}}</p><p>Please update your payment method to avoid losing access to job posting.</p><a href="{{dashboardUrl}}" class="btn">Update Payment Info</a>'),
+    textBody: 'Hi {{bossName}}, Payment failed for GuardMate. Reason: {{reason}}. Update payment info at {{dashboardUrl}}.',
+    variables: ['bossName', 'amount', 'currency', 'reason', 'dashboardUrl'],
+    isActive: true,
+  },
+  [NotificationEventType.MANUAL_WITHDRAWAL_REQUESTED]: {
+    notificationType: NotificationEventType.MANUAL_WITHDRAWAL_REQUESTED,
+    subject: 'ACTION REQUIRED: Manual Withdrawal Requested',
+    htmlBody: BASE_HTML('Manual Withdrawal Requested', '<p>Admin Team,</p><p>A manual bank transfer withdrawal has been requested by <strong>{{guardName}}</strong>.</p><ul><li><strong>Amount:</strong> ${{amount}}</li><li><strong>Account Name:</strong> {{accountName}}</li><li><strong>BSB:</strong> {{bsb}}</li><li><strong>Account Number:</strong> {{accountNumber}}</li><li><strong>Withdrawal ID:</strong> {{withdrawalId}}</li></ul><p>Please log in to the admin dashboard to process this transfer.</p><a href="{{adminDashboardUrl}}" class="btn">View Withdrawals</a>'),
+    textBody: 'Admin: Manual withdrawal requested by {{guardName}} for ${{amount}}. Account Name: {{accountName}}, BSB: {{bsb}}, Account Number: {{accountNumber}}. Process at {{adminDashboardUrl}}.',
+    variables: ['guardName', 'amount', 'accountName', 'bsb', 'accountNumber', 'withdrawalId', 'adminDashboardUrl'],
     isActive: true,
   },
 };

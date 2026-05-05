@@ -1,20 +1,129 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
   CreditCard, ArrowLeft, CheckCircle2, Clock, AlertTriangle,
-  Shield, Calendar, DollarSign, X
+  Shield, Calendar, DollarSign, Edit
 } from 'lucide-react';
 import { subscriptionApi } from '@/lib/api/subscription.api';
 import { usePlatformContext } from '@/context/PlatformContext';
 import type { ISubscriptionStatus } from '@/types/subscription.types';
 import toast from 'react-hot-toast';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements
+} from '@stripe/react-stripe-js';
 
-export default function BossSubscriptionPage() {
+// Initialize Stripe outside component render to avoid recreating it
+let stripePromise: Promise<any> | null = null;
+const getStripe = (key?: string) => {
+  if (!stripePromise && key) {
+    stripePromise = loadStripe(key);
+  }
+  return stripePromise;
+};
+
+function StripeCardForm({
+  clientSecret,
+  onSuccess,
+  onCancel,
+  buttonText = "Pay Now"
+}: {
+  clientSecret?: string;
+  onSuccess: (paymentMethodId?: string) => void;
+  onCancel: () => void;
+  buttonText?: string;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+
+    try {
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) throw new Error('Card element not found');
+
+      if (clientSecret) {
+        // Initial subscription setup with PaymentIntent
+        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message || 'Payment failed');
+        }
+        onSuccess();
+      } else {
+        // Just updating payment method
+        const { error, paymentMethod } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: cardElement,
+        });
+
+        if (error) {
+          throw new Error(error.message || 'Failed to create payment method');
+        }
+        
+        // Send paymentMethod.id to backend
+        const res = await subscriptionApi.updatePaymentMethod(paymentMethod.id);
+        if (res.success) {
+          onSuccess(paymentMethod.id);
+        } else {
+          throw new Error(res.message);
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Processing failed');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <div className="p-4 border rounded-md bg-white">
+        <CardElement options={{
+          style: {
+            base: {
+              fontSize: '16px',
+              color: '#32325d',
+              '::placeholder': { color: '#aab7c4' },
+            },
+            invalid: { color: '#fa755a', iconColor: '#fa755a' },
+          }
+        }} />
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" variant="outline" className="w-1/3" onClick={onCancel} disabled={processing}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" className="w-2/3" disabled={!stripe || processing}>
+          {processing ? 'Processing...' : buttonText}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function SubscriptionContent() {
+  const searchParams = useSearchParams();
+  const paypalStatus = searchParams.get('paypal');
+  const paypalSubscriptionId = searchParams.get('subscription_id');
   const { platformSettings } = usePlatformContext();
   const [subStatus, setSubStatus] = useState<ISubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,16 +131,54 @@ export default function BossSubscriptionPage() {
   const [cancelling, setCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
+  
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [showStripeForm, setShowStripeForm] = useState(false);
+  
+  const [savedCard, setSavedCard] = useState<any>(null);
+  const [isUpdatingCard, setIsUpdatingCard] = useState(false);
 
   useEffect(() => {
-    loadStatus();
-  }, []);
+    // Handle PayPal redirect return
+    if (paypalStatus === 'success') {
+      toast.success('PayPal approval successful. Activating subscription...', { id: 'paypal-auth' });
+      // Call capture API to verify and activate the subscription immediately.
+      if (paypalSubscriptionId) {
+        subscriptionApi.capturePaypalSubscription(paypalSubscriptionId).then(() => {
+           loadStatus();
+        }).catch((e) => {
+           console.error('PayPal capture error', e);
+           loadStatus();
+        });
+      } else {
+        // Fallback: subscription_id not in URL, rely on webhook to activate
+        console.warn('PayPal subscription_id not found in return URL, relying on webhook.');
+        loadStatus();
+      }
+    } else if (paypalStatus === 'cancelled') {
+      toast.error('PayPal checkout cancelled.');
+    } else {
+      loadStatus();
+    }
+  }, [paypalStatus]);
 
   const loadStatus = async () => {
     try {
       setLoading(true);
       const status = await subscriptionApi.getStatus();
       setSubStatus(status);
+      
+      // Load saved payment method if active
+      if (status.isSubscribed && status.status !== 'CANCELLED') {
+        try {
+          const pmData = await subscriptionApi.getPaymentMethod();
+          if (pmData?.hasPaymentMethod) {
+            setSavedCard(pmData);
+          }
+        } catch {
+          // Payment method fetch is non-critical, don't block
+        }
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to load subscription status');
     } finally {
@@ -44,23 +191,31 @@ export default function BossSubscriptionPage() {
       setSubscribing(true);
       if (paymentMethod === 'stripe') {
         const result = await subscriptionApi.createStripeSubscription();
-        // In a real implementation, this would open the Stripe payment element
-        toast.success(`Subscription PaymentIntent created. Period ends: ${new Date(result.periodEnd).toLocaleDateString()}`);
+        if (result.clientSecret) {
+          setClientSecret(result.clientSecret);
+          setShowStripeForm(true);
+        }
       } else {
         const result = await subscriptionApi.createPaypalSubscription();
-        // Redirect to PayPal approval URL
         if (result.approvalUrl) {
           window.location.href = result.approvalUrl;
           return;
         }
-        toast.success('PayPal subscription order created.');
+        toast.success('PayPal subscription created.');
       }
-      await loadStatus();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to create subscription');
     } finally {
       setSubscribing(false);
     }
+  };
+
+  const handleStripeSuccess = async () => {
+    setShowStripeForm(false);
+    setClientSecret(null);
+    setIsUpdatingCard(false);
+    toast.success('Payment successful! Subscription active.');
+    await loadStatus();
   };
 
   const handleCancel = async () => {
@@ -105,7 +260,7 @@ export default function BossSubscriptionPage() {
   }
 
   const isSubscribed = subStatus?.isSubscribed ?? false;
-  const statusLabel = subStatus?.status === 'ACTIVE' ? 'Active' : subStatus?.status === 'TRIAL' ? 'Free Trial' : subStatus?.status === 'CANCELLED' ? 'Cancelled' : subStatus?.status === 'LAPSED' ? (subStatus.isInGracePeriod ? 'Grace Period' : 'Lapsed') : 'Not Subscribed';
+  const statusLabel = subStatus?.status === 'ACTIVE' ? 'Active' : subStatus?.status === 'CANCELLED' ? 'Cancelled' : subStatus?.status === 'LAPSED' ? 'Lapsed' : 'Not Subscribed';
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
@@ -126,14 +281,14 @@ export default function BossSubscriptionPage() {
         {/* Status Card */}
         <Card className={`p-6 border-2 ${
           isSubscribed
-            ? subStatus?.status === 'ACTIVE' ? 'border-emerald-300' : subStatus?.status === 'TRIAL' ? 'border-blue-300' : 'border-amber-300'
+            ? subStatus?.status === 'ACTIVE' ? 'border-emerald-300' : 'border-amber-300'
             : 'border-red-300'
         }`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-2xl ${
                 isSubscribed
-                  ? subStatus?.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'
+                  ? subStatus?.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
                   : 'bg-red-100 text-red-600'
               }`}>
                 {isSubscribed ? <CheckCircle2 className="h-8 w-8" /> : <AlertTriangle className="h-8 w-8" />}
@@ -171,40 +326,56 @@ export default function BossSubscriptionPage() {
               A monthly subscription is required to post and manage jobs on GuardMate. Choose your preferred payment method below.
             </p>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <button
-                onClick={() => setPaymentMethod('stripe')}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  paymentMethod === 'stripe'
-                    ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
-                    : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
-                }`}
-              >
-                <CreditCard className="h-6 w-6 mb-2 text-[var(--color-primary)]" />
-                <p className="text-sm font-bold text-[var(--color-text-primary)]">Card Payment</p>
-                <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">Visa, Mastercard, Amex</p>
-              </button>
-              <button
-                onClick={() => setPaymentMethod('paypal')}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  paymentMethod === 'paypal'
-                    ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
-                    : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
-                }`}
-              >
-                <DollarSign className="h-6 w-6 mb-2 text-blue-600" />
-                <p className="text-sm font-bold text-[var(--color-text-primary)]">PayPal</p>
-                <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">PayPal account</p>
-              </button>
-            </div>
+            {!showStripeForm ? (
+              <>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <button
+                    onClick={() => setPaymentMethod('stripe')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      paymentMethod === 'stripe'
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
+                        : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
+                    }`}
+                  >
+                    <CreditCard className="h-6 w-6 mb-2 text-[var(--color-primary)] mx-auto" />
+                    <p className="text-sm font-bold text-[var(--color-text-primary)] text-center">Card Payment</p>
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod('paypal')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      paymentMethod === 'paypal'
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
+                        : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
+                    }`}
+                  >
+                    <DollarSign className="h-6 w-6 mb-2 text-blue-600 mx-auto" />
+                    <p className="text-sm font-bold text-[var(--color-text-primary)] text-center">PayPal</p>
+                  </button>
+                </div>
 
-            <Button
-              onClick={handleSubscribe}
-              disabled={subscribing}
-              className="w-full h-12 text-base font-bold shadow-lg shadow-[var(--color-primary)]/20"
-            >
-              {subscribing ? 'Processing...' : `Subscribe for $${(subStatus?.amount ?? 0).toFixed(2)}/month`}
-            </Button>
+                <Button
+                  onClick={handleSubscribe}
+                  disabled={subscribing}
+                  className="w-full h-12 text-base font-bold shadow-lg shadow-[var(--color-primary)]/20"
+                >
+                  {subscribing ? 'Processing...' : `Subscribe for $${(subStatus?.amount ?? 0).toFixed(2)}/month`}
+                </Button>
+              </>
+            ) : (
+              <div className="mt-4">
+                <h4 className="font-medium text-sm mb-3">Enter Card Details</h4>
+                {platformSettings?.stripePublishableKey && (
+                  <Elements stripe={getStripe(platformSettings.stripePublishableKey)} options={{ clientSecret: clientSecret! }}>
+                    <StripeCardForm 
+                      clientSecret={clientSecret!} 
+                      onSuccess={handleStripeSuccess} 
+                      onCancel={() => { setShowStripeForm(false); setClientSecret(null); }}
+                      buttonText={`Pay $${(subStatus?.amount ?? 0).toFixed(2)}`}
+                    />
+                  </Elements>
+                )}
+              </div>
+            )}
           </Card>
         )}
 
@@ -229,6 +400,34 @@ export default function BossSubscriptionPage() {
                 <p className="text-sm font-bold text-[var(--color-text-primary)]">${subStatus.amount.toFixed(2)} {subStatus.currency}</p>
               </div>
             </div>
+
+            {savedCard && !isUpdatingCard && (
+              <div className="mb-6 p-4 border rounded-xl flex justify-between items-center bg-slate-50">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-5 w-5 text-slate-500" />
+                  <div>
+                    <p className="text-sm font-medium capitalize">{savedCard.brand} ending in {savedCard.last4}</p>
+                    <p className="text-xs text-slate-500">Expires {savedCard.expMonth}/{savedCard.expYear}</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setIsUpdatingCard(true)}>
+                  <Edit className="w-4 h-4 mr-1" /> Update
+                </Button>
+              </div>
+            )}
+
+            {isUpdatingCard && platformSettings?.stripePublishableKey && (
+              <div className="mb-6 p-4 border rounded-xl bg-slate-50">
+                <h4 className="font-medium text-sm mb-3">Update Payment Method</h4>
+                <Elements stripe={getStripe(platformSettings.stripePublishableKey)}>
+                  <StripeCardForm 
+                    onSuccess={handleStripeSuccess} 
+                    onCancel={() => setIsUpdatingCard(false)}
+                    buttonText="Save Card"
+                  />
+                </Elements>
+              </div>
+            )}
 
             {!showCancelConfirm ? (
               <button
@@ -262,7 +461,7 @@ export default function BossSubscriptionPage() {
         )}
 
         {/* Cancelled / Lapsed — Resubscribe */}
-        {(subStatus?.status === 'CANCELLED' || (subStatus?.status === 'LAPSED' && !subStatus.isInGracePeriod)) && (
+        {(subStatus?.status === 'CANCELLED' || subStatus?.status === 'LAPSED') && (
           <Card className="p-6 text-center">
             <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
             <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">
@@ -271,16 +470,56 @@ export default function BossSubscriptionPage() {
             <p className="text-sm text-[var(--color-text-secondary)] max-w-md mx-auto mb-6">
               Resubscribe now to continue posting jobs and managing your security workforce on GuardMate.
             </p>
-            <Button
-              onClick={handleSubscribe}
-              disabled={subscribing}
-              className="px-8 h-11 font-bold shadow-lg shadow-[var(--color-primary)]/20"
-            >
-              {subscribing ? 'Processing...' : `Resubscribe for $${(subStatus?.amount ?? 0).toFixed(2)}/month`}
-            </Button>
+            {!showStripeForm ? (
+              <>
+                <div className="flex justify-center gap-4 mb-4">
+                   <button
+                    onClick={() => setPaymentMethod('stripe')}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-bold ${paymentMethod === 'stripe' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-slate-500'}`}
+                  >Card</button>
+                  <button
+                    onClick={() => setPaymentMethod('paypal')}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-bold ${paymentMethod === 'paypal' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-slate-500'}`}
+                  >PayPal</button>
+                </div>
+                <Button
+                  onClick={handleSubscribe}
+                  disabled={subscribing}
+                  className="px-8 h-11 font-bold shadow-lg shadow-[var(--color-primary)]/20"
+                >
+                  {subscribing ? 'Processing...' : `Resubscribe for $${(subStatus?.amount ?? 0).toFixed(2)}/month`}
+                </Button>
+              </>
+            ) : (
+              <div className="mt-4 text-left">
+                <h4 className="font-medium text-sm mb-3">Enter Card Details</h4>
+                {platformSettings?.stripePublishableKey && (
+                  <Elements stripe={getStripe(platformSettings.stripePublishableKey)} options={{ clientSecret: clientSecret! }}>
+                    <StripeCardForm 
+                      clientSecret={clientSecret!} 
+                      onSuccess={handleStripeSuccess} 
+                      onCancel={() => { setShowStripeForm(false); setClientSecret(null); }}
+                      buttonText={`Pay $${(subStatus?.amount ?? 0).toFixed(2)}`}
+                    />
+                  </Elements>
+                )}
+              </div>
+            )}
           </Card>
         )}
       </div>
     </div>
   );
+}
+
+export default function BossSubscriptionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center">
+        <div className="h-6 w-6 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <SubscriptionContent />
+    </Suspense>
+  )
 }

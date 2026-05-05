@@ -15,12 +15,6 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
     type: PlatformCountrySchema,
     default: null,
   },
-  checkInRadiusMeters: {
-    type: Number,
-    default: 500,
-    min: 50,
-    max: 5000,
-  },
   abrGuid: {
     type: String,
     default: null,
@@ -102,8 +96,6 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
   bossSubscriptionEnabled: { type: Boolean, default: false },
   bossSubscriptionAmount: { type: Number, default: null },
   bossSubscriptionCurrency: { type: String, default: 'AUD' },
-  bossSubscriptionGracePeriodDays: { type: Number, default: 3, min: 1, max: 30 },
-  bossSubscriptionTrialDays: { type: Number, default: 0, min: 0, max: 90 },
 }, {
   timestamps: true,
 });

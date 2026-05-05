@@ -8,7 +8,6 @@ export interface IPlatformCountry {
 export interface IPlatformSettings {
   _id?: string;
   platformCountry: IPlatformCountry | null;
-  checkInRadiusMeters: number;
   abrGuid: string | null;
   abrVerificationEnabled: boolean;
   platformCurrency: string;
@@ -46,8 +45,6 @@ export interface IPlatformSettings {
   bossSubscriptionEnabled: boolean;
   bossSubscriptionAmount: number | null;
   bossSubscriptionCurrency: string;
-  bossSubscriptionGracePeriodDays: number;
-  bossSubscriptionTrialDays: number;
 
   createdAt?: string | Date;
   updatedAt?: string | Date;

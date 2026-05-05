@@ -12,10 +12,11 @@ import {
   setPaypalEmail, 
   requestWithdrawal,
   getEarnings,
-  getWithdrawals
+  getWithdrawals,
+  saveBankDetails
 } from '@/lib/api/payment.api';
-import { PaymentMethod } from '@/types/enums';
-import { Wallet, DollarSign, ExternalLink, ArrowDownToLine, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { PaymentMethod, WithdrawalMethod } from '@/types/enums';
+import { Wallet, DollarSign, ExternalLink, ArrowDownToLine, Clock, CheckCircle2, XCircle, Building } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function WalletPageContent() {
@@ -32,8 +33,15 @@ function WalletPageContent() {
   const [pEmail, setPEmail] = useState('');
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   
+  // Bank Transfer
+  const [bankAccountName, setBankAccountName] = useState('');
+  const [bankBsb, setBankBsb] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [isUpdatingBank, setIsUpdatingBank] = useState(false);
+  const [isBankSaved, setIsBankSaved] = useState(false);
+  
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [withdrawMethod, setWithdrawMethod] = useState<PaymentMethod | ''>('');
+  const [withdrawMethod, setWithdrawMethod] = useState<WithdrawalMethod | ''>('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   useEffect(() => {
@@ -61,6 +69,12 @@ function WalletPageContent() {
       if (walletRes.success) {
         setWallet(walletRes.data);
         if (walletRes.data.paypalEmail) setPEmail(walletRes.data.paypalEmail);
+        if (walletRes.data.bankAccountNumber) {
+          setIsBankSaved(true);
+          setBankAccountName(walletRes.data.bankAccountName || '');
+          setBankBsb(walletRes.data.bankBSB || '');
+          setBankAccountNumber(walletRes.data.bankAccountNumber || '');
+        }
       }
       if (stripeRes.success) setStripeStatus(stripeRes.data);
       if (earnRes.success) setEarnings(earnRes.data);
@@ -110,6 +124,46 @@ function WalletPageContent() {
     }
   };
 
+  const handleRemovePaypal = async () => {
+    if (!window.confirm('Are you sure you want to remove your PayPal email?')) return;
+    try {
+      setIsUpdatingEmail(true);
+      const res = await setPaypalEmail('');
+      if (res.success) {
+        toast.success(res.message);
+        setPEmail('');
+        loadData();
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      toast.error('Failed to remove PayPal email.');
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
+
+  const handleUpdateBank = async () => {
+    if (!bankAccountName || !bankBsb || !bankAccountNumber) {
+      toast.error('Please fill in all bank details.');
+      return;
+    }
+    try {
+      setIsUpdatingBank(true);
+      const res = await saveBankDetails({ accountName: bankAccountName, bsb: bankBsb, accountNumber: bankAccountNumber });
+      if (res.success) {
+        toast.success(res.message);
+        loadData();
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      toast.error('Failed to save bank details.');
+    } finally {
+      setIsUpdatingBank(false);
+    }
+  };
+
   const handleWithdraw = async () => {
     const amount = Number(withdrawAmount);
     if (!amount || amount <= 0) {
@@ -127,6 +181,10 @@ function WalletPageContent() {
     }
     if (!withdrawMethod) {
       toast.error('Please select a withdrawal method.');
+      return;
+    }
+    const confirmMsg = `Withdraw AUD ${amount} via ${withdrawMethod}. This cannot be undone.`;
+    if (!window.confirm(confirmMsg)) {
       return;
     }
 
@@ -179,7 +237,7 @@ function WalletPageContent() {
           </div>
         </Card>
 
-        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
            {hasStripe && (
               <Card className="p-6 flex flex-col justify-between">
                 <div>
@@ -224,10 +282,63 @@ function WalletPageContent() {
                      >
                        Save
                      </Button>
+                     {wallet?.paypalEmail && (
+                       <Button 
+                         variant="ghost" 
+                         className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                         disabled={isUpdatingEmail}
+                         onClick={handleRemovePaypal}
+                       >
+                         Remove
+                       </Button>
+                     )}
                   </div>
                </div>
              </Card>
            )}
+
+           <Card className="p-6 flex flex-col justify-between">
+             <div>
+                <h3 className="font-bold text-slate-800 flex items-center gap-2"><Building className="w-5 h-5 text-emerald-500"/> Direct Bank</h3>
+                <p className="text-sm text-slate-500 mt-2">Manual bank transfer (takes 2-4 days).</p>
+                <div className="mt-3 flex flex-col gap-2">
+                   {isBankSaved && !isUpdatingBank ? (
+                     <div className="text-sm bg-slate-50 p-3 rounded border">
+                       <p className="font-medium">{bankAccountName}</p>
+                       <p className="text-slate-500 text-xs">BSB: {bankBsb}</p>
+                       <p className="text-slate-500 text-xs">Acct: {bankAccountNumber}</p>
+                       <Button size="sm" variant="ghost" className="mt-2 h-7 px-2 text-xs" onClick={() => setIsBankSaved(false)}>Edit Details</Button>
+                     </div>
+                   ) : (
+                     <>
+                       <input 
+                         type="text" value={bankAccountName} onChange={e => setBankAccountName(e.target.value)}
+                         placeholder="Account Name" className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-blue-500"
+                       />
+                       <input 
+                         type="text" value={bankBsb} onChange={e => setBankBsb(e.target.value)}
+                         placeholder="BSB (6 digits)" className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-blue-500"
+                       />
+                       <input 
+                         type="text" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)}
+                         placeholder="Account Number" className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-blue-500"
+                       />
+                       <Button 
+                         disabled={isUpdatingBank || !bankAccountName || !bankBsb || !bankAccountNumber} 
+                         onClick={handleUpdateBank}
+                         size="sm"
+                         className="w-full"
+                       >
+                         {wallet?.bankAccountNumber ? 'Update Bank' : 'Save Bank Details'}
+                       </Button>
+                       {wallet?.bankAccountNumber && (
+                         <Button size="sm" variant="ghost" onClick={() => setIsBankSaved(true)}>Cancel</Button>
+                       )}
+                     </>
+                   )}
+                </div>
+             </div>
+           </Card>
         </div>
       </div>
 
@@ -253,12 +364,13 @@ function WalletPageContent() {
              <label className="text-sm font-medium text-slate-700">Method</label>
              <select 
                 value={withdrawMethod} 
-                onChange={e => setWithdrawMethod(e.target.value as PaymentMethod)}
+                onChange={e => setWithdrawMethod(e.target.value as WithdrawalMethod)}
                 className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 bg-white"
              >
                 <option value="">Select Method...</option>
-                {hasStripe && stripeStatus?.verified && <option value={PaymentMethod.STRIPE}>Stripe (Bank Transfer)</option>}
-                {hasPaypal && wallet?.paypalEmail && <option value={PaymentMethod.PAYPAL}>PayPal ({wallet.paypalEmail})</option>}
+                {hasStripe && stripeStatus?.verified && <option value={WithdrawalMethod.STRIPE_BANK}>Stripe (Bank Transfer)</option>}
+                {hasPaypal && wallet?.paypalEmail && <option value={WithdrawalMethod.PAYPAL}>PayPal ({wallet.paypalEmail})</option>}
+                {wallet?.bankAccountNumber && <option value={WithdrawalMethod.BANK_TRANSFER}>Direct Bank ({wallet.bankAccountNumber})</option>}
              </select>
           </div>
           <div className="w-full md:w-1/3">

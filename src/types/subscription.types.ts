@@ -15,9 +15,9 @@ export interface IBossSubscription {
   currency: string;
   stripeSubscriptionId: string | null;
   stripeCustomerId: string | null;
+  stripePriceId: string | null;
   paypalSubscriptionId: string | null;
   paypalOrderId: string | null;
-  trialEndsAt: Date | string | null;
   cancelledAt: Date | string | null;
   lastPaymentAt: Date | string | null;
   lastPaymentAmount: number | null;
@@ -33,7 +33,6 @@ export interface ISubscriptionStatus {
   status: string;
   expiresAt: Date | string | null;
   daysRemaining: number | null;
-  isInGracePeriod: boolean;
   amount: number;
   currency: string;
 }

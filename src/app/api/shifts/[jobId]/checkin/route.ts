@@ -4,7 +4,6 @@ import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
 import Shift from '@/models/Shift.model';
-import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import { UserRole, JobStatus, BidStatus, JobPaymentStatus } from '@/types/enums';
 import { calculateDistance } from '@/lib/utils/haversine';
@@ -134,13 +133,8 @@ export async function POST(
       return createApiResponse(false, null, 'Job has no coordinates set. Contact the boss.', 400);
     }
 
-    const settings = await PlatformSettings.findOne().lean();
-    
-    // Per-job radius logic
-    // 1. First priority: the specific job's radius
-    // 2. Second priority: platform global default radius
-    // 3. Fallback: 1000m
-    const rawRadiusMeters = job.checkInRadiusMeters ?? settings?.checkInRadiusMeters ?? 1000;
+    // Per-job radius logic — job radius set by Boss during posting, fallback to 500m
+    const rawRadiusMeters = job.checkInRadiusMeters ?? 500;
     
     // Hard floor: absolute minimum of 30 meters to prevent GPS bounce blocking honest check-ins
     const radiusMeters = Math.max(rawRadiusMeters, 30);

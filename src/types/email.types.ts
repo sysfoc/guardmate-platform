@@ -54,7 +54,11 @@ export enum NotificationEventType {
   SUBSCRIPTION_EXPIRING_SOON = 'subscriptionExpiringSoon',
   SUBSCRIPTION_LAPSED = 'subscriptionLapsed',
   SUBSCRIPTION_CANCELLED = 'subscriptionCancelled',
+  SUBSCRIPTION_PAYMENT_FAILED = 'subscriptionPaymentFailed',
   NEW_OFFER_AVAILABLE = 'newOfferAvailable',
+
+  // ─── Phase 10: Manual Withdrawal ────────────────────────────────────
+  MANUAL_WITHDRAWAL_REQUESTED = 'manualWithdrawalRequested',
 }
 
 export interface IEmailSettings {

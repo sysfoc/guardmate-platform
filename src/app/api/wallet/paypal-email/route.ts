@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { email } = await request.json();
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+    if (email !== '' && (!email || !/\S+@\S+\.\S+/.test(email))) {
       return createApiResponse(false, null, "A valid email address is required.", 400);
     }
 
@@ -27,11 +27,11 @@ export async function POST(request: NextRequest) {
       wallet = await GuardWallet.create({ guardUid: user.uid });
     }
 
-    wallet.paypalEmail = email;
-    wallet.paypalVerified = true; // Assuming simple trust for MVP, could require email verification
+    wallet.paypalEmail = email || null;
+    wallet.paypalVerified = !!email; // True if email exists, false if cleared
     await wallet.save();
 
-    return createApiResponse(true, { paypalEmail: email }, "PayPal email updated successfully.", 200);
+    return createApiResponse(true, { paypalEmail: email || null }, email ? "PayPal email updated successfully." : "PayPal email removed.", 200);
 
   } catch (error: any) {
     console.error("Wallet PayPal Email Error:", error);
