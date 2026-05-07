@@ -21,7 +21,7 @@ import toast from 'react-hot-toast';
 import type { IJob } from '@/types/job.types';
 import type { PendingReview } from '@/types/review.types';
 import { JobStatus, BidStatus, HiringStatus, JobPaymentStatus } from '@/types/enums';
-import { Edit, Trash2, Users, ChevronLeft, Loader2, CheckCircle2, XCircle, Clock, MessageSquare, CalendarCheck } from 'lucide-react';
+import { Edit, Trash2, Users, ChevronLeft, Loader2, CheckCircle2, XCircle, Clock, MessageSquare, CalendarCheck, Lock } from 'lucide-react';
 import { getJobBids } from '@/lib/api/job.api';
 import { createOrGetConversation } from '@/lib/api/chat.api';
 import ShiftMonitoringPanel from '@/components/shifts/ShiftMonitoringPanel';
@@ -186,6 +186,52 @@ export default function BossJobDetailPage() {
           />
         )}
 
+        {/* Payment Breakdown - Shows after escrow is funded */}
+        {job && (job.paymentStatus === JobPaymentStatus.HELD || job.paymentStatus === JobPaymentStatus.RELEASED) && (
+          <Card className="p-5 bg-emerald-50/40 border-emerald-100 mb-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-emerald-100 rounded-lg shrink-0">
+                <Lock className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-emerald-900">
+                  {job.paymentStatus === JobPaymentStatus.RELEASED ? 'Payment Released' : 'Funds in Escrow'}
+                </h3>
+                <p className="text-xs text-emerald-700 mt-0.5">
+                  {job.paymentStatus === JobPaymentStatus.RELEASED
+                    ? 'Payment has been released to the guard after shift approval.'
+                    : 'Your payment is securely held until you approve the completed shift.'}
+                </p>
+              </div>
+            </div>
+            {(() => {
+              const budget = acceptedBidAmount ?? job.budgetAmount;
+              const commissionRate = platformSettings?.platformCommissionBoss ?? 10;
+              const commission = Math.round(budget * (commissionRate / 100) * 100) / 100;
+              const total = Math.round((budget + commission) * 100) / 100;
+              const currency = platformSettings?.platformCurrency || 'AUD';
+              return (
+                <div className="bg-white rounded-lg border border-emerald-100 p-4">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Job Budget</span>
+                      <span className="font-medium text-slate-800">{currency} {budget.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Platform Fee ({commissionRate}%)</span>
+                      <span className="font-medium text-slate-800">{currency} {commission.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t border-slate-100 pt-2 mt-2 flex justify-between">
+                      <span className="text-slate-800 font-bold">Total Paid</span>
+                      <span className="text-emerald-700 font-extrabold">{currency} {total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </Card>
+        )}
+
         {/* Message Guard button in header */}
         {job && acceptedGuardUid && (job.status === JobStatus.FILLED || job.status === JobStatus.IN_PROGRESS || job.status === JobStatus.COMPLETED) && (
           <div className="flex justify-end mb-4">
@@ -263,7 +309,7 @@ export default function BossJobDetailPage() {
                   Cancel Job
                 </Button>
               )}
-              {job.hiringStatus === HiringStatus.FULLY_HIRED && job.status === JobStatus.FILLED && (
+              {job.hiringStatus === HiringStatus.FULLY_HIRED && job.status === JobStatus.FILLED && job.numberOfGuardsNeeded > 1 && (
                 <Button 
                   size="sm" 
                   variant={job.isShiftAssigned ? "secondary" : "primary"} 

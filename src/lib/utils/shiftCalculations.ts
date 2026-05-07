@@ -46,8 +46,8 @@ export function calculateShiftDuration(startTime: string, endTime: string): numb
  */
 export function getActualEndDate(date: string, startTime: string, endTime: string): string {
   if (isOvernightShift(startTime, endTime)) {
-    const d = new Date(date + 'T00:00:00');
-    d.setDate(d.getDate() + 1);
+    const d = new Date(date + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + 1);
     return d.toISOString().split('T')[0];
   }
   return date;
@@ -121,11 +121,11 @@ export function validateShiftSlot(
  */
 export function generateDateRange(startDate: string, endDate: string): string[] {
   const dates: string[] = [];
-  const current = new Date(startDate + 'T00:00:00');
-  const end = new Date(endDate + 'T00:00:00');
+  const current = new Date(startDate + 'T00:00:00Z');
+  const end = new Date(endDate + 'T00:00:00Z');
   while (current <= end) {
     dates.push(current.toISOString().split('T')[0]);
-    current.setDate(current.getDate() + 1);
+    current.setUTCDate(current.getUTCDate() + 1);
   }
   return dates;
 }

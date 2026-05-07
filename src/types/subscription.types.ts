@@ -24,6 +24,8 @@ export interface IBossSubscription {
   failedPaymentAt: Date | string | null;
   failureReason: string | null;
   expirySentAt: Date | string | null;
+  /** The offer (if any) that will be applied to the upcoming subscription payment */
+  appliedOfferId: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }

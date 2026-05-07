@@ -5,14 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
 import { createJob } from '@/lib/api/job.api';
-import { offerApi } from '@/lib/api/offer.api';
-import type { IOffer } from '@/types/offer.types';
-import { DiscountType } from '@/types/enums';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { Toggle } from '@/components/ui/Toggle';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import { LocationSearch } from '@/components/maps/LocationSearch';
 import { MapDisplay } from '@/components/maps/MapDisplay';
@@ -28,9 +25,9 @@ import {
   generateDateRange,
 } from '@/lib/utils/shiftCalculations';
 import {
-  ChevronLeft, ChevronRight, CheckCircle2, Briefcase, MapPin,
+  ChevronLeft, ChevronRight, CheckCircle2, MapPin,
   PoundSterling, Plus, Zap, Clock, Calendar, Users, ShieldCheck,
-  FileText, Repeat, HandshakeIcon, X, AlertTriangle, Moon, Tag,
+  FileText, X, AlertTriangle, Moon,
 } from 'lucide-react';
 
 const STEPS = ['Job Basics', 'Location & Schedule', 'Requirements & Budget'];
@@ -58,9 +55,6 @@ export default function NewJobPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdJobId, setCreatedJobId] = useState('');
-
-  // Boss offer state
-  const [bossOffer, setBossOffer] = useState<IOffer | null>(null);
 
   const [form, setForm] = useState<Partial<CreateJobPayload>>({
     title: '', description: '', jobType: JobType.ONE_TIME,
@@ -106,17 +100,6 @@ export default function NewJobPage() {
     regenerateSchedule();
   }, [regenerateSchedule]);
 
-  // Fetch active boss offers
-  useEffect(() => {
-    offerApi.getActiveOffers()
-      .then((offers) => {
-        const offer = offers.find((o) =>
-          (o.offerType === 'BOSS_COMMISSION_REDUCTION' || o.offerType === 'BOSS_COMMISSION_WAIVER') && o.isActive
-        );
-        if (offer) setBossOffer(offer);
-      })
-      .catch(() => {});
-  }, []);
 
   if (isLoading) return <DashboardSkeleton />;
   if (!user) return null;
@@ -401,21 +384,9 @@ export default function NewJobPage() {
             </div>
 
             <div>
-              <label className={labelCls}>Job Type *</label>
-              <div className="grid grid-cols-3 gap-3">
-                {([
-                  { val: JobType.ONE_TIME, icon: <Briefcase className="h-5 w-5" />, label: 'One-Time' },
-                  { val: JobType.RECURRING, icon: <Repeat className="h-5 w-5" />, label: 'Recurring' },
-                  { val: JobType.CONTRACT, icon: <HandshakeIcon className="h-5 w-5" />, label: 'Contract' },
-                ]).map(({ val, icon, label }) => (
-                  <button key={val} onClick={() => update({ jobType: val })}
-                    className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
-                      form.jobType === val ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)] dark:bg-[var(--color-primary)]/10' : 'border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/50'
-                    }`}>
-                    <span className={form.jobType === val ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}>{icon}</span>
-                    <span className="text-xs font-bold">{label}</span>
-                  </button>
-                ))}
+              <label className={labelCls}>Job Type</label>
+              <div className="p-4 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-light)] dark:bg-[var(--color-primary)]/10 flex items-center gap-3 w-fit">
+                <span className="text-xs font-bold text-[var(--color-primary)]">One-Time Job</span>
               </div>
             </div>
 
@@ -428,10 +399,7 @@ export default function NewJobPage() {
             </div>
 
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <Toggle checked={form.isUrgent || false} onCheckedChange={(v) => update({ isUrgent: v })} />
-                <span className="text-xs font-bold text-[var(--color-text-secondary)] flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-[var(--color-danger)]" /> Mark as Urgent</span>
-              </div>
+              <Checkbox label={<span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-[var(--color-danger)]" /> Mark as Urgent</span>} checked={form.isUrgent || false} onChange={(e) => update({ isUrgent: e.target.checked })} />
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-[var(--color-text-secondary)]"><Users className="h-3.5 w-3.5 inline mr-1" />Guards needed:</label>
                 <input type="number" min={1} max={50} value={form.numberOfGuardsNeeded || 1} onChange={(e) => update({ numberOfGuardsNeeded: Math.max(1, Number(e.target.value)) })} className={`${inputCls} w-20 text-center`} />
@@ -523,10 +491,7 @@ export default function NewJobPage() {
                     <Clock className="h-4 w-4 text-[var(--color-primary)]" />
                     Shift Schedule
                   </h3>
-                  <div className="flex items-center gap-3">
-                    <Toggle checked={sameEveryDay} onCheckedChange={setSameEveryDay} />
-                    <span className="text-[10px] font-bold text-[var(--color-text-secondary)]">Same schedule every day</span>
-                  </div>
+                  <Checkbox label="Same schedule every day" checked={sameEveryDay} onChange={(e) => setSameEveryDay(e.target.checked)} />
                 </div>
 
                 {/* Same every day mode */}
@@ -552,13 +517,7 @@ export default function NewJobPage() {
                             {formatDateLabel(day.date)}
                           </span>
                           {guardsNeeded > 1 && (
-                            <div className="flex items-center gap-2">
-                              <Toggle
-                                checked={day.sameForAllGuards}
-                                onCheckedChange={(v) => updateDaySchedule(di, 'sameForAllGuards', v)}
-                              />
-                              <span className="text-[9px] font-bold text-[var(--color-text-muted)]">Same for all guards</span>
-                            </div>
+                            <Checkbox label="Same for all guards" checked={day.sameForAllGuards} onChange={(e) => updateDaySchedule(di, 'sameForAllGuards', e.target.checked)} />
                           )}
                         </div>
 
@@ -606,10 +565,7 @@ export default function NewJobPage() {
             )}
 
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <Toggle checked={form.isFlexibleTime || false} onCheckedChange={(v) => update({ isFlexibleTime: v })} />
-                <span className="text-xs font-bold text-[var(--color-text-secondary)]"><Clock className="h-3.5 w-3.5 inline mr-1" />Flexible Time</span>
-              </div>
+              <Checkbox label={<span><Clock className="h-3.5 w-3.5 inline mr-1" />Flexible Time</span>} checked={form.isFlexibleTime || false} onChange={(e) => update({ isFlexibleTime: e.target.checked })} />
             </div>
 
             <div>
@@ -658,39 +614,6 @@ export default function NewJobPage() {
               </div>
             </div>
 
-            {/* Boss Commission Offer Banner */}
-            {bossOffer && (
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl px-4 py-3 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-500/10 rounded-full shrink-0">
-                    <Tag className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-emerald-800">
-                      🎉 Special Offer Active: {bossOffer.name} — Your commission rate is{' '}
-                      {bossOffer.discountType === DiscountType.FULL_WAIVER
-                        ? 'waived'
-                        : bossOffer.discountType === DiscountType.PERCENTAGE_OFF
-                          ? `${bossOffer.discountValue}% off`
-                          : `reduced to ${bossOffer.discountValue}%`
-                      }{' '}until {new Date(bossOffer.endDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </p>
-                    {form.budgetAmount && form.budgetAmount > 0 && bossOffer.discountValue != null && (
-                      <p className="text-xs text-emerald-700 font-medium mt-1">
-                        💰 Estimated savings on this job: {platformCurrency}
-                        {bossOffer.discountType === DiscountType.FULL_WAIVER
-                          ? (form.budgetAmount * (platformCommissionBoss / 100)).toFixed(2)
-                          : bossOffer.discountType === DiscountType.PERCENTAGE_OFF
-                            ? (form.budgetAmount * (platformCommissionBoss / 100) * (bossOffer.discountValue / 100)).toFixed(2)
-                            : (((platformCommissionBoss / 100) - bossOffer.discountValue / 100) * form.budgetAmount).toFixed(2)
-                        }
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div>
               <label className={labelCls}>Required Skills</label>
               <div className="flex gap-2 mb-2">
@@ -709,9 +632,9 @@ export default function NewJobPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3"><Toggle checked={form.requiresFirstAid || false} onCheckedChange={(v) => update({ requiresFirstAid: v })} /><span className="text-xs font-bold text-[var(--color-text-secondary)]">First Aid</span></div>
-              <div className="flex items-center gap-3"><Toggle checked={form.requiresWhiteCard || false} onCheckedChange={(v) => update({ requiresWhiteCard: v })} /><span className="text-xs font-bold text-[var(--color-text-secondary)]">White Card</span></div>
-              <div className="flex items-center gap-3"><Toggle checked={form.requiresChildrenCheck || false} onCheckedChange={(v) => update({ requiresChildrenCheck: v })} /><span className="text-xs font-bold text-[var(--color-text-secondary)]">Children Check</span></div>
+              <Checkbox label="First Aid" checked={form.requiresFirstAid || false} onChange={(e) => update({ requiresFirstAid: e.target.checked })} />
+              <Checkbox label="White Card" checked={form.requiresWhiteCard || false} onChange={(e) => update({ requiresWhiteCard: e.target.checked })} />
+              <Checkbox label="Children Check" checked={form.requiresChildrenCheck || false} onChange={(e) => update({ requiresChildrenCheck: e.target.checked })} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

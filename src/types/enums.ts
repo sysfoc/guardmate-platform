@@ -176,8 +176,6 @@ export enum WithdrawalStatus {
 }
 
 export enum WithdrawalMethod {
-  STRIPE_BANK   = 'STRIPE_BANK',
-  PAYPAL        = 'PAYPAL',
   BANK_TRANSFER = 'BANK_TRANSFER',
 }
 
@@ -190,10 +188,7 @@ export enum SubscriptionStatus {
 }
 
 export enum OfferType {
-  BOSS_COMMISSION_REDUCTION  = 'BOSS_COMMISSION_REDUCTION',
-  GUARD_COMMISSION_REDUCTION = 'GUARD_COMMISSION_REDUCTION',
-  BOSS_COMMISSION_WAIVER     = 'BOSS_COMMISSION_WAIVER',
-  GUARD_COMMISSION_WAIVER    = 'GUARD_COMMISSION_WAIVER',
+  SUBSCRIPTION_DISCOUNT = 'SUBSCRIPTION_DISCOUNT',
 }
 
 export enum DiscountType {

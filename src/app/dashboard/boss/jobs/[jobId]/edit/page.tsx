@@ -7,15 +7,15 @@ import { getJobById, updateJob } from '@/lib/api/job.api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Toggle } from '@/components/ui/Toggle';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import toast from 'react-hot-toast';
 import type { IJob, UpdateJobPayload } from '@/types/job.types';
-import { JobType, BudgetType, JobStatus } from '@/types/enums';
+import { BudgetType, JobStatus } from '@/types/enums';
 import {
-  ChevronLeft, ChevronRight, CheckCircle2, Briefcase, MapPin,
+  ChevronLeft, ChevronRight, CheckCircle2, MapPin,
   PoundSterling, Plus, Zap, Clock, Calendar, Users, ShieldCheck,
-  FileText, Repeat, HandshakeIcon, X, Loader2,
+  FileText, X, Loader2,
 } from 'lucide-react';
 
 const STEPS = ['Job Basics', 'Location & Schedule', 'Requirements & Budget'];
@@ -213,21 +213,9 @@ export default function EditJobPage() {
             </div>
 
             <div>
-              <label className={labelCls}>Job Type *</label>
-              <div className="grid grid-cols-3 gap-3">
-                {([
-                  { val: JobType.ONE_TIME, icon: <Briefcase className="h-5 w-5" />, label: 'One-Time' },
-                  { val: JobType.RECURRING, icon: <Repeat className="h-5 w-5" />, label: 'Recurring' },
-                  { val: JobType.CONTRACT, icon: <HandshakeIcon className="h-5 w-5" />, label: 'Contract' },
-                ]).map(({ val, icon, label }) => (
-                  <button key={val} onClick={() => update({ jobType: val })}
-                    className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
-                      form.jobType === val ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)] dark:bg-[var(--color-primary)]/10' : 'border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/50'
-                    }`}>
-                    <span className={form.jobType === val ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}>{icon}</span>
-                    <span className="text-xs font-bold">{label}</span>
-                  </button>
-                ))}
+              <label className={labelCls}>Job Type</label>
+              <div className="p-4 rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-primary-light)] dark:bg-[var(--color-primary)]/10 flex items-center gap-3 w-fit">
+                <span className="text-xs font-bold text-[var(--color-primary)]">{form.jobType?.replace('_', ' ') || 'One-Time'}</span>
               </div>
             </div>
 
@@ -240,10 +228,7 @@ export default function EditJobPage() {
             </div>
 
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <Toggle checked={form.isUrgent || false} onCheckedChange={(v) => update({ isUrgent: v })} />
-                <span className="text-xs font-bold text-[var(--color-text-secondary)] flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-[var(--color-danger)]" /> Mark as Urgent</span>
-              </div>
+              <Checkbox label={<span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-[var(--color-danger)]" /> Mark as Urgent</span>} checked={form.isUrgent || false} onChange={(e) => update({ isUrgent: e.target.checked })} />
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-[var(--color-text-secondary)]"><Users className="h-3.5 w-3.5 inline mr-1" />Guards needed:</label>
                 <input type="number" min={1} max={50} value={form.numberOfGuardsNeeded || 1} onChange={(e) => update({ numberOfGuardsNeeded: Math.max(1, Number(e.target.value)) })} className={`${inputCls} w-20 text-center`} />
@@ -287,10 +272,7 @@ export default function EditJobPage() {
             </div>
 
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <Toggle checked={form.isFlexibleTime || false} onCheckedChange={(v) => update({ isFlexibleTime: v })} />
-                <span className="text-xs font-bold text-[var(--color-text-secondary)]"><Clock className="h-3.5 w-3.5 inline mr-1" />Flexible Time</span>
-              </div>
+              <Checkbox label={<span><Clock className="h-3.5 w-3.5 inline mr-1" />Flexible Time</span>} checked={form.isFlexibleTime || false} onChange={(e) => update({ isFlexibleTime: e.target.checked })} />
               {calcHours() > 0 && (
                 <Badge className="text-[10px] h-6"><Clock className="h-3 w-3 mr-1" />{calcHours()} total hours</Badge>
               )}
@@ -350,9 +332,9 @@ export default function EditJobPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3"><Toggle checked={form.requiresFirstAid || false} onCheckedChange={(v) => update({ requiresFirstAid: v })} /><span className="text-xs font-bold text-[var(--color-text-secondary)]">First Aid</span></div>
-              <div className="flex items-center gap-3"><Toggle checked={form.requiresWhiteCard || false} onCheckedChange={(v) => update({ requiresWhiteCard: v })} /><span className="text-xs font-bold text-[var(--color-text-secondary)]">White Card</span></div>
-              <div className="flex items-center gap-3"><Toggle checked={form.requiresChildrenCheck || false} onCheckedChange={(v) => update({ requiresChildrenCheck: v })} /><span className="text-xs font-bold text-[var(--color-text-secondary)]">Children Check</span></div>
+              <Checkbox label="First Aid" checked={form.requiresFirstAid || false} onChange={(e) => update({ requiresFirstAid: e.target.checked })} />
+              <Checkbox label="White Card" checked={form.requiresWhiteCard || false} onChange={(e) => update({ requiresWhiteCard: e.target.checked })} />
+              <Checkbox label="Children Check" checked={form.requiresChildrenCheck || false} onChange={(e) => update({ requiresChildrenCheck: e.target.checked })} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

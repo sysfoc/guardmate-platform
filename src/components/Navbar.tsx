@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Shield, LogOut, LayoutDashboard, Briefcase, Send } from 'lucide-react';
+import { Shield, LogOut, LayoutDashboard, Briefcase, Send, Tag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
 import { Button } from '@/components/ui/Button';
@@ -101,6 +101,10 @@ export function Navbar() {
                       <DropdownItem onClick={() => router.push('/dashboard/boss/jobs')}>
                         <Briefcase className="h-4 w-4 mr-2" />
                         My Jobs
+                      </DropdownItem>
+                      <DropdownItem onClick={() => router.push('/dashboard/boss/offers')}>
+                        <Tag className="h-4 w-4 mr-2" />
+                        Subscription Offers
                       </DropdownItem>
                       <DropdownItem onClick={() => router.push('/dashboard/boss/payments')}>
                         <CreditCard className="h-4 w-4 mr-2" />

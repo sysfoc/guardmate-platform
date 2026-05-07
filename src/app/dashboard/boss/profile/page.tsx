@@ -287,16 +287,16 @@ export default function BossProfileEdit() {
               </div>
             </div>
 
-            {/* Actions Bar (Below Banner) */}
             <div className="px-5 sm:px-6 py-3 bg-[var(--color-bg-primary)]">
-              <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full">
+              <div className="flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-4 w-full">
                 <div className="hidden sm:block flex-1 text-xs text-[var(--color-text-secondary)]">Account: {boss?.email}</div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2 w-full sm:w-auto">
                   <Button 
                     type="button" 
                     variant="ghost" 
                     size="sm" 
                     onClick={handleGoBack}
+                    className="flex-1 sm:flex-none"
                     leftIcon={<ChevronLeft className="h-4 w-4" />}
                   >
                     Back
@@ -305,6 +305,7 @@ export default function BossProfileEdit() {
                     type="submit" 
                     size="sm" 
                     loading={isSaving} 
+                    className="whitespace-nowrap flex-1 sm:flex-none"
                     leftIcon={<Save className="h-4 w-4" />}
                   >
                     Save Changes
@@ -367,6 +368,7 @@ export default function BossProfileEdit() {
                     value={formData.phone} 
                     defaultCountry={formData.phoneCountryCode as any} 
                     onChange={(v: string) => { setFormData(prev => ({ ...prev, phone: v })); setHasUnsavedChanges(true); }} 
+                    lockedCountry={lockedCountry}
                     error={errors.phone} 
                   />
                 </div>
@@ -444,13 +446,13 @@ function DocUploadRow({
   status?: LicenseStatus | VerificationStatus | string;
 }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${url ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]'}`}>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
+      <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
+        <div className={`p-2 rounded-lg ${url ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]'} shrink-0`}>
           <FileText className="h-4 w-4" />
         </div>
-        <div>
-          <p className="text-[11px] font-bold tracking-tight leading-none">{label}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-bold tracking-tight leading-none truncate">{label}</p>
           <div className="mt-1">
             {url ? (
                <Badge 
@@ -468,13 +470,13 @@ function DocUploadRow({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0 justify-end sm:justify-start">
         {url && onReview && (
-          <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={() => onReview(url)}>
+          <Button type="button" variant="ghost" size="sm" className="h-8 px-2 flex-1 sm:flex-none" onClick={() => onReview(url)}>
             View
           </Button>
         )}
-        <Button type="button" variant="outline" size="sm" className="h-8 px-2 border-dashed" loading={isUploading} onClick={onUpload}>
+        <Button type="button" variant="outline" size="sm" className="h-8 px-2 border-dashed flex-1 sm:flex-none" loading={isUploading} onClick={onUpload}>
           {url ? 'Replace' : 'Upload'}
         </Button>
       </div>

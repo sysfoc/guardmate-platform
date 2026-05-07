@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
   CreditCard, ArrowLeft, CheckCircle2, Clock, AlertTriangle,
-  Shield, Calendar, DollarSign, Edit
+  Shield, Calendar, DollarSign, Edit, Tag
 } from 'lucide-react';
 import { subscriptionApi } from '@/lib/api/subscription.api';
+import { offerApi } from '@/lib/api/offer.api';
 import { usePlatformContext } from '@/context/PlatformContext';
 import type { ISubscriptionStatus } from '@/types/subscription.types';
+import type { IOffer } from '@/types/offer.types';
 import toast from 'react-hot-toast';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -51,6 +53,7 @@ function StripeCardForm({
     if (!stripe || !elements) return;
 
     setProcessing(true);
+    console.log('[frontend:StripeCardForm] 💳 Card form submitted. clientSecret present:', !!clientSecret);
 
     try {
       const cardElement = elements.getElement(CardElement);
@@ -58,15 +61,19 @@ function StripeCardForm({
 
       if (clientSecret) {
         // Initial subscription setup with PaymentIntent
+        console.log('[frontend:StripeCardForm] 📤 Calling stripe.confirmCardPayment with clientSecret...');
         const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
           payment_method: {
             card: cardElement,
           }
         });
+        console.log('[frontend:StripeCardForm] 📥 confirmCardPayment result — error:', !!error, '| paymentIntent status:', paymentIntent?.status, '| paymentIntent id:', paymentIntent?.id);
 
         if (error) {
+          console.error('[frontend:StripeCardForm] ❌ Payment confirmation error:', error.message);
           throw new Error(error.message || 'Payment failed');
         }
+        console.log('[frontend:StripeCardForm] ✅ Payment confirmed successfully. Calling onSuccess()');
         onSuccess();
       } else {
         // Just updating payment method
@@ -137,6 +144,31 @@ function SubscriptionContent() {
   
   const [savedCard, setSavedCard] = useState<any>(null);
   const [isUpdatingCard, setIsUpdatingCard] = useState(false);
+  const [pendingSubscriptionId, setPendingSubscriptionId] = useState<string | null>(null);
+
+  // Acquired offer state
+  const [acquiredOffer, setAcquiredOffer] = useState<IOffer | null>(null);
+  const [offerDiscountLabel, setOfferDiscountLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch acquired subscription offer (only active AND unconsumed)
+    offerApi.getMyOffers()
+      .then((records) => {
+        const active = records.find((r) => r.isStillActive && !r.isConsumed);
+        if (active) {
+          setAcquiredOffer(active.offer);
+          const o = active.offer;
+          if (o.discountType === 'FULL_WAIVER') {
+            setOfferDiscountLabel('Full Waiver');
+          } else if (o.discountType === 'PERCENTAGE_OFF' && o.discountValue != null) {
+            setOfferDiscountLabel(`${o.discountValue}% Off`);
+          } else if (o.discountType === 'FIXED_RATE' && o.discountValue != null) {
+            setOfferDiscountLabel(`Fixed ${o.discountValue}%`);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     // Handle PayPal redirect return
@@ -187,14 +219,21 @@ function SubscriptionContent() {
   };
 
   const handleSubscribe = async () => {
+    console.log('[frontend:handleSubscribe] 🚀 Subscribe button clicked. paymentMethod:', paymentMethod);
     try {
       setSubscribing(true);
       if (paymentMethod === 'stripe') {
+        console.log('[frontend:handleSubscribe] 📤 Calling createStripeSubscription API...');
         const result = await subscriptionApi.createStripeSubscription();
-        if (result.clientSecret) {
-          setClientSecret(result.clientSecret);
-          setShowStripeForm(true);
+        console.log('[frontend:handleSubscribe] 📥 API response — subscriptionId:', result.subscriptionId, '| clientSecret present:', !!result.clientSecret, '| amount:', result.amount, '| status requiresPayment:', result.requiresPayment);
+        if (!result.clientSecret) {
+          console.error('[frontend:handleSubscribe] ❌ No clientSecret in response. Throwing error.');
+          throw new Error('Payment initialization failed – missing client secret. Please contact support.');
         }
+        console.log('[frontend:handleSubscribe] ✅ clientSecret received. Showing Stripe card form.');
+        setPendingSubscriptionId(result.subscriptionId);
+        setClientSecret(result.clientSecret);
+        setShowStripeForm(true);
       } else {
         const result = await subscriptionApi.createPaypalSubscription();
         if (result.approvalUrl) {
@@ -211,11 +250,32 @@ function SubscriptionContent() {
   };
 
   const handleStripeSuccess = async () => {
+    console.log('[frontend:handleStripeSuccess] 🎉 Stripe card form reported success. pendingSubscriptionId:', pendingSubscriptionId);
     setShowStripeForm(false);
     setClientSecret(null);
     setIsUpdatingCard(false);
-    toast.success('Payment successful! Subscription active.');
+
+    // If we have a pending subscription ID, explicitly capture it with Stripe
+    // so the DB is updated immediately instead of waiting for the webhook.
+    if (pendingSubscriptionId) {
+      console.log('[frontend:handleStripeSuccess] 📤 Calling captureStripeSubscription for subscriptionId:', pendingSubscriptionId);
+      try {
+        const captureResult = await subscriptionApi.captureStripeSubscription(pendingSubscriptionId);
+        console.log('[frontend:handleStripeSuccess] ✅ Capture response:', captureResult);
+        toast.success('Payment successful! Subscription active.');
+      } catch (e: any) {
+        console.warn('[frontend:handleStripeSuccess] ⚠️ Capture failed, falling back to webhook delay:', e?.message || e);
+        toast.success('Payment successful! Activating subscription...');
+      }
+      setPendingSubscriptionId(null);
+    } else {
+      console.log('[frontend:handleStripeSuccess] ℹ️ No pending subscription — just updating payment method.');
+      toast.success('Payment method updated successfully.');
+    }
+
+    console.log('[frontend:handleStripeSuccess] 🔄 Reloading subscription status...');
     await loadStatus();
+    console.log('[frontend:handleStripeSuccess] ✅ Status reload complete.');
   };
 
   const handleCancel = async () => {
@@ -261,6 +321,21 @@ function SubscriptionContent() {
 
   const isSubscribed = subStatus?.isSubscribed ?? false;
   const statusLabel = subStatus?.status === 'ACTIVE' ? 'Active' : subStatus?.status === 'CANCELLED' ? 'Cancelled' : subStatus?.status === 'LAPSED' ? 'Lapsed' : 'Not Subscribed';
+
+  // Compute discounted amount for display when not subscribed
+  // subStatus.amount is always fresh (fetched directly from PlatformSettings DB),
+  // whereas platformSettings context may be stale/cached.
+  const baseSubscriptionAmount = subStatus?.amount ?? platformSettings?.bossSubscriptionAmount ?? 0;
+  let displayedAmount = baseSubscriptionAmount;
+  if (!isSubscribed && acquiredOffer && acquiredOffer.discountValue != null) {
+    if (acquiredOffer.discountType === 'FULL_WAIVER') {
+      displayedAmount = 0;
+    } else if (acquiredOffer.discountType === 'PERCENTAGE_OFF') {
+      displayedAmount = Math.round(baseSubscriptionAmount * (1 - acquiredOffer.discountValue / 100) * 100) / 100;
+    } else if (acquiredOffer.discountType === 'FIXED_RATE') {
+      displayedAmount = Math.max(0, acquiredOffer.discountValue);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
@@ -310,9 +385,16 @@ function SubscriptionContent() {
                 {statusLabel.toUpperCase()}
               </Badge>
               {subStatus?.amount !== undefined && subStatus.amount > 0 && (
-                <p className="text-lg font-black text-[var(--color-text-primary)]">
-                  ${subStatus.amount.toFixed(2)} <span className="text-xs font-medium text-[var(--color-text-tertiary)]">/{subStatus.currency}/mo</span>
-                </p>
+                <div className="text-right">
+                  <p className="text-lg font-black text-[var(--color-text-primary)]">
+                    ${subStatus.amount.toFixed(2)} <span className="text-xs font-medium text-[var(--color-text-tertiary)]">/{subStatus.currency}/mo</span>
+                  </p>
+                  {acquiredOffer && (
+                    <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
+                      Discounted with {acquiredOffer.name} ({offerDiscountLabel})
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -353,12 +435,27 @@ function SubscriptionContent() {
                   </button>
                 </div>
 
+                {acquiredOffer && !isSubscribed && (
+                  <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <p className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                      <Tag className="h-3.5 w-3.5" />
+                      Offer Applied: {acquiredOffer.name} ({offerDiscountLabel})
+                    </p>
+                    {displayedAmount !== baseSubscriptionAmount && (
+                      <p className="text-[10px] text-emerald-700 mt-1">
+                        Original price: ${baseSubscriptionAmount.toFixed(2)}/mo →{' '}
+                        <span className="font-bold">${displayedAmount.toFixed(2)}/mo</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <Button
                   onClick={handleSubscribe}
                   disabled={subscribing}
                   className="w-full h-12 text-base font-bold shadow-lg shadow-[var(--color-primary)]/20"
                 >
-                  {subscribing ? 'Processing...' : `Subscribe for $${(subStatus?.amount ?? 0).toFixed(2)}/month`}
+                  {subscribing ? 'Processing...' : `Subscribe for $${displayedAmount.toFixed(2)}/month`}
                 </Button>
               </>
             ) : (
@@ -369,8 +466,8 @@ function SubscriptionContent() {
                     <StripeCardForm 
                       clientSecret={clientSecret!} 
                       onSuccess={handleStripeSuccess} 
-                      onCancel={() => { setShowStripeForm(false); setClientSecret(null); }}
-                      buttonText={`Pay $${(subStatus?.amount ?? 0).toFixed(2)}`}
+                      onCancel={() => { setShowStripeForm(false); setClientSecret(null); setPendingSubscriptionId(null); }}
+                      buttonText={`Pay $${displayedAmount.toFixed(2)}`}
                     />
                   </Elements>
                 )}
@@ -402,15 +499,15 @@ function SubscriptionContent() {
             </div>
 
             {savedCard && !isUpdatingCard && (
-              <div className="mb-6 p-4 border rounded-xl flex justify-between items-center bg-slate-50">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="h-5 w-5 text-slate-500" />
-                  <div>
-                    <p className="text-sm font-medium capitalize">{savedCard.brand} ending in {savedCard.last4}</p>
-                    <p className="text-xs text-slate-500">Expires {savedCard.expMonth}/{savedCard.expYear}</p>
+              <div className="mb-6 p-4 border rounded-xl flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 bg-slate-50">
+                <div className="flex items-center gap-3 w-full min-w-0">
+                  <CreditCard className="h-5 w-5 text-slate-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium capitalize truncate">{savedCard.brand} ending in {savedCard.last4}</p>
+                    <p className="text-xs text-slate-500 truncate">Expires {savedCard.expMonth}/{savedCard.expYear}</p>
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => setIsUpdatingCard(true)}>
+                <Button size="sm" variant="outline" onClick={() => setIsUpdatingCard(true)} className="w-full sm:w-auto shrink-0">
                   <Edit className="w-4 h-4 mr-1" /> Update
                 </Button>
               </div>
@@ -465,7 +562,7 @@ function SubscriptionContent() {
           <Card className="p-6 text-center">
             <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
             <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">
-              {subStatus.status === 'CANCELLED' ? 'Subscription Cancelled' : 'Subscription Expired'}
+              {subStatus.status === 'CANCELLED' ? 'Subscription Cancelled' : 'Subscription Inactive'}
             </h3>
             <p className="text-sm text-[var(--color-text-secondary)] max-w-md mx-auto mb-6">
               Resubscribe now to continue posting jobs and managing your security workforce on GuardMate.
@@ -498,8 +595,8 @@ function SubscriptionContent() {
                     <StripeCardForm 
                       clientSecret={clientSecret!} 
                       onSuccess={handleStripeSuccess} 
-                      onCancel={() => { setShowStripeForm(false); setClientSecret(null); }}
-                      buttonText={`Pay $${(subStatus?.amount ?? 0).toFixed(2)}`}
+                      onCancel={() => { setShowStripeForm(false); setClientSecret(null); setPendingSubscriptionId(null); }}
+                      buttonText={`Pay $${displayedAmount.toFixed(2)}`}
                     />
                   </Elements>
                 )}

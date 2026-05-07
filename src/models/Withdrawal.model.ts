@@ -28,9 +28,6 @@ const WithdrawalSchema = new Schema<WithdrawalDocument>(
     },
     requiresManualProcessing: { type: Boolean, default: false },
 
-    // ─── Payout IDs ─────────────────────────────────────────────────────────
-    stripePayoutId: { type: String, default: null },
-    paypalPayoutId: { type: String, default: null },
     failureReason:  { type: String, default: null },
 
     // ─── Timestamps ─────────────────────────────────────────────────────────

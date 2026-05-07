@@ -11,9 +11,10 @@ export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElemen
 }
 
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, label, error, indeterminate, disabled, ...props }, ref) => {
+  ({ className, label, error, indeterminate, disabled, checked, ...props }, ref) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
-    
+    const isChecked = !!checked || !!indeterminate;
+
     // Combine local ref with forwarded ref
     React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
 
@@ -34,36 +35,40 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
               type="checkbox"
               ref={inputRef}
               disabled={disabled}
-              className="peer sr-only"
+              checked={checked}
+              className="sr-only"
               {...props}
             />
             <div className={cn(
-              'h-5 w-5 rounded border-2 transition-all duration-200 flex items-center justify-center',
-              'bg-transparent border-[var(--color-border-default)] group-hover:border-[var(--color-primary)]',
-              'peer-checked:bg-[var(--color-primary)] peer-checked:border-[var(--color-primary)]',
-              'peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-focus-ring)] peer-focus-visible:ring-offset-1',
-              indeterminate && 'bg-[var(--color-primary)] border-[var(--color-primary)]',
-              error && 'border-[var(--color-danger)] group-hover:border-[var(--color-danger)]'
+              'h-5 w-5 rounded border-2 transition-all duration-200 flex items-center justify-center bg-white dark:bg-gray-800',
+              isChecked
+                ? 'border-blue-600 dark:border-blue-400'
+                : 'border-gray-400 dark:border-gray-500 group-hover:border-blue-500 dark:group-hover:border-blue-400',
+              'focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-1',
+              error && 'border-red-500 group-hover:border-red-500'
             )}>
               {indeterminate ? (
-                <Minus className="h-3.5 w-3.5 text-white stroke-[3px]" />
+                <Minus className="h-3.5 w-3.5 text-gray-900 dark:text-white stroke-[3px]" />
               ) : (
-                <Check className="h-3.5 w-3.5 text-white scale-0 peer-checked:scale-100 transition-transform stroke-[3px]" />
+                <Check className={cn(
+                  'h-3.5 w-3.5 text-blue-600 dark:text-blue-400 stroke-[3px] transition-transform duration-200',
+                  isChecked ? 'scale-100' : 'scale-0'
+                )} />
               )}
             </div>
           </div>
           {label && (
             <span className={cn(
-              'text-sm font-medium transition-colors select-none',
-              error ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-primary)]',
-              disabled ? 'text-[var(--color-text-disabled)]' : ''
+              'text-sm font-medium transition-colors select-none text-gray-900 dark:text-white',
+              error && 'text-red-500',
+              disabled && 'text-gray-400 dark:text-gray-500'
             )}>
               {label}
             </span>
           )}
         </label>
         {error && (
-          <p className="text-xs font-medium text-[var(--color-danger)] pl-7">
+          <p className="text-xs font-medium text-red-500 pl-7">
             {error}
           </p>
         )}

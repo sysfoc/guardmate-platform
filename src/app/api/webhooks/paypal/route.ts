@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Payment from "@/models/Payment.model";
-import GuardWallet from "@/models/GuardWallet.model";
-import Withdrawal from "@/models/Withdrawal.model";
 import Job from "@/models/Job.model";
-import { EscrowPaymentStatus, WithdrawalStatus, JobPaymentStatus } from "@/types/enums";
+import UserOffer from "@/models/UserOffer.model";
+import Offer from "@/models/Offer.model";
+import { EscrowPaymentStatus, JobPaymentStatus, DiscountType } from "@/types/enums";
 import { getPayPalAccessToken, getPayPalConfig } from "@/lib/payments/paypalClient";
 import PlatformSettings from "@/models/PlatformSettings.model";
 
@@ -229,62 +229,6 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // ─── Withdrawals: Payout Item Succeeded ──────────────────────────────
-      case "PAYMENT.PAYOUTS-ITEM.SUCCEEDED": {
-        const resource = event.resource;
-        // sender_item_id is set to the Withdrawal._id when we create the payout
-        const withdrawalId = resource.payout_item?.sender_item_id;
-
-        if (withdrawalId) {
-          const withdrawal = await Withdrawal.findById(withdrawalId);
-          if (withdrawal && withdrawal.status === WithdrawalStatus.PROCESSING) {
-            withdrawal.status = WithdrawalStatus.COMPLETED;
-            withdrawal.completedAt = new Date();
-            await withdrawal.save();
-
-            // Finalize wallet balances
-            const wallet = await GuardWallet.findOne({ guardUid: withdrawal.guardUid });
-            if (wallet) {
-              wallet.pendingBalance -= withdrawal.amount;
-              wallet.totalWithdrawn += withdrawal.amount;
-              wallet.lastPayoutAt = new Date();
-              await wallet.save();
-            }
-          }
-        }
-        break;
-      }
-
-      // ─── Withdrawals: Payout Failed ──────────────────────────────────────
-      case "PAYMENT.PAYOUTSBATCH.DENIED":
-      case "PAYMENT.PAYOUTS-ITEM.FAILED": {
-        const resource = event.resource;
-        // Always use sender_item_id — this maps to our Withdrawal._id
-        // Do NOT fall back to payout_batch_id (that's PayPal's internal batch ID)
-        const withdrawalId = resource.payout_item?.sender_item_id;
-
-        if (!withdrawalId) {
-          console.warn("PayPal payout failure webhook missing sender_item_id, cannot match withdrawal.");
-          break;
-        }
-
-        const withdrawal = await Withdrawal.findById(withdrawalId);
-        if (withdrawal && withdrawal.status !== WithdrawalStatus.FAILED) {
-          withdrawal.status = WithdrawalStatus.FAILED;
-          withdrawal.failureReason = resource.errors?.message || "Payout failed via PayPal webhook";
-          await withdrawal.save();
-
-          // Revert wallet balances — return funds from pending back to available
-          const wallet = await GuardWallet.findOne({ guardUid: withdrawal.guardUid });
-          if (wallet) {
-            wallet.pendingBalance -= withdrawal.amount;
-            wallet.availableBalance += withdrawal.amount;
-            await wallet.save();
-          }
-        }
-        break;
-      }
-
       // ─── Subscription: Subscription Activated/Renewed ────────────────────
       case "BILLING.SUBSCRIPTION.ACTIVATED":
       case "BILLING.SUBSCRIPTION.RENEWED": {
@@ -319,6 +263,155 @@ export async function POST(request: NextRequest) {
             await sub.save();
 
             console.log(`PayPal Subscription ACTIVE for boss ${sub.bossUid}`);
+
+            // ─── Consume the offer that was used for this payment ───────────────
+            if (sub.appliedOfferId) {
+              const userOffer = await UserOffer.findOne({ userUid: sub.bossUid, offerId: sub.appliedOfferId });
+              if (userOffer && !userOffer.usedAt) {
+                userOffer.usedAt = new Date();
+                await userOffer.save();
+                await Offer.updateOne({ _id: sub.appliedOfferId }, { $inc: { usageCount: 1 } });
+                console.log(`Offer ${sub.appliedOfferId} marked as used for boss ${sub.bossUid}`);
+              }
+            }
+
+            // ─── Calculate next period amount (dynamic pricing + next offer) ────
+            try {
+              const settings = await PlatformSettings.findOne().lean();
+              const baseAmount = settings?.bossSubscriptionAmount ?? 0;
+              let nextAmount = baseAmount;
+              let nextOfferId: string | null = null;
+
+              if (baseAmount > 0) {
+                const now = new Date();
+                const bossAcquired = await UserOffer.find({ userUid: sub.bossUid, usedAt: null }).lean();
+                if (bossAcquired.length > 0) {
+                  const offerIds = bossAcquired.map((r) => r.offerId);
+                  const offers = await Offer.find({
+                    _id: { $in: offerIds },
+                    isActive: true,
+                    startDate: { $lte: now },
+                    endDate: { $gte: now },
+                  }).lean();
+                  const offer = offers[0];
+                  if (offer) {
+                    nextOfferId = String(offer._id);
+                    if (offer.discountType === DiscountType.FULL_WAIVER) {
+                      nextAmount = 0;
+                    } else if (offer.discountType === DiscountType.PERCENTAGE_OFF && offer.discountValue != null) {
+                      nextAmount = Math.round(baseAmount * (1 - offer.discountValue / 100) * 100) / 100;
+                    } else if (offer.discountType === DiscountType.FIXED_RATE && offer.discountValue != null) {
+                      nextAmount = Math.max(0, offer.discountValue);
+                    }
+                  }
+                }
+              }
+
+              // Update PayPal subscription with new plan for next period
+              if (nextAmount !== sub.amount) {
+                const accessToken = await getPayPalAccessToken();
+                const config = await getPayPalConfig();
+
+                // Create a new product (or reuse existing)
+                const productRes = await fetch(`${config.baseUrl}/v1/catalogs/products`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    'PayPal-Request-Id': `gm-boss-sub-product-${Date.now()}`,
+                  },
+                  body: JSON.stringify({
+                    name: 'GuardMate Boss Monthly Subscription',
+                    description: 'Monthly subscription for posting jobs on GuardMate',
+                    type: 'SERVICE',
+                    category: 'SOFTWARE',
+                  }),
+                });
+                let productId: string | undefined;
+                if (productRes.ok) {
+                  const product = await productRes.json();
+                  productId = product.id;
+                } else {
+                  // Fallback: try to find existing product
+                  const productsRes = await fetch(`${config.baseUrl}/v1/catalogs/products?page_size=20&total_required=true`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` },
+                  });
+                  if (productsRes.ok) {
+                    const products = await productsRes.json();
+                    const existing = products.products?.find((p: any) => p.name === 'GuardMate Boss Monthly Subscription');
+                    productId = existing?.id;
+                  }
+                }
+
+                if (productId) {
+                  // Create a new plan with updated amount
+                  const planRes = await fetch(`${config.baseUrl}/v1/billing/plans`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${accessToken}`,
+                      'Content-Type': 'application/json',
+                      'PayPal-Request-Id': `gm-boss-sub-plan-${Date.now()}`,
+                    },
+                    body: JSON.stringify({
+                      product_id: productId,
+                      name: 'GuardMate Monthly Plan',
+                      description: `AUD ${nextAmount.toFixed(2)}/month boss subscription`,
+                      status: 'ACTIVE',
+                      billing_cycles: [
+                        {
+                          frequency: { interval_unit: 'MONTH', interval_count: 1 },
+                          tenure_type: 'REGULAR',
+                          sequence: 1,
+                          total_cycles: 0,
+                          pricing_scheme: {
+                            fixed_price: { value: nextAmount.toFixed(2), currency_code: 'AUD' },
+                          },
+                        },
+                      ],
+                      payment_preferences: {
+                        auto_bill_outstanding: true,
+                        payment_failure_threshold: 3,
+                      },
+                    }),
+                  });
+
+                  if (planRes.ok) {
+                    const plan = await planRes.json();
+                    // Update subscription to use new plan
+                    const patchRes = await fetch(`${config.baseUrl}/v1/billing/subscriptions/${paypalSubId}`, {
+                      method: 'PATCH',
+                      headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'PayPal-Request-Id': `gm-boss-sub-patch-${Date.now()}`,
+                      },
+                      body: JSON.stringify([
+                        {
+                          op: 'replace',
+                          path: '/plan_id',
+                          value: plan.id,
+                        },
+                      ]),
+                    });
+                    if (patchRes.ok) {
+                      console.log(`Updated PayPal subscription ${paypalSubId} to new plan ${plan.id} with amount ${nextAmount}`);
+                    } else {
+                      console.error('PayPal subscription patch failed:', await patchRes.text());
+                    }
+                  } else {
+                    console.error('PayPal plan creation failed:', await planRes.text());
+                  }
+                }
+              }
+
+              // Update BossSubscription with next period's amount and offer
+              await BossSubscription.updateOne(
+                { _id: sub._id },
+                { $set: { amount: nextAmount, appliedOfferId: nextOfferId } }
+              );
+            } catch (pricingErr: any) {
+              console.error('Failed to update PayPal subscription for next period:', pricingErr.message);
+            }
 
             // Send activation email
             try {

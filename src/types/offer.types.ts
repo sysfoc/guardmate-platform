@@ -21,6 +21,10 @@ export interface IOffer {
   createdBy: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  /** Set by GET /api/offers/active to indicate if the current user already acquired this offer */
+  isAcquired?: boolean;
+  /** Set by GET /api/offers/active to indicate if the acquired offer has already been consumed (used for a payment) */
+  isConsumed?: boolean;
 }
 
 export interface CreateOfferPayload {
@@ -54,6 +58,16 @@ export interface AppliedOffer {
   originalRate: number;
   appliedRate: number;
   savings: number;
+}
+
+export interface IUserOffer {
+  _id?: string;
+  userUid: string;
+  offerId: string;
+  acquiredAt: Date | string;
+  usedAt?: Date | string | null; // set when discount is applied to a subscription payment
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface OfferFilters {

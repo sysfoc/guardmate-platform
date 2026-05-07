@@ -152,7 +152,7 @@ export default function MateDashboard() {
               <div className="p-1.5 bg-emerald-500/10 rounded-full text-emerald-500">
                 <DollarSign className="h-4 w-4" />
               </div>
-              <span className="text-xs font-black">£{(mate.totalEarnings || 0).toLocaleString()}</span>
+              <span className="text-xs font-black">{(mate.totalEarnings || 0).toLocaleString()}</span>
             </div>
           </div>
         </div>

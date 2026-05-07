@@ -62,8 +62,6 @@ export async function PATCH(
       wallet.pendingBalance -= withdrawal.amount;
       wallet.totalWithdrawn += withdrawal.amount;
       wallet.lastPayoutAt = new Date();
-      // First successful transfer means the bank account is verified to work
-      wallet.bankAccountVerified = true; 
       await wallet.save({ session });
 
       await session.commitTransaction();

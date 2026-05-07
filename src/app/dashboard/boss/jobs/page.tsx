@@ -116,8 +116,8 @@ function BossJobsContent() {
             <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
               {currentTab ? 'No jobs match this status filter.' : "You haven't posted any jobs yet."}
             </p>
-            <Link href="/dashboard/boss/jobs/new">
-              <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>Post Your First Job</Button>
+            <Link href="/dashboard/boss/jobs/new" className="block w-full sm:w-auto">
+              <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} className="whitespace-nowrap w-full sm:w-auto">Post Your First Job</Button>
             </Link>
           </Card>
         ) : (

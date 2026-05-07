@@ -14,10 +14,7 @@ import toast from 'react-hot-toast';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const OFFER_TYPE_LABELS: Record<string, string> = {
-  [OfferType.BOSS_COMMISSION_REDUCTION]: 'Boss Commission Reduction',
-  [OfferType.GUARD_COMMISSION_REDUCTION]: 'Guard Commission Reduction',
-  [OfferType.BOSS_COMMISSION_WAIVER]: 'Boss Commission Waiver',
-  [OfferType.GUARD_COMMISSION_WAIVER]: 'Guard Commission Waiver',
+  [OfferType.SUBSCRIPTION_DISCOUNT]: 'Subscription Discount',
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -55,7 +52,7 @@ export default function AdminOffersPage() {
   // Form state
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
-  const [formOfferType, setFormOfferType] = useState<OfferType>(OfferType.BOSS_COMMISSION_REDUCTION);
+  const [formOfferType, setFormOfferType] = useState<OfferType>(OfferType.SUBSCRIPTION_DISCOUNT);
   const [formDiscountType, setFormDiscountType] = useState<DiscountType>(DiscountType.PERCENTAGE_OFF);
   const [formDiscountValue, setFormDiscountValue] = useState<number | ''>('');
   const [formEligibility, setFormEligibility] = useState<OfferEligibility>(OfferEligibility.ALL_USERS);
@@ -85,7 +82,7 @@ export default function AdminOffersPage() {
   const resetForm = () => {
     setFormName('');
     setFormDescription('');
-    setFormOfferType(OfferType.BOSS_COMMISSION_REDUCTION);
+    setFormOfferType(OfferType.SUBSCRIPTION_DISCOUNT);
     setFormDiscountType(DiscountType.PERCENTAGE_OFF);
     setFormDiscountValue('');
     setFormEligibility(OfferEligibility.ALL_USERS);

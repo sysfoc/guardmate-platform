@@ -4,14 +4,30 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/apiClient';
-import type { IOffer, CreateOfferPayload, UpdateOfferPayload } from '@/types/offer.types';
+import type { IOffer, IUserOffer, CreateOfferPayload, UpdateOfferPayload } from '@/types/offer.types';
 
 export const offerApi = {
   /**
-   * Get active offers relevant to the authenticated user.
+   * Get active subscription discount offers for the authenticated Boss.
    */
   async getActiveOffers(): Promise<IOffer[]> {
     const res = await apiGet<IOffer[]>('/api/offers/active');
+    return res.data;
+  },
+
+  /**
+   * Acquire/claim an active subscription discount offer (Boss only).
+   */
+  async acquireOffer(offerId: string): Promise<IUserOffer> {
+    const res = await apiPost<IUserOffer>('/api/offers/acquire', { offerId });
+    return res.data;
+  },
+
+  /**
+   * Get all subscription discount offers acquired by the authenticated Boss.
+   */
+  async getMyOffers(): Promise<(IUserOffer & { offer: IOffer; isStillActive: boolean; isConsumed: boolean })[]> {
+    const res = await apiGet<(IUserOffer & { offer: IOffer; isStillActive: boolean; isConsumed: boolean })[]>('/api/offers/my');
     return res.data;
   },
 

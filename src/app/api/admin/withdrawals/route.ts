@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     // Fetch guard details and wallet details for each withdrawal
     const enrichedWithdrawals = await Promise.all(withdrawals.map(async (w) => {
       const guard = await User.findOne({ uid: w.guardUid }).select('firstName lastName email profilePhoto').lean();
-      const wallet = await GuardWallet.findOne({ guardUid: w.guardUid }).select('bankAccountName bankBSB bankAccountNumber paypalEmail stripeAccountId').lean();
+      const wallet = await GuardWallet.findOne({ guardUid: w.guardUid }).select('bankAccountName bankBSB bankAccountNumber').lean();
 
       let walletDetailsToReturn = wallet ? { ...wallet } : null;
       if (walletDetailsToReturn && walletDetailsToReturn.bankAccountNumber) {

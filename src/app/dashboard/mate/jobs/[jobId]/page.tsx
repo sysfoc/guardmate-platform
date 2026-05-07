@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
 import { getJobById, submitBid } from '@/lib/api/job.api';
-import { offerApi } from '@/lib/api/offer.api';
 import { JobDetailView } from '@/components/jobs/JobDetailView';
 import { BidSubmissionModal } from '@/components/jobs/BidSubmissionModal';
 import { Button } from '@/components/ui/Button';
@@ -16,9 +15,8 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import toast from 'react-hot-toast';
 import type { IJob, SubmitBidPayload } from '@/types/job.types';
-import type { IOffer } from '@/types/offer.types';
-import { JobStatus, UserStatus, LicenseStatus, DiscountType } from '@/types/enums';
-import { ChevronLeft, Send, CheckCircle2, Loader2, AlertCircle, MessageSquare, Building2, Tag } from 'lucide-react';
+import { JobStatus, UserStatus, LicenseStatus } from '@/types/enums';
+import { ChevronLeft, Send, CheckCircle2, Loader2, AlertCircle, MessageSquare, Building2 } from 'lucide-react';
 import { createOrGetConversation } from '@/lib/api/chat.api';
 import type { MateProfile } from '@/types/user.types';
 
@@ -34,15 +32,20 @@ export default function MateJobDetailPage() {
   const [hasApplied, setHasApplied] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [messagingBoss, setMessagingBoss] = useState(false);
-  const [guardOffer, setGuardOffer] = useState<IOffer | null>(null);
-
   useEffect(() => {
     if (!jobId) return;
     const fetch = async () => {
       setLoading(true);
       try {
         const resp = await getJobById(jobId);
-        if (resp.success && resp.data) setJob(resp.data);
+        if (resp.success && resp.data) {
+          // Backend includes hasApplied flag for Mate users
+          const jobData = resp.data as IJob & { hasApplied?: boolean };
+          setJob(jobData);
+          if (jobData.hasApplied) {
+            setHasApplied(true);
+          }
+        }
       } catch (err) {
         console.error(err);
         toast.error('Failed to load job');
@@ -50,18 +53,6 @@ export default function MateJobDetailPage() {
     };
     fetch();
   }, [jobId]);
-
-  // Fetch active guard commission offers
-  useEffect(() => {
-    offerApi.getActiveOffers()
-      .then((offers) => {
-        const offer = offers.find((o) =>
-          (o.offerType === 'GUARD_COMMISSION_REDUCTION' || o.offerType === 'GUARD_COMMISSION_WAIVER') && o.isActive
-        );
-        if (offer) setGuardOffer(offer);
-      })
-      .catch(() => {});
-  }, []);
 
   const isGuardReady = user?.status === UserStatus.ACTIVE && user !== null && 'licenseStatus' in user && user.licenseStatus === LicenseStatus.VALID;
 
@@ -171,27 +162,6 @@ export default function MateJobDetailPage() {
                       <span className={`text-[10px] font-medium ${abnVerified ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                         {abnVerified ? 'ABN Verified — Custom rates enabled' : 'No verified ABN — Rate locked to posting'}
                       </span>
-                    </div>
-                  </div>
-                )}
-                {/* Guard Commission Offer Banner */}
-                {guardOffer && (
-                  <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl px-3 py-2 mb-3 animate-in fade-in slide-in-from-top-2">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-emerald-500/10 rounded-full shrink-0">
-                        <Tag className="h-3.5 w-3.5 text-emerald-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[11px] font-bold text-emerald-800">
-                          🎉 {guardOffer.name} — Your platform fee is{' '}
-                          {guardOffer.discountType === DiscountType.FULL_WAIVER
-                            ? 'waived'
-                            : guardOffer.discountType === DiscountType.PERCENTAGE_OFF
-                              ? `${guardOffer.discountValue}% off`
-                              : `reduced to ${guardOffer.discountValue}%`
-                          }
-                        </p>
-                      </div>
                     </div>
                   </div>
                 )}

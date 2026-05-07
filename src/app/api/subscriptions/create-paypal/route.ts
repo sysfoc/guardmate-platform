@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import PlatformSettings from '@/models/PlatformSettings.model';
 import BossSubscription from '@/models/BossSubscription.model';
+import UserOffer from '@/models/UserOffer.model';
+import Offer from '@/models/Offer.model';
 import { verifyFirebaseToken } from '@/lib/firebase/firebaseAdmin';
-import { SubscriptionStatus } from '@/types/enums';
+import { SubscriptionStatus, DiscountType } from '@/types/enums';
 import { getPayPalAccessToken, getPayPalConfig } from '@/lib/payments/paypalClient';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -36,9 +38,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'PayPal is not configured.' }, { status: 400 });
     }
 
-    const amount = settings.bossSubscriptionAmount;
+    let amount = settings.bossSubscriptionAmount;
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: 'Subscription amount not configured.' }, { status: 400 });
+    }
+
+    // ── Apply acquired subscription discount offer ────────────────────────────
+    let appliedOffer: { offerId: string; offerName: string; originalAmount: number; discountedAmount: number } | null = null;
+    const now = new Date();
+    const bossAcquired = await UserOffer.find({ userUid: bossUid, usedAt: null }).lean();
+    if (bossAcquired.length > 0) {
+      const offerIds = bossAcquired.map((r) => r.offerId);
+      const offers = await Offer.find({
+        _id: { $in: offerIds },
+        isActive: true,
+        startDate: { $lte: now },
+        endDate: { $gte: now },
+      }).lean();
+      const offer = offers[0];
+      if (offer) {
+        const originalAmount = amount;
+        if (offer.discountType === DiscountType.FULL_WAIVER) {
+          amount = 0;
+        } else if (offer.discountType === DiscountType.PERCENTAGE_OFF && offer.discountValue != null) {
+          amount = Math.round(originalAmount * (1 - offer.discountValue / 100) * 100) / 100;
+        } else if (offer.discountType === DiscountType.FIXED_RATE && offer.discountValue != null) {
+          amount = Math.max(0, offer.discountValue);
+        }
+        appliedOffer = {
+          offerId: String(offer._id),
+          offerName: offer.name,
+          originalAmount,
+          discountedAmount: amount,
+        };
+      }
     }
 
     // ── Check existing active subscription ─────────────────────────────────
@@ -140,13 +173,12 @@ export async function POST(request: NextRequest) {
 
     if (!subRes.ok) {
       const errText = await subRes.text();
-      console.error('PayPal Subscription Error:', errText);
+      console.error('PayPal Subscription Error:', errText); 
       return NextResponse.json({ error: 'Failed to create PayPal subscription.' }, { status: 500 });
     }
     const paypalSub = await subRes.json();
 
     const approvalLink = paypalSub.links?.find((l: any) => l.rel === 'approve');
-    const now = new Date();
     const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     // ── Upsert BossSubscription ────────────────────────────────────────────
@@ -163,6 +195,7 @@ export async function POST(request: NextRequest) {
       cancelledAt: null,
       failedPaymentAt: null,
       failureReason: null,
+      appliedOfferId: appliedOffer?.offerId ?? null,
     };
 
     if (sub) {
@@ -177,6 +210,8 @@ export async function POST(request: NextRequest) {
         subscriptionId: paypalSub.id,
         approvalUrl: approvalLink?.href || '',
         amount,
+        originalAmount: appliedOffer?.originalAmount ?? amount,
+        appliedOffer,
         currency: 'AUD',
         periodEnd: periodEnd.toISOString(),
       },

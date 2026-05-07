@@ -163,6 +163,21 @@ export default function AssignShiftsPage() {
     );
   }
 
+  if (job.numberOfGuardsNeeded === 1 && job.isShiftAssigned) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12 text-center">
+        <CheckCircle2 className="h-8 w-8 text-[var(--color-success)] mx-auto mb-4" />
+        <h2 className="text-xl font-black text-[var(--color-text-primary)] mb-2">Shifts Auto-Assigned</h2>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-6">
+          This job only requires one guard, so all shifts have been automatically assigned.
+        </p>
+        <Link href={`/dashboard/boss/jobs/${job.jobId}`}>
+          <Button size="sm">Back to Job</Button>
+        </Link>
+      </div>
+    );
+  }
+
   const acceptedGuards = (job.acceptedGuards || []) as AcceptedGuard[];
 
   return (
@@ -204,7 +219,7 @@ export default function AssignShiftsPage() {
               <div className="w-full bg-[var(--color-surface-border)] rounded-full h-1.5 overflow-hidden">
                 <div 
                   className={`h-full ${allAssigned ? 'bg-[var(--color-success)]' : 'bg-[var(--color-primary)]'}`} 
-                  style={{ width: `${(Object.values(assignments).filter(Boolean).length / ((job.shiftSchedule?.length || 1) * job.numberOfGuardsNeeded)) * 100}%` }}
+                  style={{ width: `${(Object.values(assignments).filter(Boolean).length / ((job.shiftSchedule?.reduce((sum, day) => sum + day.slots.length, 0)) || 1)) * 100}%` }}
                 />
               </div>
             </div>

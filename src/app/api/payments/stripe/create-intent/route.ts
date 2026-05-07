@@ -91,8 +91,6 @@ export async function POST(request: NextRequest) {
       paymentDoc.platformRevenue = breakdown.platformRevenue;
       paymentDoc.currency = currency;
       paymentDoc.paymentMethod = PaymentMethod.STRIPE;
-      paymentDoc.appliedBossOfferId = breakdown.appliedBossOffer?.offerId || null;
-      paymentDoc.appliedGuardOfferId = breakdown.appliedGuardOffer?.offerId || null;
       await paymentDoc.save();
     } else {
       paymentDoc = await Payment.create({
@@ -112,8 +110,6 @@ export async function POST(request: NextRequest) {
         currency,
         paymentMethod: PaymentMethod.STRIPE,
         paymentStatus: EscrowPaymentStatus.PENDING,
-        appliedBossOfferId: breakdown.appliedBossOffer?.offerId || null,
-        appliedGuardOfferId: breakdown.appliedGuardOffer?.offerId || null,
       });
     }
 
@@ -188,8 +184,6 @@ export async function POST(request: NextRequest) {
           guardPayout: breakdown.guardPayout,
           platformRevenue: breakdown.platformRevenue,
         },
-        appliedBossOffer: breakdown.appliedBossOffer,
-        appliedGuardOffer: breakdown.appliedGuardOffer,
         currency,
       },
       message: "Payment Intent created."

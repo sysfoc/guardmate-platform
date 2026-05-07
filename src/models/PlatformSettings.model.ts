@@ -75,7 +75,6 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
   stripeSecretKey: { type: String, default: null },
   // TODO: Future AES-256 encryption for stripeWebhookSecret
   stripeWebhookSecret: { type: String, default: null },
-  stripeConnectEnabled: { type: Boolean, default: false },
 
   // ─── Phase 6: PayPal Configuration ─────────────────────────────────────
   paypalEnabled: { type: Boolean, default: false },

@@ -27,8 +27,6 @@ export interface IPlatformSettings {
   stripePublishableKey?: string;         // Safe for frontend
   stripeSecretKey?: string;              // TODO: Future AES-256 encryption — server-only
   stripeWebhookSecret?: string;          // TODO: Future AES-256 encryption — server-only
-  stripeConnectEnabled: boolean;
-
   // ─── Phase 6: PayPal Configuration ───────────────────────────────────────
   paypalEnabled: boolean;
   paypalClientId?: string;               // Safe for frontend

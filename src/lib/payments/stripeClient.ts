@@ -31,7 +31,7 @@ export async function getStripeInstance(): Promise<Stripe> {
     return cachedStripe;
   }
 
-  cachedStripe = new Stripe(secretKey, { apiVersion: '2026-03-25.dahlia' });
+  cachedStripe = new Stripe(secretKey, { apiVersion: '2025-02-24.acacia' as any });
   cachedKey = secretKey;
   return cachedStripe;
 }

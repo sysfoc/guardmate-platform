@@ -48,6 +48,10 @@ const BossSubscriptionSchema = new Schema<BossSubscriptionDocument>(
 
     // ─── Expiry Email Deduplication ──────────────────────────────────────────
     expirySentAt: { type: Date, default: null },
+
+    // ─── Offer Tracking ────────────────────────────────────────────────────────
+    /** The offer (if any) that will be applied to the upcoming subscription payment */
+    appliedOfferId: { type: String, default: null },
   },
   {
     timestamps: true,

@@ -83,21 +83,48 @@ export async function PATCH(
     const newAcceptedCount = currentAccepted.length + 1;
     const isFullyHired = newAcceptedCount >= job.numberOfGuardsNeeded;
 
-    // Update job
-    const updateFields: Record<string, unknown> = {};
+    // Prepare the atomic job update
+    const jobUpdate: Record<string, unknown> = {
+      $push: { acceptedGuards: newAcceptedGuard },
+    };
+
     if (isFullyHired) {
-      updateFields.status = JobStatus.FILLED;
-      updateFields.hiringStatus = HiringStatus.FULLY_HIRED;
-      updateFields.paymentStatus = JobPaymentStatus.UNPAID; // Boss must now fund escrow
+      jobUpdate.$set = {
+        status: JobStatus.FILLED,
+        hiringStatus: HiringStatus.FULLY_HIRED,
+        paymentStatus: JobPaymentStatus.UNPAID, // Boss must now fund escrow
+      };
+
+      // AUTO-ASSIGN: If the job only requires 1 guard, auto-assign all shift slots to them.
+      const schedule = job.shiftSchedule || [];
+      const hasSlots = schedule.some((day: any) => (day.slots || (typeof day.toObject === 'function' ? day.toObject().slots : [])).length > 0);
+
+      if (job.numberOfGuardsNeeded === 1 && hasSlots) {
+        console.log(`[Job ID: ${jobId}] Auto-assigning all shift slots for single-guard job.`);
+        console.log(`[Job ID: ${jobId}] Target Guard UID: ${bid.guardUid}`);
+
+        // Build a plain-JS updatedSchedule to avoid Mongoose subdocument serialization quirks
+        const updatedSchedule = schedule.map((day: any) => {
+          const dayObj = typeof day.toObject === 'function' ? day.toObject() : day;
+          return {
+            ...dayObj,
+            slots: (dayObj.slots || []).map((slot: any) => {
+              const slotObj = typeof slot.toObject === 'function' ? slot.toObject() : slot;
+              console.log(`[Job ID: ${jobId}] Setting assignedGuardUid on slot ${slotObj.slotNumber} (Date: ${dayObj.date}) to ${bid.guardUid}`);
+              return {
+                ...slotObj,
+                assignedGuardUid: bid.guardUid,
+              };
+            }),
+          };
+        });
+
+        (jobUpdate.$set as Record<string, unknown>).shiftSchedule = updatedSchedule;
+        (jobUpdate.$set as Record<string, unknown>).isShiftAssigned = true;
+      }
     }
 
-    await Job.updateOne(
-      { jobId },
-      {
-        $push: { acceptedGuards: newAcceptedGuard },
-        $set: updateFields,
-      }
-    );
+    await Job.updateOne({ jobId }, jobUpdate);
 
     // Only update remaining bids to rejected when fully hired, but DO NOT send rejection emails yet.
     // They will be handled either by auto-cancellation or when funds clear.
@@ -112,32 +139,6 @@ export async function PATCH(
         { uid: user.uid },
         { $inc: { activeJobsCount: -1 } }
       );
-
-      // AUTO-ASSIGN: For simple jobs (1 guard + 1 slot total), auto-assign the shift
-      // This skips the "Assign Shifts" UI for single-guard, single-slot jobs
-      const schedule = job.shiftSchedule || [];
-      const totalSlots = schedule.reduce((sum: number, day: { slots: unknown[] }) => sum + (day.slots?.length || 0), 0);
-      
-      if (job.numberOfGuardsNeeded === 1 && totalSlots === 1) {
-        // Auto-assign the single guard to the single slot
-        const updatedSchedule = schedule.map((day: { date: string; slots: Array<{ slotNumber: number; assignedGuardUid?: string | null }> }) => ({
-          ...day,
-          slots: day.slots.map((slot: { slotNumber: number; assignedGuardUid?: string | null }) => ({
-            ...slot,
-            assignedGuardUid: bid.guardUid,
-          })),
-        }));
-
-        await Job.updateOne(
-          { jobId },
-          { 
-            $set: { 
-              shiftSchedule: updatedSchedule,
-              isShiftAssigned: true,
-            } 
-          }
-        );
-      }
     }
 
     const updatedBid = await Bid.findOne({ bidId }).lean();

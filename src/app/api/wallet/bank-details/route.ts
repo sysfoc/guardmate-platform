@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
     wallet.bankAccountName = accountName.trim();
     wallet.bankBSB = cleanBsb;
     wallet.bankAccountNumber = cleanAccount;
-    wallet.bankAccountVerified = false; // Requires first successful transfer or manual admin verification
     wallet.bankAccountSavedAt = new Date();
 
     await wallet.save();

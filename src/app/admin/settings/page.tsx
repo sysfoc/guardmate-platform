@@ -38,7 +38,6 @@ export default function AdminSettingsPage() {
   const [stripePublishableKey, setStripePublishableKey] = useState<string>('');
   const [stripeSecretKey, setStripeSecretKey] = useState<string>('');
   const [stripeWebhookSecret, setStripeWebhookSecret] = useState<string>('');
-  const [stripeConnectEnabled, setStripeConnectEnabled] = useState<boolean>(false);
   const [paypalEnabled, setPaypalEnabled] = useState<boolean>(false);
   const [paypalClientId, setPaypalClientId] = useState<string>('');
   const [paypalClientSecret, setPaypalClientSecret] = useState<string>('');
@@ -86,7 +85,6 @@ export default function AdminSettingsPage() {
       setStripePublishableKey(platformData.stripePublishableKey || '');
       setStripeSecretKey(platformData.stripeSecretKey || '');
       setStripeWebhookSecret(platformData.stripeWebhookSecret || '');
-      setStripeConnectEnabled(platformData.stripeConnectEnabled ?? false);
       setPaypalEnabled(platformData.paypalEnabled ?? false);
       setPaypalClientId(platformData.paypalClientId || '');
       setPaypalClientSecret(platformData.paypalClientSecret || '');
@@ -152,6 +150,15 @@ export default function AdminSettingsPage() {
         }
       }
 
+      // Validation: If bossSubscriptionEnabled is true, amount must be set
+      if (bossSubscriptionEnabled) {
+        if (bossSubscriptionAmount === null || bossSubscriptionAmount === undefined || bossSubscriptionAmount <= 0) {
+          setErrorMsg('Please set a subscription amount greater than 0 before enabling subscriptions');
+          setPlatformSaving(false);
+          return;
+        }
+      }
+
       const targetCountry = selectedCountryCode === 'none' 
         ? null 
         : countries.find(c => c.code === selectedCountryCode) || null;
@@ -177,7 +184,6 @@ export default function AdminSettingsPage() {
         stripePublishableKey,
         stripeSecretKey,
         stripeWebhookSecret,
-        stripeConnectEnabled,
         paypalEnabled,
         paypalClientId,
         paypalClientSecret,
@@ -207,7 +213,6 @@ export default function AdminSettingsPage() {
       setStripePublishableKey(updated.stripePublishableKey || '');
       setStripeSecretKey(updated.stripeSecretKey || '');
       setStripeWebhookSecret(updated.stripeWebhookSecret || '');
-      setStripeConnectEnabled(updated.stripeConnectEnabled ?? false);
       setPaypalEnabled(updated.paypalEnabled ?? false);
       setPaypalClientId(updated.paypalClientId || '');
       setPaypalClientSecret(updated.paypalClientSecret || '');
@@ -346,10 +351,10 @@ export default function AdminSettingsPage() {
         <div className="bg-emerald-50 text-emerald-700 p-3 rounded-md border border-emerald-200 text-sm">{successMsg}</div>
       )}
 
-      <div className="flex border-b border-slate-200">
+      <div className="flex overflow-x-auto border-b border-slate-200 scrollbar-hide">
         <button
           onClick={() => setActiveTab('config')}
-          className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+          className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'config' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -357,7 +362,7 @@ export default function AdminSettingsPage() {
         </button>
         <button
           onClick={() => setActiveTab('toggles')}
-          className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+          className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'toggles' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -365,7 +370,7 @@ export default function AdminSettingsPage() {
         </button>
         <button
           onClick={() => setActiveTab('platform')}
-          className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+          className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'platform' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -373,7 +378,7 @@ export default function AdminSettingsPage() {
         </button>
         <button
           onClick={() => setActiveTab('finance')}
-          className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+          className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'finance' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -421,15 +426,15 @@ export default function AdminSettingsPage() {
               />
             </div>
 
-            <div className="flex gap-4 pt-4">
-              <Button onClick={handleSave} disabled={saving} leftIcon={<Save className="h-4 w-4" />}>
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button onClick={handleSave} disabled={saving} leftIcon={<Save className="h-4 w-4" />} className="w-full sm:w-auto">
                 {saving ? 'Saving...' : 'Save Configuration'}
               </Button>
               <Button 
                 onClick={handleTestEmail} 
                 disabled={testing || !settings.gmailUser} 
                 variant="outline"
-                className="text-slate-600 border-slate-300 hover:bg-slate-50"
+                className="text-slate-600 border-slate-300 hover:bg-slate-50 w-full sm:w-auto"
                 leftIcon={<Send className="h-4 w-4" />}
               >
                 {testing ? 'Sending...' : 'Send Test Email'}
@@ -442,7 +447,7 @@ export default function AdminSettingsPage() {
       {activeTab === 'toggles' && (
         <div className="space-y-8">
           <div className="flex justify-end">
-             <Button onClick={handleSave} disabled={saving} leftIcon={<Save className="h-4 w-4" />}>
+             <Button onClick={handleSave} disabled={saving} leftIcon={<Save className="h-4 w-4" />} className="w-full sm:w-auto">
                 {saving ? 'Saving...' : 'Save Toggles'}
               </Button>
           </div>
@@ -720,7 +725,7 @@ export default function AdminSettingsPage() {
                   <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                   Live Preview — {platformCurrency}100 Job
                 </h5>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="text-center p-3 bg-white rounded-lg border border-indigo-100">
                     <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-wider">Boss Pays</p>
                     <p className="text-lg font-black text-indigo-900">{platformCurrency}{(100 + (100 * platformCommissionBoss / 100)).toFixed(2)}</p>
@@ -762,7 +767,7 @@ export default function AdminSettingsPage() {
               <div className="flex items-center justify-between bg-emerald-50 p-4 rounded-xl border border-emerald-200">
                 <div>
                   <h4 className="text-lg font-bold text-emerald-800">Stripe Integration</h4>
-                  <p className="text-sm text-emerald-700">Required for direct card payments and Stripe Express payouts.</p>
+                  <p className="text-sm text-emerald-700">Required for Boss direct card payments.</p>
                 </div>
                 <Toggle checked={stripeEnabled} onCheckedChange={setStripeEnabled} />
               </div>
@@ -789,12 +794,6 @@ export default function AdminSettingsPage() {
                     onChange={setStripeWebhookSecret}
                     placeholder="whsec_..."
                   />
-                  <div className="flex items-end pb-2">
-                     <div className="flex items-center gap-3 w-full bg-[var(--color-bg-secondary)] p-3 border border-[var(--color-border-primary)] rounded-md">
-                        <Toggle checked={stripeConnectEnabled} onCheckedChange={setStripeConnectEnabled} />
-                        <span className="text-sm font-medium text-[var(--color-text-primary)]">Enable Stripe Connect (Guard Wallets)</span>
-                     </div>
-                  </div>
                 </div>
               )}
             </div>

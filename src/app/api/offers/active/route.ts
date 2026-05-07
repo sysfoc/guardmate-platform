@@ -2,12 +2,13 @@ import { NextRequest } from "next/server";
 import { verifyAndGetUser, createApiResponse } from "@/lib/serverAuth";
 import connectDB from "@/lib/mongodb";
 import Offer from "@/models/Offer.model";
+import UserOffer from "@/models/UserOffer.model";
 import { UserRole, OfferType } from "@/types/enums";
 
 /**
  * GET /api/offers/active
- * Authenticated — returns active offers relevant to the user's role.
- * Boss sees Boss commission offers, Guard sees Guard commission offers.
+ * Authenticated — returns active subscription discount offers for Boss only.
+ * Guards do not see offers (offers are subscription-only).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -19,31 +20,37 @@ export async function GET(request: NextRequest) {
 
     const now = new Date();
 
-    // Filter offers by role
-    let relevantTypes: OfferType[];
-    if (user.role === UserRole.BOSS) {
-      relevantTypes = [
-        OfferType.BOSS_COMMISSION_REDUCTION,
-        OfferType.BOSS_COMMISSION_WAIVER,
-      ];
-    } else {
-      relevantTypes = [
-        OfferType.GUARD_COMMISSION_REDUCTION,
-        OfferType.GUARD_COMMISSION_WAIVER,
-      ];
+    // Only Boss can see offers (subscription discounts only)
+    if (user.role !== UserRole.BOSS) {
+      return createApiResponse(true, [], "Offers not available for this role.", 200);
     }
 
     const offers = await Offer.find({
       isActive: true,
       startDate: { $lte: now },
       endDate: { $gte: now },
-      offerType: { $in: relevantTypes },
+      offerType: OfferType.SUBSCRIPTION_DISCOUNT,
     })
-      .select('name description offerType discountType discountValue eligibility startDate endDate')
+      .select('name description offerType discountType discountValue eligibility newUserDaysThreshold startDate endDate')
       .sort({ createdAt: -1 })
       .lean();
 
-    return createApiResponse(true, offers, "Active offers fetched.", 200);
+    // Check which offers this user has already acquired and which are consumed
+    const acquiredRecords = await UserOffer.find({ userUid: user.uid }).lean();
+    const acquiredMap = new Map(acquiredRecords.map((r) => [String(r.offerId), r.usedAt ? true : false]));
+
+    const enriched = offers.map((o) => {
+      const offerId = String(o._id);
+      const isAcquired = acquiredMap.has(offerId);
+      const isConsumed = isAcquired && acquiredMap.get(offerId) === true;
+      return {
+        ...o,
+        isAcquired,
+        isConsumed,
+      };
+    });
+
+    return createApiResponse(true, enriched, "Active offers fetched.", 200);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : "Failed to fetch offers.";
     console.error("Active Offers Error:", error);

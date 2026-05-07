@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Job from '@/models/Job.model';
+import Bid from '@/models/Bid.model';
 import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import { JobStatus, UserRole, BudgetType } from '@/types/enums';
@@ -16,6 +17,7 @@ import type { ShiftScheduleDay } from '@/types/job.types';
 /**
  * GET /api/jobs/[jobId]
  * Single job detail — increment viewCount.
+ * For Mate users, includes `hasApplied` flag indicating if they already bid.
  */
 export async function GET(
   request: NextRequest,
@@ -51,7 +53,14 @@ export async function GET(
           { new: true }
         ).lean();
 
-    return createApiResponse(true, job, 'Job fetched successfully.', 200);
+    // For Mate users, check if they have already submitted a bid for this job
+    let hasApplied = false;
+    if (user.role === UserRole.MATE) {
+      const existingBid = await Bid.findOne({ jobId, guardUid: user.uid }).lean();
+      hasApplied = !!existingBid;
+    }
+
+    return createApiResponse(true, { ...job, hasApplied }, 'Job fetched successfully.', 200);
   } catch (error: unknown) {
     console.error('GET /api/jobs/[jobId] error:', error);
     return createApiResponse(false, null, 'Failed to fetch job.', 500);
@@ -140,23 +149,31 @@ export async function PATCH(
 
     // Recalculate schedule if shiftSchedule changed
     if (body.shiftSchedule && Array.isArray(body.shiftSchedule)) {
-      body.shiftSchedule = body.shiftSchedule.map((day: ShiftScheduleDay) => ({
-        date: day.date,
-        slots: day.slots.map((slot) => {
-          const overnight = isOvernightShift(slot.startTime, slot.endTime);
-          const duration = calculateShiftDuration(slot.startTime, slot.endTime);
-          const endDate = getActualEndDate(day.date, slot.startTime, slot.endTime);
-          return {
-            slotNumber: slot.slotNumber,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            isOvernight: overnight,
-            actualEndDate: endDate,
-            durationHours: duration,
-            assignedGuardUid: slot.assignedGuardUid || null,
-          };
-        }),
-      }));
+      const existingSchedule = (job.shiftSchedule || []) as ShiftScheduleDay[];
+      body.shiftSchedule = body.shiftSchedule.map((day: ShiftScheduleDay) => {
+        const existingDay = existingSchedule.find((d) => d.date === day.date);
+        return {
+          date: day.date,
+          slots: day.slots.map((slot) => {
+            const overnight = isOvernightShift(slot.startTime, slot.endTime);
+            const duration = calculateShiftDuration(slot.startTime, slot.endTime);
+            const endDate = getActualEndDate(day.date, slot.startTime, slot.endTime);
+            // Preserve existing assignment if incoming slot doesn't explicitly provide one
+            const existingSlot = existingDay?.slots.find((s) => s.slotNumber === slot.slotNumber);
+            const assignedGuardUid =
+              slot.assignedGuardUid !== undefined ? slot.assignedGuardUid : (existingSlot?.assignedGuardUid ?? null);
+            return {
+              slotNumber: slot.slotNumber,
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+              isOvernight: overnight,
+              actualEndDate: endDate,
+              durationHours: duration,
+              assignedGuardUid,
+            };
+          }),
+        };
+      });
       body.totalScheduledHours = calculateTotalScheduledHours(body.shiftSchedule);
       body.totalHours = body.totalScheduledHours;
     } else if (body.startDate || body.endDate || body.startTime || body.endTime) {

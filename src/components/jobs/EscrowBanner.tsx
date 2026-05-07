@@ -3,11 +3,10 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Lock, ShieldCheck, CreditCard, Sparkles, Loader2, Tag } from 'lucide-react';
+import { Lock, ShieldCheck, CreditCard, Sparkles, Loader2 } from 'lucide-react';
 import { JobPaymentStatus } from '@/types/enums';
 import { createStripeIntent, createPaypalOrder } from '@/lib/api/payment.api';
 import { StripePaymentModal } from '@/components/payments/StripePaymentModal';
-import type { AppliedOffer } from '@/types/offer.types';
 import toast from 'react-hot-toast';
 
 interface EscrowBannerProps {
@@ -27,11 +26,6 @@ interface PaymentBreakdown {
   platformRevenue: number;
 }
 
-interface ApiBreakdown extends PaymentBreakdown {
-  appliedBossOffer?: AppliedOffer | null;
-  appliedGuardOffer?: AppliedOffer | null;
-}
-
 export function EscrowBanner({ 
   jobId, 
   paymentStatus, 
@@ -43,8 +37,7 @@ export function EscrowBanner({
   const [loading, setLoading] = useState(false);
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [clientSecret, setClientSecret] = useState<string>('');
-  const [paymentBreakdown, setPaymentBreakdown] = useState<ApiBreakdown | null>(null);
-  const [appliedOffer, setAppliedOffer] = useState<AppliedOffer | null>(null);
+  const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdown | null>(null);
 
   // Calculate expected amounts (will be updated from API response)
   const displayBudget = paymentBreakdown?.jobBudget ?? budgetAmount;
@@ -58,19 +51,18 @@ export function EscrowBanner({
       
       if (res.success && res.data?.clientSecret) {
         setClientSecret(res.data.clientSecret);
-        // Store the breakdown and applied offer from API (uses actual bid amount)
+        // Store the breakdown from API (uses actual bid amount)
         if (res.data.breakdown) {
           setPaymentBreakdown(res.data.breakdown);
         }
-        if (res.data.appliedBossOffer) {
-          setAppliedOffer(res.data.appliedBossOffer);
-        }
+        setClientSecret(res.data.clientSecret || '');
         setShowStripeModal(true);
       } else {
         toast.error(res.message || 'Failed to initialize Stripe payment');
       }
     } catch (err: any) {
-      toast.error('Failed to initiate Stripe payment');
+      console.error("Stripe payment init error:", err);
+      toast.error(err.message || 'Failed to initiate Stripe payment');
     } finally {
       setLoading(false);
     }
@@ -149,11 +141,6 @@ export function EscrowBanner({
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600">
                     Platform Fee ({bossCommissionRate}%)
-                    {appliedOffer && (
-                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                        <Tag className="w-2.5 h-2.5" /> {appliedOffer.offerName} applied — saved {currency} {appliedOffer.savings.toFixed(2)}
-                      </span>
-                    )}
                   </span>
                   <span className="font-medium">{currency} {displayCommission.toFixed(2)}</span>
                 </div>

@@ -6,8 +6,6 @@ import GuardWallet from "@/models/GuardWallet.model";
 import Withdrawal from "@/models/Withdrawal.model";
 import PlatformSettings from "@/models/PlatformSettings.model";
 import { UserRole, WithdrawalMethod, WithdrawalStatus } from "@/types/enums";
-import { getStripeInstance } from "@/lib/payments/stripeClient";
-import { createPayPalPayout } from "@/lib/payments/paypalClient";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,8 +23,8 @@ export async function POST(request: NextRequest) {
     if (!amount || amount <= 0) {
       return createApiResponse(false, null, "Valid withdrawal amount is required.", 400);
     }
-    if (![WithdrawalMethod.STRIPE_BANK, WithdrawalMethod.PAYPAL, WithdrawalMethod.BANK_TRANSFER].includes(method)) {
-      return createApiResponse(false, null, "Invalid withdrawal method.", 400);
+    if (method !== WithdrawalMethod.BANK_TRANSFER) {
+      return createApiResponse(false, null, "Invalid withdrawal method. Only Bank Transfers are supported.", 400);
     }
 
     await connectDB();
@@ -47,19 +45,8 @@ export async function POST(request: NextRequest) {
       return createApiResponse(false, null, "Insufficient available balance.", 400);
     }
 
-    // Validate Account Readiness
-    if (method === WithdrawalMethod.STRIPE_BANK) {
-      if (!wallet.stripeAccountVerified || !wallet.stripeAccountId) {
-        return createApiResponse(false, null, "Stripe Connect account is not fully verified.", 400);
-      }
-    } else if (method === WithdrawalMethod.PAYPAL) {
-      if (!wallet.paypalEmail) {
-        return createApiResponse(false, null, "PayPal email is not configured.", 400);
-      }
-    } else if (method === WithdrawalMethod.BANK_TRANSFER) {
-      if (!wallet.bankAccountNumber || !wallet.bankBSB || !wallet.bankAccountName) {
-        return createApiResponse(false, null, "Bank details are not configured.", 400);
-      }
+    if (!wallet.bankAccountNumber || !wallet.bankBSB || !wallet.bankAccountName) {
+      return createApiResponse(false, null, "Bank details are not configured.", 400);
     }
 
     // ─── Deduct Balance & Create Withdrawal (atomic via transaction) ─────────
@@ -78,99 +65,58 @@ export async function POST(request: NextRequest) {
         amount,
         currency: wallet.currency,
         withdrawalMethod: method,
-        status: method === WithdrawalMethod.BANK_TRANSFER ? WithdrawalStatus.PENDING : WithdrawalStatus.PROCESSING,
-        requiresManualProcessing: method === WithdrawalMethod.BANK_TRANSFER,
-        processedAt: method === WithdrawalMethod.BANK_TRANSFER ? null : new Date(),
+        status: WithdrawalStatus.PENDING,
+        requiresManualProcessing: true,
+        processedAt: null,
       }], { session });
 
       await session.commitTransaction();
       session.endSession();
 
-      // ─── Process Payment Gateway Payout ───────────────────────────────────
+      // ─── Send Admin Notification Email ───────────────────────────────────
       try {
-        if (method === WithdrawalMethod.STRIPE_BANK) {
-          const stripe = await getStripeInstance();
-          const transfer = await stripe.transfers.create({
-            amount: Math.round(amount * 100),
-            currency: wallet.currency.toLowerCase(),
-            destination: wallet.stripeAccountId!,
-            metadata: {
-              withdrawalId: withdrawal._id.toString(),
-              guardUid: user.uid,
-            }
-          });
+        const { sendManualWithdrawalRequested } = await import('@/lib/email/emailTriggers');
+        const User = (await import('@/models/User.model')).default;
+        const admins = await User.find({ role: UserRole.ADMIN, 'emailSettings.financialAlerts': true }).lean();
+        const guard = await User.findOne({ uid: user.uid }).lean();
+        
+        const maskedAccount = `***${wallet.bankAccountNumber!.slice(-3)}`;
 
-          // Stripe Connect transfers are immediate to connected account
-          withdrawal.stripePayoutId = transfer.id;
-          withdrawal.status = WithdrawalStatus.COMPLETED;
-          withdrawal.completedAt = new Date();
-          await withdrawal.save();
-
-          // Finalize wallet — move from pending to withdrawn
-          wallet.pendingBalance -= amount;
-          wallet.totalWithdrawn += amount;
-          wallet.lastPayoutAt = new Date();
-          await wallet.save();
-        }
-        else if (method === WithdrawalMethod.PAYPAL) {
-          const payout = await createPayPalPayout(
-            wallet.paypalEmail!,
-            amount,
-            wallet.currency,
-            withdrawal._id.toString(),
-            "GuardMate Wallet Withdrawal"
-          );
-
-          // PayPal payouts are async — stay in PROCESSING until webhook confirms
-          withdrawal.paypalPayoutId = payout.payoutBatchId;
-          // Do NOT mark as COMPLETED here. The PayPal webhook will finalize.
-          await withdrawal.save();
-        }
-        else if (method === WithdrawalMethod.BANK_TRANSFER) {
-          // Send email to admins
-          try {
-            const { sendManualWithdrawalRequested } = await import('@/lib/email/emailTriggers');
-            const User = (await import('@/models/User.model')).default;
-            const admins = await User.find({ role: UserRole.ADMIN, 'emailSettings.financialAlerts': true }).lean();
-            const guard = await User.findOne({ uid: user.uid }).lean();
-            
-            const maskedAccount = `***${wallet.bankAccountNumber!.slice(-3)}`;
-
-            for (const admin of admins) {
-              if (admin.email) {
-                await sendManualWithdrawalRequested(
-                  admin.email,
-                  guard ? `${guard.firstName} ${guard.lastName}` : 'Guard',
-                  amount,
-                  wallet.bankAccountName!,
-                  wallet.bankBSB!,
-                  maskedAccount,
-                  withdrawal._id.toString()
-                );
-              }
-            }
-          } catch (e) {
-            console.warn('Failed to send admin notification for manual withdrawal:', e);
+        for (const admin of admins) {
+          if (admin.email) {
+            await sendManualWithdrawalRequested(
+              admin.email,
+              guard ? `${guard.firstName} ${guard.lastName}` : 'Guard',
+              amount,
+              wallet.bankAccountName!,
+              wallet.bankBSB!,
+              maskedAccount,
+              withdrawal._id.toString()
+            );
           }
         }
-
-        return createApiResponse(true, { withdrawal }, "Withdrawal processed successfully.", 200);
-
-      } catch (payoutError: any) {
-        console.error("Payout Gateway Error:", payoutError);
-
-        // Revert balances
-        wallet.availableBalance += amount;
-        wallet.pendingBalance -= amount;
-        await wallet.save();
-
-        // Mark withdrawal as failed
-        withdrawal.status = WithdrawalStatus.FAILED;
-        withdrawal.failureReason = payoutError.message || "Gateway processing error";
-        await withdrawal.save();
-
-        return createApiResponse(false, null, `Withdrawal failed: ${withdrawal.failureReason}`, 500);
+      } catch (e) {
+        console.warn('Failed to send admin notification for manual withdrawal:', e);
       }
+
+      // ─── Send Guard Confirmation Email ─────────────────────────────────────
+      try {
+        const { sendWithdrawalInitiated } = await import('@/lib/email/emailTriggers');
+        const User = (await import('@/models/User.model')).default;
+        const guard = await User.findOne({ uid: user.uid }).lean();
+        if (guard?.email) {
+          await sendWithdrawalInitiated(
+            guard.email,
+            guard.firstName,
+            `${withdrawal.currency} ${amount.toFixed(2)}`,
+            'Direct Bank Transfer'
+          );
+        }
+      } catch (e) {
+        console.warn('Failed to send guard withdrawal confirmation email:', e);
+      }
+
+      return createApiResponse(true, { withdrawal }, "Withdrawal processed successfully.", 200);
 
     } catch (txError: any) {
       await session.abortTransaction();

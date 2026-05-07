@@ -14,18 +14,24 @@ export const subscriptionApi = {
     subscriptionId: string;
     clientSecret: string | null;
     amount: number;
+    originalAmount: number;
+    appliedOffer: { offerId: string; offerName: string; originalAmount: number; discountedAmount: number } | null;
     currency: string;
     periodEnd: string;
     requiresPayment: boolean;
   }> {
+    console.log('[api:subscription] 📤 POST /api/subscriptions/create-stripe');
     const res = await apiPost<{
       subscriptionId: string;
       clientSecret: string | null;
       amount: number;
+      originalAmount: number;
+      appliedOffer: { offerId: string; offerName: string; originalAmount: number; discountedAmount: number } | null;
       currency: string;
       periodEnd: string;
       requiresPayment: boolean;
     }>('/api/subscriptions/create-stripe', {});
+    console.log('[api:subscription] 📥 createStripeSubscription response — success:', res.success, '| data keys:', Object.keys(res.data || {}));
     return res.data;
   },
 
@@ -36,6 +42,8 @@ export const subscriptionApi = {
     subscriptionId: string;
     approvalUrl: string;
     amount: number;
+    originalAmount: number;
+    appliedOffer: { offerId: string; offerName: string; originalAmount: number; discountedAmount: number } | null;
     currency: string;
     periodEnd: string;
   }> {
@@ -43,6 +51,8 @@ export const subscriptionApi = {
       subscriptionId: string;
       approvalUrl: string;
       amount: number;
+      originalAmount: number;
+      appliedOffer: { offerId: string; offerName: string; originalAmount: number; discountedAmount: number } | null;
       currency: string;
       periodEnd: string;
     }>('/api/subscriptions/create-paypal', {});
@@ -58,10 +68,22 @@ export const subscriptionApi = {
   },
 
   /**
+   * Capture and confirm a Stripe subscription after client-side payment succeeds.
+   */
+  async captureStripeSubscription(subscriptionId: string): Promise<any> {
+    console.log('[api:subscription] 📤 POST /api/subscriptions/stripe-capture — subscriptionId:', subscriptionId);
+    const res = await apiPost<any>('/api/subscriptions/stripe-capture', { subscriptionId });
+    console.log('[api:subscription] 📥 captureStripeSubscription response — success:', res.success, '| message:', res.message);
+    return res.data;
+  },
+
+  /**
    * Get current subscription status for the authenticated Boss.
    */
   async getStatus(): Promise<ISubscriptionStatus> {
+    console.log('[api:subscription] 📤 GET /api/subscriptions/status');
     const res = await apiGet<ISubscriptionStatus>('/api/subscriptions/status');
+    console.log('[api:subscription] 📥 getStatus response — status:', res.data?.status, '| isSubscribed:', res.data?.isSubscribed);
     return res.data;
   },
 

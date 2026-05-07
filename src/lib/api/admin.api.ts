@@ -275,3 +275,34 @@ export const getAdminWithdrawals = async (filters?: { status?: string; method?: 
 export const completeWithdrawal = async (id: string) => {
   return apiPatch<any>(`/api/admin/withdrawals/${id}/complete`, {});
 };
+
+// ─── Platform Balance & Admin Withdrawal ──────────────────────────────────────
+
+export const getAdminBalance = async () => {
+  return apiGet<{
+    available: { amount: number; currency: string }[];
+    pending: { amount: number; currency: string }[];
+    payoutHistory: {
+      id: string;
+      amount: number;
+      currency: string;
+      status: string;
+      method: string;
+      arrivalDate: string;
+      createdAt: string;
+      description: string | null;
+      failureMessage: string | null;
+    }[];
+  }>('/api/admin/balance');
+};
+
+export const createAdminWithdrawal = async (amount: number, description?: string) => {
+  return apiPost<{
+    payoutId: string;
+    amount: number;
+    currency: string;
+    status: string;
+    arrivalDate: string;
+    method: string;
+  }>('/api/admin/withdraw', { amount, description });
+};

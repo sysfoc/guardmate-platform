@@ -320,7 +320,7 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
   [NotificationEventType.PAYMENT_RELEASED]: {
     notificationType: NotificationEventType.PAYMENT_RELEASED,
     subject: 'You got paid! Payment released for {{jobTitle}}',
-    htmlBody: BASE_HTML('Payment Released', '<p>Hi {{guardName}},</p><p>Great job! The boss has approved your shift for <strong>{{jobTitle}}</strong>.</p><p>A payment of <strong>{{amount}}</strong> has been released to your GuardMate Wallet. {{commissionSection}} You can withdraw these funds to your linked Stripe account or PayPal email at any time.</p><p><a href="{{walletUrl}}" class="btn">View My Wallet</a></p>'),
+    htmlBody: BASE_HTML('Payment Released', '<p>Hi {{guardName}},</p><p>Great job! The boss has approved your shift for <strong>{{jobName}}</strong>.</p><p>A payment of <strong>{{amount}}</strong> has been released to your GuardMate Wallet. {{commissionSection}} You can withdraw these funds via Direct Bank Transfer from your Wallet at any time.</p><p><a href="{{walletUrl}}" class="btn">View My Wallet</a></p>'),
     textBody: 'Hi {{guardName}}, Great job! The boss approved your shift for {{jobTitle}}. A payment of {{amount}} has been released to your GuardMate Wallet.',
     variables: ['guardName', 'jobTitle', 'amount', 'commissionSection', 'walletUrl', 'platformName'],
     isActive: true,

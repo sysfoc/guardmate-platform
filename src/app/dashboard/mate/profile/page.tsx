@@ -131,6 +131,13 @@ export default function MateProfileEdit() {
     }
   }, [mate]);
 
+  const lockedCountry = React.useMemo(() => platformCountry ? {
+    name: platformCountry.countryName,
+    code: platformCountry.countryCode,
+    dialCode: platformCountry.dialCode,
+    flag: platformCountry.flag,
+  } : null, [platformCountry]);
+
   if (!mate) return null;
 
   const handleGoBack = () => {
@@ -329,7 +336,7 @@ export default function MateProfileEdit() {
 
             {/* Actions Bar (Below Banner) */}
             <div className="px-5 sm:px-6 py-3 bg-[var(--color-bg-primary)]">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                   <CertificateBadges user={mate} size="sm" />
                   <div className="h-4 w-px bg-[var(--color-border-primary)] hidden sm:block" />
@@ -340,12 +347,13 @@ export default function MateProfileEdit() {
                     onCheckedChange={(v) => handleChange('isAvailable', v)}
                   />
                 </div>
-                <div className="flex items-center justify-center sm:justify-end gap-2">
+                <div className="flex items-center justify-center gap-2 w-full sm:w-auto">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={handleGoBack}
+                    className="flex-1 sm:flex-none"
                     leftIcon={<ChevronLeft className="h-4 w-4" />}
                   >
                     Back
@@ -355,6 +363,7 @@ export default function MateProfileEdit() {
                     variant="primary"
                     size="sm"
                     loading={isSaving}
+                    className="whitespace-nowrap flex-1 sm:flex-none"
                     leftIcon={<Save className="h-4 w-4" />}
                   >
                     Save Changes
@@ -375,6 +384,7 @@ export default function MateProfileEdit() {
                     value={formData.phone}
                     defaultCountry={formData.phoneCountryCode as any}
                     onChange={(v: string) => { setFormData(prev => ({ ...prev, phone: v })); setHasUnsavedChanges(true); }}
+                    lockedCountry={lockedCountry}
                   />
                 </div>
                 <div className="mt-3">
@@ -551,7 +561,7 @@ export default function MateProfileEdit() {
                   </div>
 
                   {(localFirstAidDoc || mate.firstAidCertificate) && (
-                    <a href={localFirstAidDoc || mate.firstAidCertificate || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1">
+                    <a href={localFirstAidDoc || mate.firstAidCertificate || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline inline-flex items-center gap-1 w-fit">
                       <FileText className="h-3 w-3" /> View Document
                     </a>
                   )}
@@ -596,7 +606,7 @@ export default function MateProfileEdit() {
                       </div>
                     </div>
                     {(localWhiteCardDoc || mate.constructionWhiteCard) && (
-                      <a href={localWhiteCardDoc || mate.constructionWhiteCard || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1">
+                      <a href={localWhiteCardDoc || mate.constructionWhiteCard || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline inline-flex items-center gap-1 w-fit">
                         <FileText className="h-3 w-3" /> View Document
                       </a>
                     )}
@@ -642,7 +652,7 @@ export default function MateProfileEdit() {
                       </div>
                     </div>
                     {(localChildrenCheckDoc || mate.workingWithChildrenCheck) && (
-                      <a href={localChildrenCheckDoc || mate.workingWithChildrenCheck || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1">
+                      <a href={localChildrenCheckDoc || mate.workingWithChildrenCheck || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline inline-flex items-center gap-1 w-fit">
                         <FileText className="h-3 w-3" /> View Document
                       </a>
                     )}
@@ -680,7 +690,7 @@ export default function MateProfileEdit() {
                       </div>
                     </div>
                     {localVictorianLicenceDoc || mate.victorianBusinessLicence ? (
-                      <a href={localVictorianLicenceDoc || mate.victorianBusinessLicence || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1">
+                      <a href={localVictorianLicenceDoc || mate.victorianBusinessLicence || '#'} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--color-primary)] hover:underline inline-flex items-center gap-1 w-fit">
                         <FileText className="h-3 w-3" /> View Document
                       </a>
                     ) : null}
@@ -920,13 +930,13 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 
 function DocUploadRow({ label, url, isUploading, onUpload, status }: { label: string; url: string | null | undefined; isUploading: boolean; onUpload: () => void; status: string | null | undefined }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${url ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]'}`}>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
+      <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
+        <div className={`p-2 rounded-lg ${url ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]'} shrink-0`}>
           <FileText className="h-4 w-4" />
         </div>
-        <div>
-          <p className="text-[11px] font-bold leading-none">{label}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-bold leading-none truncate">{label}</p>
           <div className="mt-1">
             {url ? (
               <Badge variant={status === 'VERIFIED' || status === 'VALID' ? 'success' : 'warning'} className="text-[9px] h-4 py-0 font-bold uppercase">
@@ -938,9 +948,11 @@ function DocUploadRow({ label, url, isUploading, onUpload, status }: { label: st
           </div>
         </div>
       </div>
-      <Button type="button" variant="outline" size="sm" className="h-8 px-2 border-dashed" loading={isUploading} onClick={onUpload}>
-        {url ? 'Replace' : 'Upload'}
-      </Button>
+      <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0 justify-end sm:justify-start">
+        <Button type="button" variant="outline" size="sm" className="h-8 px-2 border-dashed flex-1 sm:flex-none" loading={isUploading} onClick={onUpload}>
+          {url ? 'Replace' : 'Upload'}
+        </Button>
+      </div>
     </div>
   );
 }

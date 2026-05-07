@@ -18,20 +18,10 @@ const GuardWalletSchema = new Schema<GuardWalletDocument>(
     totalEarned:      { type: Number, default: 0, min: 0 },
     totalWithdrawn:   { type: Number, default: 0, min: 0 },
 
-    // ─── Stripe Connect ─────────────────────────────────────────────────────
-    // TODO: Future AES-256 encryption for stripeAccountId
-    stripeAccountId:       { type: String, default: null },
-    stripeAccountVerified: { type: Boolean, default: false },
-
-    // ─── PayPal ─────────────────────────────────────────────────────────────
-    paypalEmail:    { type: String, default: null },
-    paypalVerified: { type: Boolean, default: false },
-
     // ─── Direct Bank Transfer ───────────────────────────────────────────────
     bankAccountName:     { type: String, default: null },
     bankBSB:             { type: String, default: null },
     bankAccountNumber:   { type: String, default: null },
-    bankAccountVerified: { type: Boolean, default: false },
     bankAccountSavedAt:  { type: Date, default: null },
 
     currency:     { type: String, default: 'AUD' },

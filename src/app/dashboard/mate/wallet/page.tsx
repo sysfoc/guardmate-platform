@@ -5,18 +5,19 @@ import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { usePlatformContext } from '@/context/PlatformContext';
-import { 
-  getWalletBalance, 
-  onboardStripeConnect, 
-  checkStripeConnectStatus, 
-  setPaypalEmail, 
+import {
+  getWalletBalance,
   requestWithdrawal,
   getEarnings,
   getWithdrawals,
   saveBankDetails
 } from '@/lib/api/payment.api';
-import { PaymentMethod, WithdrawalMethod } from '@/types/enums';
-import { Wallet, DollarSign, ExternalLink, ArrowDownToLine, Clock, CheckCircle2, XCircle, Building } from 'lucide-react';
+import { WithdrawalMethod } from '@/types/enums';
+import {
+  Wallet, DollarSign, ExternalLink, ArrowDownToLine, Clock,
+  CheckCircle2, XCircle, Building, CreditCard, Loader2,
+  TrendingUp, TrendingDown
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function WalletPageContent() {
@@ -25,50 +26,36 @@ function WalletPageContent() {
 
   const [loading, setLoading] = useState(true);
   const [wallet, setWallet] = useState<any>(null);
-  const [stripeStatus, setStripeStatus] = useState<any>(null);
-  
+
   const [earnings, setEarnings] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
 
-  const [pEmail, setPEmail] = useState('');
-  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
-  
   // Bank Transfer
   const [bankAccountName, setBankAccountName] = useState('');
   const [bankBsb, setBankBsb] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [isUpdatingBank, setIsUpdatingBank] = useState(false);
   const [isBankSaved, setIsBankSaved] = useState(false);
-  
+
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawMethod, setWithdrawMethod] = useState<WithdrawalMethod | ''>('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   useEffect(() => {
-    // Check callback status from URL
-    const stripeParam = searchParams.get('stripe');
-    if (stripeParam === 'success') {
-      toast.success('Stripe Connect onboarding completed!');
-    } else if (stripeParam === 'refresh') {
-      toast('Stripe Connect onboarding refreshed.', { icon: 'ℹ️' });
-    }
-
     loadData();
-  }, [searchParams]);
+  }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [walletRes, stripeRes, earnRes, withRes] = await Promise.all([
+      const [walletRes, earnRes, withRes] = await Promise.all([
         getWalletBalance(),
-        checkStripeConnectStatus(),
         getEarnings(1, 10),
         getWithdrawals(1, 10)
       ]);
 
       if (walletRes.success) {
         setWallet(walletRes.data);
-        if (walletRes.data.paypalEmail) setPEmail(walletRes.data.paypalEmail);
         if (walletRes.data.bankAccountNumber) {
           setIsBankSaved(true);
           setBankAccountName(walletRes.data.bankAccountName || '');
@@ -76,70 +63,12 @@ function WalletPageContent() {
           setBankAccountNumber(walletRes.data.bankAccountNumber || '');
         }
       }
-      if (stripeRes.success) setStripeStatus(stripeRes.data);
       if (earnRes.success) setEarnings(earnRes.data);
       if (withRes.success) setWithdrawals(withRes.data);
-
     } catch (err: any) {
       toast.error(err.message || 'Failed to load wallet data');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStripeOnboard = async () => {
-    try {
-      // For Guards, default to AU unless platform sets another country. 
-      // Platform settings has platformCountry.
-      const targetCountry = platformSettings?.platformCountry?.countryCode || 'AU';
-      const res = await onboardStripeConnect(targetCountry);
-      if (res.success && res.data?.url) {
-        window.location.href = res.data.url;
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err: any) {
-      toast.error('Could not start Stripe onboarding.');
-    }
-  };
-
-  const handleUpdatePaypal = async () => {
-    if (!pEmail || !/\S+@\S+\.\S+/.test(pEmail)) {
-      toast.error('Please enter a valid email address.');
-      return;
-    }
-    try {
-      setIsUpdatingEmail(true);
-      const res = await setPaypalEmail(pEmail);
-      if (res.success) {
-        toast.success(res.message);
-        loadData();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err: any) {
-      toast.error('Failed to update PayPal email.');
-    } finally {
-      setIsUpdatingEmail(false);
-    }
-  };
-
-  const handleRemovePaypal = async () => {
-    if (!window.confirm('Are you sure you want to remove your PayPal email?')) return;
-    try {
-      setIsUpdatingEmail(true);
-      const res = await setPaypalEmail('');
-      if (res.success) {
-        toast.success(res.message);
-        setPEmail('');
-        loadData();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err: any) {
-      toast.error('Failed to remove PayPal email.');
-    } finally {
-      setIsUpdatingEmail(false);
     }
   };
 
@@ -150,14 +79,14 @@ function WalletPageContent() {
     }
     try {
       setIsUpdatingBank(true);
-      const res = await saveBankDetails({ accountName: bankAccountName, bsb: bankBsb, accountNumber: bankAccountNumber });
-      if (res.success) {
-        toast.success(res.message);
-        loadData();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (err: any) {
+      const res = await saveBankDetails({
+        accountName: bankAccountName,
+        bsb: bankBsb,
+        accountNumber: bankAccountNumber
+      });
+      if (res.success) { toast.success(res.message); loadData(); }
+      else toast.error(res.message);
+    } catch {
       toast.error('Failed to save bank details.');
     } finally {
       setIsUpdatingBank(false);
@@ -166,27 +95,12 @@ function WalletPageContent() {
 
   const handleWithdraw = async () => {
     const amount = Number(withdrawAmount);
-    if (!amount || amount <= 0) {
-      toast.error('Please enter a valid amount.');
-      return;
-    }
+    if (!amount || amount <= 0) { toast.error('Enter a valid amount.'); return; }
     const minW = platformSettings?.minimumWithdrawalAmount || 50;
-    if (amount < minW) {
-      toast.error(`Minimum withdrawal amount is ${platformSettings?.platformCurrency || 'AUD'} ${minW}`);
-      return;
-    }
-    if (amount > wallet.availableBalance) {
-      toast.error('Insufficient available balance.');
-      return;
-    }
-    if (!withdrawMethod) {
-      toast.error('Please select a withdrawal method.');
-      return;
-    }
-    const confirmMsg = `Withdraw AUD ${amount} via ${withdrawMethod}. This cannot be undone.`;
-    if (!window.confirm(confirmMsg)) {
-      return;
-    }
+    if (amount < minW) { toast.error(`Min withdrawal: ${currency} ${minW}`); return; }
+    if (amount > wallet.availableBalance) { toast.error('Insufficient balance.'); return; }
+    if (!withdrawMethod) { toast.error('Select a withdrawal method.'); return; }
+    if (!window.confirm(`Withdraw ${currency} ${amount} via ${withdrawMethod}?`)) return;
 
     try {
       setIsWithdrawing(true);
@@ -194,6 +108,7 @@ function WalletPageContent() {
       if (res.success) {
         toast.success(res.message);
         setWithdrawAmount('');
+        setWithdrawMethod('');
         loadData();
       } else {
         toast.error(res.message);
@@ -205,259 +120,334 @@ function WalletPageContent() {
     }
   };
 
+  const currency = platformSettings?.platformCurrency || 'AUD';
+
   if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading wallet...</div>;
+    return (
+      <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--color-text-muted)]" />
+      </div>
+    );
   }
 
-  const currency = platformSettings?.platformCurrency || 'AUD';
-  const hasStripe = platformSettings?.stripeConnectEnabled;
-  const hasPaypal = platformSettings?.paypalEnabled;
-
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto pb-12 p-6 md:p-0">
-      <div>
-        <h1 className="text-2xl font-extrabold text-[var(--color-text-primary)] flex items-center gap-2">
-          <Wallet className="h-6 w-6 text-blue-600" />
-          Mate Wallet
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">Manage your earnings, view platform payouts, and request withdrawals.</p>
-      </div>
+    <div className="min-h-screen bg-[var(--color-bg-primary)]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        {/* Header */}
+        <div className="mb-5">
+          <h1 className="text-2xl font-extrabold text-[var(--color-text-primary)] flex items-center gap-2">
+            <Wallet className="h-6 w-6 text-indigo-600" />
+            Mate Wallet
+          </h1>
+          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+            Manage earnings, withdrawals, and payout methods.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-blue-500 to-indigo-600 border-0 flex flex-col justify-between">
-          <div>
-             <p className="text-blue-100 font-medium">Available Balance</p>
-             <h2 className="text-4xl font-extrabold text-white mt-2">
-               {currency} {(wallet?.availableBalance || 0).toFixed(2)}
-             </h2>
-          </div>
-          <div className="mt-8 pt-4 border-t border-white/20 text-blue-100 flex justify-between text-sm">
-            <span>Total Earned:</span>
-            <span className="font-bold">{currency} {(wallet?.totalEarned || 0).toFixed(2)}</span>
-          </div>
-        </Card>
+        {/* Balance Summary */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+          <Card className="p-4 bg-gradient-to-br from-indigo-500 to-blue-600 border-0">
+            <p className="text-xs font-medium text-indigo-100">Available Balance</p>
+            <p className="text-2xl font-extrabold text-white mt-1">
+              {currency} {(wallet?.availableBalance || 0).toFixed(2)}
+            </p>
+            <p className="text-[10px] text-indigo-200 mt-1">
+              Ready to withdraw
+            </p>
+          </Card>
+          <SummaryCard
+            icon={<TrendingUp className="w-4 h-4 text-emerald-600" />}
+            label="Total Earned"
+            value={`${currency} ${(wallet?.totalEarned || 0).toFixed(2)}`}
+            subLabel="Lifetime earnings"
+          />
+          <SummaryCard
+            icon={<TrendingDown className="w-4 h-4 text-slate-600" />}
+            label="Total Withdrawn"
+            value={`${currency} ${(wallet?.totalWithdrawn || 0).toFixed(2)}`}
+            subLabel="Paid out to you"
+          />
+        </div>
 
-        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-           {hasStripe && (
-              <Card className="p-6 flex flex-col justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-800 flex items-center gap-2"><DollarSign className="w-5 h-5 text-indigo-500"/> Stripe Connect</h3>
-                  <p className="text-sm text-slate-500 mt-2">
-                    {stripeStatus?.verified 
-                      ? "Your account is verified. You can receive direct bank payouts." 
-                      : "Link your bank account to receive withdrawals via Stripe."}
-                  </p>
+        {/* Payout Methods + Withdrawal — side by side on lg */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6 items-stretch">
+          {/* Left: Payout Methods (3/5) — single card with sections */}
+          <Card className="p-0 h-full flex flex-col lg:col-span-3 overflow-hidden">
+            <div className="p-3 border-b border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] flex items-center gap-2">
+              <CreditCard className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+              <h2 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+                Payout Methods
+              </h2>
+            </div>
+            <div className="p-4 space-y-4 flex-1">
+              {/* Direct Bank */}
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex items-start gap-3 w-full min-w-0">
+                  <div className="p-1.5 bg-emerald-50 rounded-md shrink-0 mt-0.5">
+                    <Building className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-bold text-[var(--color-text-primary)]">Direct Bank</h3>
+                    {isBankSaved && !isUpdatingBank ? (
+                      <div className="mt-1">
+                        <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">{bankAccountName}</p>
+                        <p className="text-[10px] text-[var(--color-text-secondary)] truncate">BSB: {bankBsb} &middot; Acct: {bankAccountNumber}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 w-full mt-2">
+                        <input
+                          type="text"
+                          value={bankAccountName}
+                          onChange={e => setBankAccountName(e.target.value)}
+                          placeholder="Account Name"
+                          className="w-full rounded-md border border-[var(--color-border-primary)] px-2.5 py-1.5 text-xs focus:border-[var(--color-primary)] outline-none bg-[var(--color-bg-primary)]"
+                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={bankBsb}
+                            onChange={e => setBankBsb(e.target.value)}
+                            placeholder="BSB"
+                            className="w-full rounded-md border border-[var(--color-border-primary)] px-2.5 py-1.5 text-xs focus:border-[var(--color-primary)] outline-none bg-[var(--color-bg-primary)]"
+                          />
+                          <input
+                            type="text"
+                            value={bankAccountNumber}
+                            onChange={e => setBankAccountNumber(e.target.value)}
+                            placeholder="Account Number"
+                            className="w-full rounded-md border border-[var(--color-border-primary)] px-2.5 py-1.5 text-xs focus:border-[var(--color-primary)] outline-none bg-[var(--color-bg-primary)]"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="mt-4">
-                  {stripeStatus?.verified ? (
-                    <Button variant="outline" className="w-full text-indigo-600 border-indigo-200 hover:bg-indigo-50" onClick={handleStripeOnboard}>
-                      Manage Stripe Account <ExternalLink className="w-3 h-3 ml-2" />
+                <div className="flex gap-2 shrink-0 sm:mt-0 mt-2">
+                  {isBankSaved && !isUpdatingBank ? (
+                    <Button size="sm" variant="ghost" className="text-xs h-8" onClick={() => setIsBankSaved(false)}>
+                      Edit
                     </Button>
                   ) : (
-                    <Button onClick={handleStripeOnboard} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                      Setup Bank Account <ExternalLink className="w-3 h-3 ml-2" />
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        className="text-xs h-8"
+                        disabled={isUpdatingBank || !bankAccountName || !bankBsb || !bankAccountNumber}
+                        onClick={handleUpdateBank}
+                      >
+                        {wallet?.bankAccountNumber ? 'Update' : 'Save'}
+                      </Button>
+                      {wallet?.bankAccountNumber && (
+                        <Button size="sm" variant="ghost" className="text-xs h-8" onClick={() => setIsBankSaved(true)}>
+                          Cancel
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
-              </Card>
-           )}
+              </div>
+            </div>
+          </Card>
 
-           {hasPaypal && (
-             <Card className="p-6 flex flex-col justify-between">
-               <div>
-                  <h3 className="font-bold text-slate-800 flex items-center gap-2"><Wallet className="w-5 h-5 text-blue-500"/> PayPal Email</h3>
-                  <p className="text-sm text-slate-500 mt-2">Receive payouts directly to your PayPal account.</p>
-                  <div className="mt-3 flex gap-2">
-                     <input 
-                       type="email" 
-                       value={pEmail}
-                       onChange={e => setPEmail(e.target.value)}
-                       placeholder="you@example.com"
-                       className="flex-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500"
-                     />
-                     <Button 
-                       disabled={isUpdatingEmail || !pEmail} 
-                       onClick={handleUpdatePaypal}
-                       variant={wallet?.paypalEmail === pEmail ? 'outline' : 'primary'}
-                     >
-                       Save
-                     </Button>
-                     {wallet?.paypalEmail && (
-                       <Button 
-                         variant="ghost" 
-                         className="text-red-500 hover:bg-red-50 hover:text-red-600"
-                         disabled={isUpdatingEmail}
-                         onClick={handleRemovePaypal}
-                       >
-                         Remove
-                       </Button>
-                     )}
+          {/* Right: Request Withdrawal (2/5) */}
+          <Card className="p-0 h-full flex flex-col lg:col-span-2 overflow-hidden">
+            <div className="p-3 border-b border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] flex items-center gap-2">
+              <ArrowDownToLine className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+              <h3 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+                Request Withdrawal
+              </h3>
+            </div>
+            <div className="p-4 flex-1 flex flex-col justify-center space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-1.5">
+                  Amount ({currency})
+                </label>
+                <input
+                  type="number"
+                  min={platformSettings?.minimumWithdrawalAmount || 50}
+                  max={wallet?.availableBalance || 0}
+                  value={withdrawAmount}
+                  onChange={e => setWithdrawAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full rounded-md border border-[var(--color-border-primary)] px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-[var(--color-bg-primary)]"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider mb-1.5">
+                  Method
+                </label>
+                <select
+                  value={withdrawMethod}
+                  onChange={e => setWithdrawMethod(e.target.value as WithdrawalMethod)}
+                  className="w-full rounded-md border border-[var(--color-border-primary)] px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-[var(--color-bg-primary)]"
+                >
+                  <option value="">Select method...</option>
+                  {wallet?.bankAccountNumber && (
+                    <option value={WithdrawalMethod.BANK_TRANSFER}>Direct Bank ({wallet.bankAccountNumber})</option>
+                  )}
+                </select>
+              </div>
+              <Button
+                disabled={isWithdrawing || !withdrawAmount || !withdrawMethod || Number(withdrawAmount) > wallet?.availableBalance}
+                onClick={handleWithdraw}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-[38px] text-sm"
+              >
+                {isWithdrawing ? 'Processing...' : 'Withdraw'}
+              </Button>
+            </div>
+            <div className="p-3 border-t border-[var(--color-border-primary)]">
+              <p className="text-[10px] text-[var(--color-text-muted)]">
+                Minimum: {currency} {platformSettings?.minimumWithdrawalAmount || 50}. Processing 1-3 business days.
+              </p>
+            </div>
+          </Card>
+        </div>
+
+        {/* History */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Earnings */}
+          <Card className="p-0 overflow-hidden">
+            <div className="p-3 border-b border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] flex items-center gap-2">
+              <DollarSign className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+              <h3 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+                Earnings History
+              </h3>
+            </div>
+            {earnings.length === 0 ? (
+              <div className="p-8 text-center">
+                <DollarSign className="w-8 h-8 text-[var(--color-text-muted)] mx-auto mb-2" />
+                <p className="text-xs text-[var(--color-text-secondary)]">No earnings yet.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-[var(--color-border-primary)]">
+                {earnings.map((e, idx) => (
+                  <div key={idx} className="p-3 flex items-center justify-between hover:bg-[var(--color-bg-secondary)]/50 transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-[var(--color-text-primary)] truncate">{e.jobTitle}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)]">
+                        {e.releasedAt ? new Date(e.releasedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+                      </p>
+                    </div>
+                    <span className="text-xs font-extrabold text-emerald-600 shrink-0 ml-3">
+                      +{e.currency || currency} {e.guardPayout?.toFixed(2)}
+                    </span>
                   </div>
-               </div>
-             </Card>
-           )}
+                ))}
+              </div>
+            )}
+          </Card>
 
-           <Card className="p-6 flex flex-col justify-between">
-             <div>
-                <h3 className="font-bold text-slate-800 flex items-center gap-2"><Building className="w-5 h-5 text-emerald-500"/> Direct Bank</h3>
-                <p className="text-sm text-slate-500 mt-2">Manual bank transfer (takes 2-4 days).</p>
-                <div className="mt-3 flex flex-col gap-2">
-                   {isBankSaved && !isUpdatingBank ? (
-                     <div className="text-sm bg-slate-50 p-3 rounded border">
-                       <p className="font-medium">{bankAccountName}</p>
-                       <p className="text-slate-500 text-xs">BSB: {bankBsb}</p>
-                       <p className="text-slate-500 text-xs">Acct: {bankAccountNumber}</p>
-                       <Button size="sm" variant="ghost" className="mt-2 h-7 px-2 text-xs" onClick={() => setIsBankSaved(false)}>Edit Details</Button>
-                     </div>
-                   ) : (
-                     <>
-                       <input 
-                         type="text" value={bankAccountName} onChange={e => setBankAccountName(e.target.value)}
-                         placeholder="Account Name" className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-blue-500"
-                       />
-                       <input 
-                         type="text" value={bankBsb} onChange={e => setBankBsb(e.target.value)}
-                         placeholder="BSB (6 digits)" className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-blue-500"
-                       />
-                       <input 
-                         type="text" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)}
-                         placeholder="Account Number" className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-blue-500"
-                       />
-                       <Button 
-                         disabled={isUpdatingBank || !bankAccountName || !bankBsb || !bankAccountNumber} 
-                         onClick={handleUpdateBank}
-                         size="sm"
-                         className="w-full"
-                       >
-                         {wallet?.bankAccountNumber ? 'Update Bank' : 'Save Bank Details'}
-                       </Button>
-                       {wallet?.bankAccountNumber && (
-                         <Button size="sm" variant="ghost" onClick={() => setIsBankSaved(true)}>Cancel</Button>
-                       )}
-                     </>
-                   )}
-                </div>
-             </div>
-           </Card>
+          {/* Withdrawals */}
+          <Card className="p-0 overflow-hidden">
+            <div className="p-3 border-b border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] flex items-center gap-2">
+              <ArrowDownToLine className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+              <h3 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+                Withdrawals
+              </h3>
+            </div>
+            {withdrawals.length === 0 ? (
+              <div className="p-8 text-center">
+                <ArrowDownToLine className="w-8 h-8 text-[var(--color-text-muted)] mx-auto mb-2" />
+                <p className="text-xs text-[var(--color-text-secondary)]">No withdrawals yet.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-[var(--color-border-primary)]">
+                {withdrawals.map((w, idx) => {
+                  const statusCfg = getWithdrawalStatus(w.status);
+                  return (
+                    <div key={idx} className="p-3 flex items-center justify-between hover:bg-[var(--color-bg-secondary)]/50 transition-colors">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {statusCfg.icon}
+                          <span className="text-xs font-bold text-[var(--color-text-primary)]">{w.withdrawalMethod}</span>
+                        </div>
+                        <p className="text-[10px] text-[var(--color-text-muted)]">
+                          {w.requestedAt ? new Date(w.requestedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+                        </p>
+                        {w.status === 'FAILED' && w.failureReason && (
+                          <p className="text-[10px] text-red-500 truncate max-w-[180px]" title={w.failureReason}>{w.failureReason}</p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <p className="text-xs font-extrabold text-[var(--color-text-primary)]">
+                          -{w.currency || currency} {w.amount?.toFixed(2)}
+                        </p>
+                        <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${statusCfg.bg} ${statusCfg.color} mt-0.5`}>
+                          {statusCfg.label}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
         </div>
       </div>
-
-      <Card className="p-6 border-emerald-200 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <ArrowDownToLine className="w-5 h-5 text-emerald-600" />
-          Request Withdrawal
-        </h3>
-        <div className="flex flex-col md:flex-row gap-6 items-end">
-          <div className="w-full md:w-1/3 flex flex-col space-y-2">
-            <label className="text-sm font-medium text-slate-700">Amount ({currency})</label>
-            <input 
-               type="number"
-               min={platformSettings?.minimumWithdrawalAmount || 50}
-               max={wallet?.availableBalance || 0}
-               value={withdrawAmount}
-               onChange={e => setWithdrawAmount(e.target.value)}
-               placeholder="0.00"
-               className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500"
-            />
-          </div>
-          <div className="w-full md:w-1/3 flex flex-col space-y-2">
-             <label className="text-sm font-medium text-slate-700">Method</label>
-             <select 
-                value={withdrawMethod} 
-                onChange={e => setWithdrawMethod(e.target.value as WithdrawalMethod)}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 bg-white"
-             >
-                <option value="">Select Method...</option>
-                {hasStripe && stripeStatus?.verified && <option value={WithdrawalMethod.STRIPE_BANK}>Stripe (Bank Transfer)</option>}
-                {hasPaypal && wallet?.paypalEmail && <option value={WithdrawalMethod.PAYPAL}>PayPal ({wallet.paypalEmail})</option>}
-                {wallet?.bankAccountNumber && <option value={WithdrawalMethod.BANK_TRANSFER}>Direct Bank ({wallet.bankAccountNumber})</option>}
-             </select>
-          </div>
-          <div className="w-full md:w-1/3">
-             <Button 
-               disabled={isWithdrawing || !withdrawAmount || !withdrawMethod || Number(withdrawAmount) > wallet?.availableBalance}
-               onClick={handleWithdraw}
-               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 h-[42px]"
-             >
-                {isWithdrawing ? 'Processing...' : 'Withdraw Funds'}
-             </Button>
-          </div>
-        </div>
-        <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-100">
-           Minimum withdrawal is {currency} {platformSettings?.minimumWithdrawalAmount || 50}. Funds may take 1-3 business days to appear in your account depending on the method.
-        </p>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-         <Card className="p-0 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-slate-50">
-               <h3 className="font-bold text-slate-800 flex items-center gap-2"><DollarSign className="w-4 h-4" /> Earnings History</h3>
-            </div>
-            <div className="p-0">
-               {earnings.length === 0 ? (
-                 <div className="p-8 text-center text-slate-500 text-sm">No earnings yet. Complete jobs to earn money.</div>
-               ) : (
-                 <table className="w-full text-sm">
-                   <tbody>
-                      {earnings.map((e, idx) => (
-                         <tr key={idx} className="border-b last:border-0 border-slate-100 hover:bg-slate-50">
-                            <td className="p-4">
-                               <div className="font-medium text-slate-800">{e.jobTitle}</div>
-                               <div className="text-xs text-slate-500">{new Date(e.releasedAt).toLocaleDateString()}</div>
-                            </td>
-                            <td className="p-4 text-right font-bold text-emerald-600">
-                               +{e.currency} {e.guardPayout.toFixed(2)}
-                            </td>
-                         </tr>
-                      ))}
-                   </tbody>
-                 </table>
-               )}
-            </div>
-         </Card>
-
-         <Card className="p-0 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-slate-50">
-               <h3 className="font-bold text-slate-800 flex items-center gap-2"><ArrowDownToLine className="w-4 h-4" /> Withdrawals</h3>
-            </div>
-            <div className="p-0">
-               {withdrawals.length === 0 ? (
-                 <div className="p-8 text-center text-slate-500 text-sm">No withdrawal history.</div>
-               ) : (
-                 <table className="w-full text-sm">
-                   <tbody>
-                      {withdrawals.map((w, idx) => (
-                         <tr key={idx} className="border-b last:border-0 border-slate-100 hover:bg-slate-50">
-                            <td className="p-4">
-                               <div className="font-medium text-slate-800 flex items-center gap-2">
-                                  {w.status === 'COMPLETED' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                                  {w.status === 'PROCESSING' && <Clock className="w-4 h-4 text-amber-500" />}
-                                  {w.status === 'FAILED' && <XCircle className="w-4 h-4 text-red-500" />}
-                                  {w.withdrawalMethod}
-                               </div>
-                               <div className="text-xs text-slate-500">{new Date(w.requestedAt).toLocaleDateString()}</div>
-                            </td>
-                            <td className="p-4 text-right">
-                               <div className="font-bold text-slate-800">-{w.currency} {w.amount.toFixed(2)}</div>
-                               {w.status === 'FAILED' && <div className="text-xs text-red-500 max-w-[120px] truncate" title={w.failureReason}>{w.failureReason}</div>}
-                            </td>
-                         </tr>
-                      ))}
-                   </tbody>
-                 </table>
-               )}
-            </div>
-         </Card>
-      </div>
-
     </div>
   );
+}
+
+function SummaryCard({
+  icon,
+  label,
+  value,
+  subLabel,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  subLabel: string;
+}) {
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="p-1.5 bg-[var(--color-bg-secondary)] rounded-md">{icon}</div>
+        <span className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">{label}</span>
+      </div>
+      <p className="text-lg font-extrabold text-[var(--color-text-primary)]">{value}</p>
+      <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{subLabel}</p>
+    </Card>
+  );
+}
+
+function getWithdrawalStatus(status: string) {
+  switch (status) {
+    case 'COMPLETED':
+      return {
+        label: 'Completed',
+        icon: <CheckCircle2 className="w-3 h-3 text-emerald-500" />,
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-50 border-emerald-200',
+      };
+    case 'PROCESSING':
+      return {
+        label: 'Processing',
+        icon: <Clock className="w-3 h-3 text-amber-500" />,
+        color: 'text-amber-600',
+        bg: 'bg-amber-50 border-amber-200',
+      };
+    case 'FAILED':
+      return {
+        label: 'Failed',
+        icon: <XCircle className="w-3 h-3 text-red-500" />,
+        color: 'text-red-600',
+        bg: 'bg-red-50 border-red-200',
+      };
+    default:
+      return {
+        label: 'Pending',
+        icon: <Clock className="w-3 h-3 text-slate-400" />,
+        color: 'text-slate-600',
+        bg: 'bg-slate-50 border-slate-200',
+      };
+  }
 }
 
 export default function GuardWalletPage() {
   return (
     <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
-       <WalletPageContent />
+      <WalletPageContent />
     </Suspense>
-  )
+  );
 }

@@ -4,9 +4,10 @@ import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { UserRole, BidStatus, JobStatus } from '@/types/enums';
+import { UserRole, BidStatus, JobStatus, HiringStatus } from '@/types/enums';
 import { sendGuardWithdrewBid, sendJobReopenedToBidders } from '@/lib/email/emailTriggers';
 import { updateGuardReliabilityScore } from '@/lib/jobs/reliabilityScore';
+import type { ShiftScheduleDay, ShiftSlot } from '@/types/job.types';
 
 /**
  * DELETE /api/jobs/[jobId]/bids/[bidId]
@@ -70,10 +71,35 @@ export async function DELETE(
       // Decrement totalBids
       await Job.updateOne({ jobId }, { $inc: { totalBids: -1 } });
 
-      // Set job back to OPEN
+      // Set job back to OPEN and clear all hiring state
+      const existingJob = await Job.findOne({ jobId }).lean();
+      let clearedShiftSchedule = existingJob?.shiftSchedule as ShiftScheduleDay[] | undefined;
+      if (clearedShiftSchedule && Array.isArray(clearedShiftSchedule)) {
+        clearedShiftSchedule = clearedShiftSchedule.map((day) => ({
+          date: day.date,
+          slots: day.slots.map((slot: ShiftSlot) => ({
+            slotNumber: slot.slotNumber,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isOvernight: slot.isOvernight,
+            actualEndDate: slot.actualEndDate,
+            durationHours: slot.durationHours,
+            assignedGuardUid: null,
+          })),
+        }));
+      }
+
       await Job.updateOne(
         { jobId, status: JobStatus.FILLED },
-        { $set: { status: JobStatus.OPEN } }
+        {
+          $set: {
+            status: JobStatus.OPEN,
+            hiringStatus: HiringStatus.OPEN,
+            isShiftAssigned: false,
+            shiftSchedule: clearedShiftSchedule,
+          },
+          $pull: { acceptedGuards: { guardUid: bid.guardUid } },
+        }
       );
 
       // Apply penalty to guard

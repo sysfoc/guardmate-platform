@@ -72,7 +72,7 @@ function AdminActivityPageInner() {
       </div>
 
       {/* Filters */}
-      <Card className="p-4 flex flex-wrap gap-4 items-end bg-[var(--color-bg-subtle)]">
+      <Card className="p-4 flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-end bg-[var(--color-bg-subtle)]">
         <div className="w-full sm:w-auto flex-1 md:flex-none md:w-64">
           <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1">Action Type</label>
           <select
@@ -86,8 +86,8 @@ function AdminActivityPageInner() {
             ))}
           </select>
         </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <div className="flex-1 min-w-[130px]">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto md:w-auto">
+          <div className="flex-1 w-full sm:w-auto sm:min-w-[130px]">
             <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1">From</label>
             <input
               type="date"
@@ -96,7 +96,7 @@ function AdminActivityPageInner() {
               onChange={(e) => updateUrl({ dateFrom: e.target.value })}
             />
           </div>
-          <div className="flex-1 min-w-[130px]">
+          <div className="flex-1 w-full sm:w-auto sm:min-w-[130px]">
             <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1">To</label>
             <input
               type="date"
@@ -107,7 +107,7 @@ function AdminActivityPageInner() {
           </div>
         </div>
         {(actionType || dateFrom || dateTo) && (
-          <Button variant="ghost" className="h-9" onClick={() => router.push('/admin/activity')}>
+          <Button variant="ghost" className="h-9 w-full sm:w-auto mt-2 sm:mt-0" onClick={() => router.push('/admin/activity')}>
             Clear
           </Button>
         )}

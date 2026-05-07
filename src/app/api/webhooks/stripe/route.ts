@@ -4,7 +4,10 @@ import connectDB from "@/lib/mongodb";
 import Payment from "@/models/Payment.model";
 import Job from "@/models/Job.model";
 import GuardWallet from "@/models/GuardWallet.model";
-import { EscrowPaymentStatus, JobPaymentStatus } from "@/types/enums";
+import PlatformSettings from "@/models/PlatformSettings.model";
+import UserOffer from "@/models/UserOffer.model";
+import Offer from "@/models/Offer.model";
+import { EscrowPaymentStatus, JobPaymentStatus, DiscountType } from "@/types/enums";
 import { sendEmail } from "@/lib/email/sendEmail";
 
 export async function POST(request: NextRequest) {
@@ -192,12 +195,17 @@ export async function POST(request: NextRequest) {
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as any;
         const subscriptionId = invoice.subscription;
-        if (!subscriptionId) break;
+        console.log('[webhook:invoice.payment_succeeded] 📥 Event received. subscriptionId:', subscriptionId, '| invoiceId:', invoice.id, '| amount_paid:', invoice.amount_paid);
+        if (!subscriptionId) {
+          console.warn('[webhook:invoice.payment_succeeded] ⚠️ No subscriptionId in invoice, skipping.');
+          break;
+        }
 
         const BossSubscription = (await import('@/models/BossSubscription.model')).default;
         const { SubscriptionStatus } = await import('@/types/enums');
 
         const sub = await BossSubscription.findOne({ stripeSubscriptionId: subscriptionId });
+        console.log('[webhook:invoice.payment_succeeded] 🔍 DB record found:', !!sub, '| current status:', sub?.status, '| bossUid:', sub?.bossUid);
         if (sub) {
           const periodEnd = invoice.lines?.data?.[0]?.period?.end
             ? new Date(invoice.lines.data[0].period.end * 1000)
@@ -212,7 +220,93 @@ export async function POST(request: NextRequest) {
           sub.failureReason = null;
           await sub.save();
 
-          console.log(`Subscription ACTIVE for boss ${sub.bossUid}`);
+          console.log('[webhook:invoice.payment_succeeded] ✅ DB updated to ACTIVE for boss', sub.bossUid, '| lastPaymentAmount:', sub.lastPaymentAmount, '| periodEnd:', periodEnd.toISOString());
+
+          // ─── Consume the offer that was used for this payment ─────────────────
+          console.log('[webhook:invoice.payment_succeeded] 🎟️ Checking appliedOfferId:', sub.appliedOfferId);
+          if (sub.appliedOfferId) {
+            const userOffer = await UserOffer.findOne({ userUid: sub.bossUid, offerId: sub.appliedOfferId });
+            if (userOffer && !userOffer.usedAt) {
+              userOffer.usedAt = new Date();
+              await userOffer.save();
+              await Offer.updateOne({ _id: sub.appliedOfferId }, { $inc: { usageCount: 1 } });
+              console.log(`[webhook:invoice.payment_succeeded] 🎟️ Offer ${sub.appliedOfferId} marked as used for boss ${sub.bossUid}`);
+            } else {
+              console.log('[webhook:invoice.payment_succeeded] 🎟️ Offer already consumed or not found');
+            }
+          } else {
+            console.log('[webhook:invoice.payment_succeeded] 🎟️ No applied offer on this subscription');
+          }
+
+          // ─── Calculate next period amount (dynamic pricing + next offer) ──────
+          try {
+            const settings = await PlatformSettings.findOne().lean();
+            const baseAmount = settings?.bossSubscriptionAmount ?? 0;
+            let nextAmount = baseAmount;
+            let nextOfferId: string | null = null;
+
+            if (baseAmount > 0) {
+              const now = new Date();
+              const bossAcquired = await UserOffer.find({ userUid: sub.bossUid, usedAt: null }).lean();
+              if (bossAcquired.length > 0) {
+                const offerIds = bossAcquired.map((r) => r.offerId);
+                const offers = await Offer.find({
+                  _id: { $in: offerIds },
+                  isActive: true,
+                  startDate: { $lte: now },
+                  endDate: { $gte: now },
+                }).lean();
+                const offer = offers[0];
+                if (offer) {
+                  nextOfferId = String(offer._id);
+                  if (offer.discountType === DiscountType.FULL_WAIVER) {
+                    nextAmount = 0;
+                  } else if (offer.discountType === DiscountType.PERCENTAGE_OFF && offer.discountValue != null) {
+                    nextAmount = Math.round(baseAmount * (1 - offer.discountValue / 100) * 100) / 100;
+                  } else if (offer.discountType === DiscountType.FIXED_RATE && offer.discountValue != null) {
+                    nextAmount = Math.max(0, offer.discountValue);
+                  }
+                }
+              }
+            }
+
+            // Update subscription with new price for next period
+            if (nextAmount !== sub.amount) {
+              const stripe = await getStripeInstance();
+              const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+              const itemId = subscription.items.data[0]?.id;
+              if (itemId) {
+                // Search for existing product
+                const products = await stripe.products.search({
+                  query: `metadata['app']:'guardmate' AND metadata['type']:'boss_subscription'`,
+                });
+                const product = products.data[0];
+                if (product) {
+                  const amountInCents = Math.round(nextAmount * 100);
+                  const newPrice = await stripe.prices.create({
+                    product: product.id,
+                    unit_amount: amountInCents,
+                    currency: 'aud',
+                    recurring: { interval: 'month' },
+                  });
+                  await stripe.subscriptions.update(subscriptionId, {
+                    items: [{ id: itemId, price: newPrice.id }],
+                    proration_behavior: 'none',
+                  });
+                  console.log(`Updated Stripe subscription ${subscriptionId} to new price ${nextAmount} for next period`);
+                }
+              }
+            }
+
+            // Update BossSubscription with next period's amount and offer
+            await BossSubscription.updateOne(
+              { _id: sub._id },
+              { $set: { amount: nextAmount, appliedOfferId: nextOfferId } }
+            );
+          } catch (pricingErr: any) {
+            console.error('Failed to update subscription for next period:', pricingErr.message);
+            // Non-critical: subscription stays on old price until next successful update
+          }
 
           // Send activation email
           try {

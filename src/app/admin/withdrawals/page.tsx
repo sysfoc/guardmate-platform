@@ -8,13 +8,10 @@ import { Badge } from '@/components/ui/Badge';
 import { toast } from 'react-hot-toast';
 import { 
   ArrowDownToLine, 
-  Search, 
   CheckCircle2, 
   Clock, 
   XCircle,
-  Building,
-  CreditCard,
-  DollarSign
+  Building
 } from 'lucide-react';
 import { WithdrawalStatus, WithdrawalMethod } from '@/types/enums';
 
@@ -108,10 +105,10 @@ export default function AdminWithdrawalsPage() {
       </div>
 
       <Card className="p-0 overflow-hidden border border-[var(--color-border)] shadow-sm">
-        <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] flex flex-wrap gap-4 items-center justify-between">
-           <div className="flex gap-2">
+        <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
              <select 
-               className="h-9 px-3 rounded-md border border-[var(--color-input-border)] bg-[var(--color-bg-primary)] text-sm focus:ring-2 focus:ring-blue-500"
+               className="h-9 px-3 rounded-md border border-[var(--color-input-border)] bg-[var(--color-bg-primary)] text-sm focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
                value={statusFilter}
                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
              >
@@ -123,13 +120,11 @@ export default function AdminWithdrawalsPage() {
              </select>
              
              <select 
-               className="h-9 px-3 rounded-md border border-[var(--color-input-border)] bg-[var(--color-bg-primary)] text-sm focus:ring-2 focus:ring-blue-500"
+               className="h-9 px-3 rounded-md border border-[var(--color-input-border)] bg-[var(--color-bg-primary)] text-sm focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
                value={methodFilter}
                onChange={(e) => { setMethodFilter(e.target.value); setPage(1); }}
              >
                <option value="">All Methods</option>
-               <option value={WithdrawalMethod.STRIPE_BANK}>Stripe Connect</option>
-               <option value={WithdrawalMethod.PAYPAL}>PayPal</option>
                <option value={WithdrawalMethod.BANK_TRANSFER}>Manual Bank Transfer</option>
              </select>
            </div>
@@ -180,19 +175,14 @@ export default function AdminWithdrawalsPage() {
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 w-fit">
-                           {w.withdrawalMethod === WithdrawalMethod.STRIPE_BANK && <><CreditCard className="w-3 h-3" /> Stripe Bank</>}
-                           {w.withdrawalMethod === WithdrawalMethod.PAYPAL && <><DollarSign className="w-3 h-3" /> PayPal</>}
-                           {w.withdrawalMethod === WithdrawalMethod.BANK_TRANSFER && <><Building className="w-3 h-3" /> Direct Bank</>}
+                          <Building className="w-3 h-3" /> Direct Bank
                         </div>
                         {w.withdrawalMethod === WithdrawalMethod.BANK_TRANSFER && w.walletDetails && (
-                           <div className="mt-1 text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)] p-2 rounded border border-[var(--color-border)]">
-                              <p><span className="font-medium text-[var(--color-text-primary)]">Name:</span> {w.walletDetails.bankAccountName}</p>
-                              <p><span className="font-medium text-[var(--color-text-primary)]">BSB:</span> {w.walletDetails.bankBSB}</p>
-                              <p><span className="font-medium text-[var(--color-text-primary)]">Account:</span> {w.walletDetails.bankAccountNumber}</p>
-                           </div>
-                        )}
-                        {w.withdrawalMethod === WithdrawalMethod.PAYPAL && w.walletDetails && (
-                           <div className="text-xs text-[var(--color-text-secondary)]">{w.walletDetails.paypalEmail}</div>
+                          <div className="mt-1 text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)] p-2 rounded border border-[var(--color-border)]">
+                            <p><span className="font-medium text-[var(--color-text-primary)]">Name:</span> {w.walletDetails.bankAccountName}</p>
+                            <p><span className="font-medium text-[var(--color-text-primary)]">BSB:</span> {w.walletDetails.bankBSB}</p>
+                            <p><span className="font-medium text-[var(--color-text-primary)]">Account:</span> {w.walletDetails.bankAccountNumber}</p>
+                          </div>
                         )}
                       </div>
                     </td>

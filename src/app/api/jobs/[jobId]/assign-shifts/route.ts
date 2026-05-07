@@ -106,9 +106,9 @@ export async function PATCH(
       }),
     }));
 
-    // Check if all slots are assigned
+    // Check if all slots are assigned (guardUid must be a truthy string)
     const allAssigned = updatedSchedule.every((day) =>
-      day.slots.every((slot: ShiftSlot) => slot.assignedGuardUid !== null)
+      day.slots.every((slot: ShiftSlot) => !!slot.assignedGuardUid)
     );
 
     await Job.updateOne(

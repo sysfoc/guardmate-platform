@@ -4,6 +4,13 @@
 
 import { apiGet, apiPost } from '../apiClient';
 import type { WithdrawalMethod } from '@/types/enums';
+import type { IPayment } from '@/types/payment.types';
+
+// ─── Boss - Payment History ─────────────────────────────────────────────────
+
+export const getMyPayments = async () => {
+  return apiGet<(IPayment & { jobStatus: string | null; guardName: string | null })[]>('/api/payments/my');
+};
 
 // ─── Boss - Escrow Funding ──────────────────────────────────────────────────
 
@@ -51,17 +58,7 @@ export const requestWithdrawal = async (amount: number, method: WithdrawalMethod
 
 // ─── Guard - Gateway Setup ──────────────────────────────────────────────────
 
-export const onboardStripeConnect = async (country: string = 'AU') => {
-  return apiPost<any>('/api/stripe/connect/onboard', { country });
-};
 
-export const checkStripeConnectStatus = async () => {
-  return apiGet<any>('/api/stripe/connect/status');
-};
-
-export const setPaypalEmail = async (email: string) => {
-  return apiPost<any>('/api/wallet/paypal-email', { email });
-};
 
 export const saveBankDetails = async (payload: { accountName: string; bsb: string; accountNumber: string }) => {
   return apiPost<any>('/api/wallet/bank-details', payload);

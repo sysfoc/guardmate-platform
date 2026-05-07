@@ -45,10 +45,6 @@ export interface IPayment {
   refundReason: string | null;
   disputeId: string | null;
 
-  // Phase 8: Applied Offers
-  appliedBossOfferId: string | null;
-  appliedGuardOfferId: string | null;
-
   createdAt: string | Date;
   updatedAt: string | Date;
 }
@@ -63,19 +59,10 @@ export interface IGuardWallet {
   totalEarned: number;
   totalWithdrawn: number;
 
-  // Stripe Connect
-  stripeAccountId: string | null;
-  stripeAccountVerified: boolean;
-
-  // PayPal
-  paypalEmail: string | null;
-  paypalVerified: boolean;
-
   // Direct Bank Transfer
   bankAccountName: string | null;
   bankBSB: string | null;
   bankAccountNumber: string | null;
-  bankAccountVerified: boolean;
   bankAccountSavedAt: string | Date | null;
 
   currency: string;
@@ -96,8 +83,6 @@ export interface IWithdrawal {
   status: WithdrawalStatus;
   requiresManualProcessing: boolean;
 
-  stripePayoutId: string | null;
-  paypalPayoutId: string | null;
   failureReason: string | null;
 
   requestedAt: string | Date;

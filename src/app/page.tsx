@@ -16,7 +16,7 @@ export default function Home() {
             <div className="mx-auto max-w-2xl">
               <div className="mb-8 flex justify-center">
                 <div className="relative rounded-full px-3 py-1 text-sm leading-6 text-[var(--color-text-secondary)] ring-1 ring-[var(--color-surface-border)] hover:ring-[var(--color-primary)] transition-all">
-                  Now live in the United Kingdom.{' '}
+                  Now live in Australia.{' '}
                   <Link href="/register" className="font-semibold text-[var(--color-primary)]">
                     <span className="absolute inset-0" aria-hidden="true" />
                     Read more <span aria-hidden="true">&rarr;</span>
