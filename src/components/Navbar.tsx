@@ -37,25 +37,35 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-[var(--color-surface-border)] bg-[var(--color-bg-base)]/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2" aria-label="GuardMate Home">
           <div className="bg-[var(--color-primary)] p-1.5 rounded-lg">
-            <Shield className="h-6 w-6 text-white" />
+            <Shield className="h-6 w-6 text-white" aria-hidden="true" />
           </div>
           <span className="text-xl font-bold tracking-tight text-[var(--color-text-primary)] hidden sm:block">
             GuardMate
           </span>
         </Link>
 
+        {/* Center nav — landing page links (logged out only) */}
+        {!firebaseUser && (
+          <nav className="hidden md:flex items-center gap-6" aria-label="Primary">
+            <ul className="flex items-center gap-6 list-none">
+              <li><Link href="/" className="text-sm font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">Home</Link></li>
+              <li><Link href="/#features" className="text-sm font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">Features</Link></li>
+              <li><Link href="/#how-it-works" className="text-sm font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">How It Works</Link></li>
+              <li><Link href="/contact" className="text-sm font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors">Contact</Link></li>
+            </ul>
+          </nav>
+        )}
+
         {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-3">
           {firebaseUser && user ? (
             // Logged in
             <>
-              <Link href={getDashboardPath()}>
-                <Button variant="ghost" size="sm" leftIcon={<LayoutDashboard className="h-4 w-4" />}>
-                  <span className="hidden sm:inline">Dashboard</span>
-                </Button>
-              </Link>
+              <Button href={getDashboardPath()} variant="ghost" size="sm" leftIcon={<LayoutDashboard className="h-4 w-4" aria-hidden="true" />}>
+                <span className="hidden sm:inline">Dashboard</span>
+              </Button>
               <div className="flex items-center gap-2 pl-2 border-l border-[var(--color-surface-border)]">
                 <GlobalChatListener userId={user.uid} role={user.role} />
                 <DarkModeToggle />
@@ -161,12 +171,8 @@ export function Navbar() {
           ) : (
             // Logged out
             <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">Login</Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm">Get Started</Button>
-              </Link>
+              <Button href="/login" variant="ghost" size="sm">Login</Button>
+              <Button href="/register" size="sm">Get Started</Button>
             </>
           )}
         </div>

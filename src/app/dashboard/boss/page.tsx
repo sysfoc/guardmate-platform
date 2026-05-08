@@ -79,33 +79,33 @@ export default function BossDashboard() {
         
         <ProfileCompletionBanner />
 
-        {pendingCount > 0 && !hideReviewBanner && (
-          <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)] text-[var(--color-primary-dark)] px-4 py-3 rounded-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[var(--color-primary)]/10 rounded-full">
-                <Star className="h-5 w-5 text-[var(--color-primary)]" fill="var(--color-primary)" />
+        <div className="min-h-[72px]">
+          {pendingCount > 0 && !hideReviewBanner && (
+            <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)] text-[var(--color-primary-dark)] px-4 py-3 rounded-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[var(--color-primary)]/10 rounded-full">
+                  <Star className="h-5 w-5 text-[var(--color-primary)]" fill="var(--color-primary)" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold">Action Required: Rate your Mates</h3>
+                  <p className="text-xs font-medium opacity-90 mt-0.5">
+                    You have {pendingCount} completed job{pendingCount !== 1 ? 's' : ''} awaiting your review. Reviews help build trust on the platform.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold">Action Required: Rate your Mates</h3>
-                <p className="text-xs font-medium opacity-90 mt-0.5">
-                  You have {pendingCount} completed job{pendingCount !== 1 ? 's' : ''} awaiting your review. Reviews help build trust on the platform.
-                </p>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button href="/dashboard/boss/jobs?status=COMPLETED" size="sm" variant="primary">Leave Reviews</Button>
+                <button
+                  onClick={() => setHideReviewBanner(true)}
+                  className="p-1.5 hover:bg-[var(--color-primary)]/10 rounded-full transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Link href="/dashboard/boss/jobs?status=COMPLETED">
-                <Button size="sm" variant="primary">Leave Reviews</Button>
-              </Link>
-              <button 
-                onClick={() => setHideReviewBanner(true)}
-                className="p-1.5 hover:bg-[var(--color-primary)]/10 rounded-full transition-colors"
-                aria-label="Dismiss"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Welcome & Action Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -118,21 +118,18 @@ export default function BossDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/dashboard/boss/profile">
-              <Button variant="ghost" size="sm" className="font-bold border border-[var(--color-border-primary)]">
-                View Profile
-              </Button>
-            </Link>
-            <Link href={isVerified ? "/dashboard/boss/jobs/new" : "#"}>
-              <Button 
-                disabled={!isVerified} 
-                size="sm"
-                className="shadow-md shadow-[var(--color-primary)]/10 px-5"
-                leftIcon={<Plus className="h-4 w-4" />}
-              >
-                Post Job
-              </Button>
-            </Link>
+            <Button href="/dashboard/boss/profile" variant="ghost" size="sm" className="font-bold border border-[var(--color-border-primary)]">
+              View Profile
+            </Button>
+            <Button
+              href={isVerified ? "/dashboard/boss/jobs/new" : undefined}
+              disabled={!isVerified}
+              size="sm"
+              className="shadow-md shadow-[var(--color-primary)]/10 px-5"
+              leftIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+            >
+              Post Job
+            </Button>
           </div>
         </div>
 
@@ -143,7 +140,7 @@ export default function BossDashboard() {
           <Card className={`p-4 flex items-center justify-between ${!isVerified ? 'border-[var(--color-warning)] bg-[var(--color-warning-light)]/20' : ''}`}>
             <div className="flex items-center gap-3">
               <div className={`p-2.5 rounded-xl ${isVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-[var(--color-warning-dark)]'}`}>
-                {isVerified ? <CheckCircle2 className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
+                {isVerified ? <CheckCircle2 className="h-5 w-5" aria-hidden="true" /> : <Shield className="h-5 w-5" aria-hidden="true" />}
               </div>
               <div>
                 <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-0.5">Company Status</p>
@@ -191,12 +188,12 @@ export default function BossDashboard() {
                   </p>
                </div>
             </div>
-            <Building2 className="hidden sm:block opacity-[0.03] absolute right-4 top-1/2 -translate-y-1/2 h-20 w-20" />
+            <Building2 className="hidden sm:block opacity-[0.03] absolute right-4 top-1/2 -translate-y-1/2 h-20 w-20" aria-hidden="true" />
           </Card>
 
           {(boss.cancellationStrikes || 0) > 0 && (
             <div className="bg-[var(--color-danger-light)] border border-[var(--color-danger)]/20 text-[var(--color-danger-dark)] px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <div>
                 <p>You have {boss.cancellationStrikes} cancellation strike{(boss.cancellationStrikes || 0) > 1 ? 's' : ''} recorded.</p>
                 <p className="text-[10px] font-medium opacity-80 mt-0.5">Frequent cancellations negatively affect your employer reputation.</p>
@@ -218,7 +215,7 @@ export default function BossDashboard() {
                       ? subStatus.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
                       : 'bg-red-500/10 text-red-500'
                   }`}>
-                    <CreditCard className="h-5 w-5" />
+                    <CreditCard className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-0.5">Subscription</p>
@@ -232,11 +229,9 @@ export default function BossDashboard() {
                     )}
                   </div>
                 </div>
-                <Link href="/dashboard/boss/subscription">
-                  <Button size="sm" variant={subStatus.isSubscribed ? 'ghost' : 'primary'} className="text-[10px] font-bold">
-                    {subStatus.isSubscribed ? 'Manage' : 'Subscribe'}
-                  </Button>
-                </Link>
+                <Button href="/dashboard/boss/subscription" size="sm" variant={subStatus.isSubscribed ? 'ghost' : 'primary'} className="text-[10px] font-bold">
+                  {subStatus.isSubscribed ? 'Manage' : 'Subscribe'}
+                </Button>
               </div>
             </Card>
           )}
@@ -250,7 +245,7 @@ export default function BossDashboard() {
             <div className="px-5 py-4 border-b border-[var(--color-border-primary)] flex items-center justify-between">
               <h3 className="font-bold text-sm">Recent Activity</h3>
               <Link href="/dashboard/boss/jobs" className="text-[10px] font-bold text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)] flex items-center gap-0.5 transition-colors">
-                VIEW ALL <ChevronRight className="h-3 w-3" />
+                VIEW ALL <ChevronRight className="h-3 w-3" aria-hidden="true" />
               </Link>
             </div>
             
@@ -282,11 +277,9 @@ export default function BossDashboard() {
                           <Briefcase className="h-6 w-6 text-[var(--color-text-muted)] opacity-40" />
                           <p className="text-[11px] text-[var(--color-text-tertiary)]">No jobs posted yet. Create your first listing!</p>
                           {isVerified && (
-                            <Link href="/dashboard/boss/jobs/new">
-                              <Button size="sm" variant="ghost" className="text-[10px] border border-[var(--color-border-primary)] mt-1">
-                                Post a Job
-                              </Button>
-                            </Link>
+                            <Button href="/dashboard/boss/jobs/new" size="sm" variant="ghost" className="text-[10px] border border-[var(--color-border-primary)] mt-1">
+                              Post a Job
+                            </Button>
                           )}
                         </div>
                       </td>
@@ -310,10 +303,8 @@ export default function BossDashboard() {
                           £{item.budgetAmount}{item.budgetType === 'HOURLY' ? '/hr' : ''}
                         </td>
                         <td className="px-5 py-3 text-right">
-                          <Link href={`/dashboard/boss/jobs/${item.jobId}`}>
-                            <button className="p-1.5 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors">
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                            </button>
+                          <Link href={`/dashboard/boss/jobs/${item.jobId}`} className="p-1.5 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors inline-flex items-center justify-center" aria-label="View job details">
+                            <MoreHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
                           </Link>
                         </td>
                       </tr>
@@ -329,7 +320,7 @@ export default function BossDashboard() {
             <Card className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-sm">Employer Status</h3>
-                <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                <Star className="h-4 w-4 text-amber-500 fill-amber-500" aria-hidden="true" />
               </div>
               <div className="flex flex-col items-center justify-center py-2">
                 <span className="text-4xl font-black text-[var(--color-text-primary)]">
@@ -370,7 +361,7 @@ export default function BossDashboard() {
                   Get Help
                 </Button>
               </div>
-              <AlertCircle className="absolute -right-4 -bottom-4 h-20 w-20 opacity-10" />
+              <AlertCircle className="absolute -right-4 -bottom-4 h-20 w-20 opacity-10" aria-hidden="true" />
             </Card>
           </div>
         </div>

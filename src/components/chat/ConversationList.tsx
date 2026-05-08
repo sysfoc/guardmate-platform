@@ -66,10 +66,14 @@ export function ConversationList({ conversations, activeId, currentUserId, onSel
             {/* Avatar */}
             <div className="relative shrink-0">
               {other.photo ? (
-                <img 
-                  src={other.photo} 
+                <img
+                  src={other.photo}
                   alt={other.name}
                   className="h-10 w-10 rounded-full object-cover"
+                  width="40"
+                  height="40"
+                  loading="lazy"
+                  decoding="async"
                 />
               ) : (
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-sm font-bold text-[var(--color-primary)]">

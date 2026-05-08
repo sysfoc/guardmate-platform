@@ -31,27 +31,45 @@ export function StarRating({
   const displayRating = interactive && hoverRating > 0 ? hoverRating : rating;
 
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
+    <div
+      className={`flex items-center gap-1 ${className}`}
+      role="img"
+      aria-label={`Rating: ${rating} out of 5 stars`}
+    >
       <div className="flex">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            disabled={!interactive}
-            onMouseEnter={() => interactive && setHoverRating(star)}
-            onMouseLeave={() => interactive && setHoverRating(0)}
-            onClick={() => interactive && onChange?.(star)}
-            className={`${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'}`}
-          >
-            <Star
-              className={`${sizes[size]} ${
-                star <= displayRating
-                  ? 'fill-amber-400 text-amber-400'
-                  : 'text-gray-300 dark:text-gray-600'
-              }`}
-            />
-          </button>
-        ))}
+        {[1, 2, 3, 4, 5].map((star) => {
+          const starProps = {
+            className: `${sizes[size]} ${
+              star <= displayRating
+                ? 'fill-amber-400 text-amber-400'
+                : 'text-gray-300 dark:text-gray-600'
+            }`,
+            'aria-hidden': true as const,
+          };
+
+          if (interactive) {
+            return (
+              <button
+                key={star}
+                type="button"
+                aria-label={`Rate ${star} out of 5`}
+                aria-pressed={star <= rating}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+                onClick={() => onChange?.(star)}
+                className="cursor-pointer hover:scale-110 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-sm"
+              >
+                <Star {...starProps} />
+              </button>
+            );
+          }
+
+          return (
+            <span key={star} className="cursor-default">
+              <Star {...starProps} />
+            </span>
+          );
+        })}
       </div>
       {showCount && (
         <span className={`text-[var(--color-text-secondary)] font-medium ${size === 'sm' ? 'text-[10px]' : 'text-xs'}`}>

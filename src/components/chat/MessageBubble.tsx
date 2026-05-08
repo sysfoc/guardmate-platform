@@ -21,10 +21,14 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
           <div className="flex w-7 shrink-0 flex-col justify-end">
             {showAvatar ? (
               message.senderPhoto ? (
-                <img 
-                  src={message.senderPhoto} 
-                  alt={message.senderName} 
+                <img
+                  src={message.senderPhoto}
+                  alt={message.senderName}
                   className="h-7 w-7 rounded-full object-cover"
+                  width="28"
+                  height="28"
+                  loading="lazy"
+                  decoding="async"
                 />
               ) : (
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-[10px] font-bold text-[var(--color-primary)]">

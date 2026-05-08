@@ -216,6 +216,9 @@ export default function AdminTemplatesPage() {
                       srcDoc={generatePreview()}
                       className="w-full h-full bg-white rounded shadow-inner"
                       title="Email Preview"
+                      width="100%"
+                      height="400"
+                      loading="lazy"
                     />
                   </div>
                 ) : (

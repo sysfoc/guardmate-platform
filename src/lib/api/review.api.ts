@@ -58,3 +58,11 @@ export async function getMyReviewsPage(
 ): Promise<ApiResponse<PaginatedReviews>> {
   return apiGet<PaginatedReviews>(`/api/reviews/my-reviews?type=${type}&page=${page}&limit=${limit}`);
 }
+
+/**
+ * Fetches recent public reviews for the landing page.
+ * @param limit Number of reviews to fetch (max 20).
+ */
+export async function getPublicReviews(limit = 9): Promise<ApiResponse<{ reviews: Review[] }>> {
+  return apiGet<{ reviews: Review[] }>(`/api/reviews/public?limit=${limit}`);
+}

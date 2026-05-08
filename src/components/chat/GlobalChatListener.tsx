@@ -75,7 +75,7 @@ export function GlobalChatListener({ userId, role, className }: GlobalChatListen
             }}
           >
             {msg.senderPhoto ? (
-              <img src={msg.senderPhoto} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" />
+              <img src={msg.senderPhoto} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" width="40" height="40" loading="lazy" decoding="async" />
             ) : (
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]">
                 {msg.senderName.charAt(0).toUpperCase()}

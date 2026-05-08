@@ -3,15 +3,17 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
-import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { UserRole } from '@/types/enums';
 
 export function ProfileCompletionBanner() {
   const { user, isProfileComplete } = useUser();
   const [isDismissed, setIsDismissed] = useState(false);
 
-  // If loading, no user, already complete, or dismissed, do not render
-  if (!user || isProfileComplete || isDismissed) return null;
+  // If loading, no user, already complete, or dismissed, render empty placeholder to reserve space
+  if (!user || isProfileComplete || isDismissed) {
+    return <div className="min-h-[100px]" aria-hidden="true" />;
+  }
 
   // Define required fields by role
   const mateRequired = [
@@ -51,7 +53,7 @@ export function ProfileCompletionBanner() {
     <div className="relative mb-6 overflow-hidden rounded-xl bg-[var(--color-warning-light)] border border-[var(--color-warning)]/30 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between transition-all animate-in fade-in slide-in-from-top-4">
       <div className="flex items-start sm:items-center gap-3 w-full">
         <div className="bg-[var(--color-warning)]/10 p-2 rounded-full shrink-0">
-          <AlertCircle className="h-6 w-6 text-[var(--color-warning)]" />
+          <AlertCircle className="h-6 w-6 text-[var(--color-warning)]" aria-hidden="true" />
         </div>
         
         <div className="flex-1 space-y-2 w-full pr-6 sm:pr-0">

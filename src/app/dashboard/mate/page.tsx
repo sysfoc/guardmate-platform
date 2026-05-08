@@ -104,33 +104,33 @@ export default function MateDashboard() {
           </div>
         )}
 
-        {pendingCount > 0 && !hideReviewBanner && (
-          <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)] text-[var(--color-primary-dark)] px-4 py-3 rounded-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[var(--color-primary)]/10 rounded-full">
-                <Star className="h-5 w-5 text-[var(--color-primary)]" fill="var(--color-primary)" />
+        <div className="min-h-[72px]">
+          {pendingCount > 0 && !hideReviewBanner && (
+            <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)] text-[var(--color-primary-dark)] px-4 py-3 rounded-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[var(--color-primary)]/10 rounded-full">
+                  <Star className="h-5 w-5 text-[var(--color-primary)]" fill="var(--color-primary)" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold">Action Required: Rate your Bosses</h3>
+                  <p className="text-xs font-medium opacity-90 mt-0.5">
+                    You have {pendingCount} completed job{pendingCount !== 1 ? 's' : ''} awaiting your review. Reviews help build trust on the platform.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold">Action Required: Rate your Bosses</h3>
-                <p className="text-xs font-medium opacity-90 mt-0.5">
-                  You have {pendingCount} completed job{pendingCount !== 1 ? 's' : ''} awaiting your review. Reviews help build trust on the platform.
-                </p>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button href="/dashboard/mate/bids?status=ACCEPTED" size="sm" variant="primary">Leave Reviews</Button>
+                <button
+                  onClick={() => setHideReviewBanner(true)}
+                  className="p-1.5 hover:bg-[var(--color-primary)]/10 rounded-full transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Link href="/dashboard/mate/bids?status=ACCEPTED">
-                <Button size="sm" variant="primary">Leave Reviews</Button>
-              </Link>
-              <button
-                onClick={() => setHideReviewBanner(true)}
-                className="p-1.5 hover:bg-[var(--color-primary)]/10 rounded-full transition-colors"
-                aria-label="Dismiss"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Welcome & Earnings Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -143,14 +143,12 @@ export default function MateDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/dashboard/mate/profile">
-              <Button variant="ghost" size="sm" className="font-bold border border-[var(--color-border-primary)]">
-                View Profile
-              </Button>
-            </Link>
+            <Button href="/dashboard/mate/profile" variant="ghost" size="sm" className="font-bold border border-[var(--color-border-primary)]">
+              View Profile
+            </Button>
             <div className="flex items-center gap-3 bg-[var(--color-bg-secondary)] py-1 pl-1 pr-3 rounded-full border border-[var(--color-border-primary)]">
               <div className="p-1.5 bg-emerald-500/10 rounded-full text-emerald-500">
-                <DollarSign className="h-4 w-4" />
+                <DollarSign className="h-4 w-4" aria-hidden="true" />
               </div>
               <span className="text-xs font-black">{(mate.totalEarnings || 0).toLocaleString()}</span>
             </div>
@@ -164,7 +162,7 @@ export default function MateDashboard() {
           <Card className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-xl">
-                <Activity className="h-5 w-5" />
+                <Activity className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-0.5">Duty Status</p>
@@ -220,7 +218,7 @@ export default function MateDashboard() {
 
           {(mate.cancellationStrikes || 0) > 0 && (
             <div className="bg-[var(--color-warning-light)] border border-[var(--color-warning)]/20 text-[var(--color-warning-dark)] px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
               You have {mate.cancellationStrikes} cancellation strike{(mate.cancellationStrikes || 0) > 1 ? 's' : ''} recorded. This negatively impacts future job matching.
             </div>
           )}
@@ -234,7 +232,7 @@ export default function MateDashboard() {
             <div className="px-5 py-4 border-b border-[var(--color-border-primary)] flex items-center justify-between">
               <h3 className="font-bold text-sm">Recent Activity</h3>
               <Link href="/dashboard/mate/bids" className="text-[10px] font-bold text-[var(--color-text-tertiary)] hover:text-[var(--color-primary)] flex items-center gap-0.5 transition-colors">
-                FULL LOG <ChevronRight className="h-3 w-3" />
+                FULL LOG <ChevronRight className="h-3 w-3" aria-hidden="true" />
               </Link>
             </div>
 
@@ -263,13 +261,11 @@ export default function MateDashboard() {
                     <tr>
                       <td colSpan={5} className="px-5 py-10 text-center">
                         <div className="flex flex-col items-center gap-2">
-                          <Briefcase className="h-6 w-6 text-[var(--color-text-muted)] opacity-40" />
+                          <Briefcase className="h-6 w-6 text-[var(--color-text-muted)] opacity-40" aria-hidden="true" />
                           <p className="text-[11px] text-[var(--color-text-tertiary)]">No activity yet. Start applying for jobs!</p>
-                          <Link href="/dashboard/mate/jobs">
-                            <Button size="sm" variant="ghost" className="text-[10px] border border-[var(--color-border-primary)] mt-1">
-                              Browse Jobs
-                            </Button>
-                          </Link>
+                          <Button href="/dashboard/mate/jobs" size="sm" variant="ghost" className="text-[10px] border border-[var(--color-border-primary)] mt-1">
+                            Browse Jobs
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -292,8 +288,8 @@ export default function MateDashboard() {
                           £{item.totalProposed}
                         </td>
                         <td className="px-5 py-3 text-right">
-                          <Link href={`/dashboard/mate/jobs/${item.jobId}`}>
-                            <button className="p-1.5 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors"><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                          <Link href={`/dashboard/mate/jobs/${item.jobId}`} className="p-1.5 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors inline-flex items-center justify-center" aria-label="View job details">
+                            <MoreHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
                           </Link>
                         </td>
                       </tr>
@@ -309,7 +305,7 @@ export default function MateDashboard() {
             <Card className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-sm">Mate Reputation</h3>
-                <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                <Star className="h-4 w-4 text-amber-500 fill-amber-500" aria-hidden="true" />
               </div>
               <div className="flex flex-col items-center justify-center py-2">
                 <span className="text-4xl font-black">
@@ -325,13 +321,13 @@ export default function MateDashboard() {
               <div className="mt-4 pt-4 border-t border-[var(--color-border-primary)] flex justify-around">
                 <Link href="/dashboard/mate/reviews" className="flex flex-col items-center group">
                   <div className="p-2.5 rounded-full bg-[var(--color-bg-secondary)] group-hover:bg-[var(--color-primary-light)] transition-colors">
-                    <Star className="h-4 w-4 text-[var(--color-text-secondary)] group-hover:text-[var(--color-primary)]" />
+                    <Star className="h-4 w-4 text-[var(--color-text-secondary)] group-hover:text-[var(--color-primary)]" aria-hidden="true" />
                   </div>
                   <span className="text-[9px] font-bold mt-1.5 uppercase opacity-70">Reviews</span>
                 </Link>
                 <Link href="/dashboard/mate/profile" className="flex flex-col items-center group">
                   <div className="p-2.5 rounded-full bg-[var(--color-bg-secondary)] group-hover:bg-[var(--color-primary-light)] transition-colors">
-                    <Activity className="h-4 w-4 text-[var(--color-text-secondary)] group-hover:text-[var(--color-primary)]" />
+                    <Activity className="h-4 w-4 text-[var(--color-text-secondary)] group-hover:text-[var(--color-primary)]" aria-hidden="true" />
                   </div>
                   <span className="text-[9px] font-bold mt-1.5 uppercase opacity-70">Profile</span>
                 </Link>
@@ -341,12 +337,10 @@ export default function MateDashboard() {
             <Card className="p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-sm">My Bids</h3>
-                <Send className="h-4 w-4 text-[var(--color-primary)]" />
+                <Send className="h-4 w-4 text-[var(--color-primary)]" aria-hidden="true" />
               </div>
               <p className="text-[10px] text-[var(--color-text-tertiary)] mb-3">Track your job applications and bid statuses.</p>
-              <Link href="/dashboard/mate/bids">
-                <Button variant="ghost" size="sm" className="w-full border border-[var(--color-border-primary)] font-bold">View My Bids</Button>
-              </Link>
+              <Button variant="ghost" size="sm" className="w-full border border-[var(--color-border-primary)] font-bold" href="/dashboard/mate/bids">View My Bids</Button>
             </Card>
 
             <Card className="p-5 bg-gradient-to-br from-blue-600 to-indigo-700 text-white border-none relative overflow-hidden group cursor-pointer shadow-lg shadow-indigo-600/20">
@@ -355,11 +349,9 @@ export default function MateDashboard() {
                 <p className="text-[10px] text-white/80 leading-relaxed mb-4">
                   Browse the latest security job openings.
                 </p>
-                <Link href="/dashboard/mate/jobs">
-                  <Button size="sm" className="bg-white text-indigo-700 hover:bg-slate-50 font-bold px-6 shadow-sm">Browse Jobs</Button>
-                </Link>
+                <Button href="/dashboard/mate/jobs" size="sm" className="bg-white text-indigo-700 hover:bg-slate-50 font-bold px-6 shadow-sm">Browse Jobs</Button>
               </div>
-              <Briefcase className="absolute -bottom-4 -right-4 h-20 w-20 text-white opacity-10 group-hover:scale-110 transition-transform duration-300" />
+              <Briefcase className="absolute -bottom-4 -right-4 h-20 w-20 text-white opacity-10 group-hover:scale-110 transition-transform duration-300" aria-hidden="true" />
             </Card>
           </div>
         </div>

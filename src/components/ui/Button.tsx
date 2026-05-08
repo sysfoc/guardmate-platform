@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,14 +12,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   fullWidth?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  href?: string;
 }
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', loading, disabled, fullWidth, leftIcon, rightIcon, children, ...props }, ref) => {
-    
+export const Button = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
+  ({ className, variant = 'primary', size = 'md', loading, disabled, fullWidth, leftIcon, rightIcon, href, type, children, ...props }, ref) => {
+
     // Base styles
     const baseStyles = 'inline-flex items-center justify-center rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-2 disabled:bg-[var(--color-btn-disabled-bg)] disabled:text-[var(--color-btn-disabled-text)] disabled:cursor-not-allowed active:scale-[0.98]';
-    
+
     // Variant styles using CSS variables
     const variants = {
       primary: 'bg-[var(--color-btn-primary-bg)] text-[var(--color-btn-primary-text)] hover:bg-[var(--color-btn-primary-hover-bg)]',
@@ -38,28 +40,46 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       xl: 'h-14 px-6 text-lg gap-3',
     };
 
+    const classes = cn(
+      baseStyles,
+      variants[variant],
+      sizes[size],
+      fullWidth ? 'w-full' : '',
+      className
+    );
+
+    const content = loading ? (
+      <Loader2 className="animate-spin h-[1.2em] w-[1.2em]" />
+    ) : (
+      <>
+        {leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>}
+        {children}
+        {rightIcon && <span className="inline-flex shrink-0">{rightIcon}</span>}
+      </>
+    );
+
+    if (href) {
+      return (
+        <Link
+          href={href}
+          className={classes}
+          ref={ref as React.Ref<HTMLAnchorElement>}
+          {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+        >
+          {content}
+        </Link>
+      );
+    }
+
     return (
       <button
-        ref={ref}
+        type={type}
+        ref={ref as React.Ref<HTMLButtonElement>}
         disabled={disabled || loading}
-        className={cn(
-          baseStyles,
-          variants[variant],
-          sizes[size],
-          fullWidth ? 'w-full' : '',
-          className
-        )}
+        className={classes}
         {...props}
       >
-        {loading ? (
-          <Loader2 className="animate-spin h-[1.2em] w-[1.2em]" />
-        ) : (
-          <>
-            {leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>}
-            {children}
-            {rightIcon && <span className="inline-flex shrink-0">{rightIcon}</span>}
-          </>
-        )}
+        {content}
       </button>
     );
   }

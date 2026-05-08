@@ -11,7 +11,7 @@
  * - Proper metadata
  */
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/context/AuthContext';
@@ -24,7 +24,16 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'GuardMate — Professional Security Platform',
-  description: 'Connecting top-tier security personnel with elite businesses.',
+  description: 'Connecting verified security professionals with businesses. Post shifts, manage schedules, and handle payments securely.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#1a2f5e' },
+    { media: '(prefers-color-scheme: dark)', color: '#0d1117' },
+  ],
 };
 
 export default function RootLayout({
@@ -39,12 +48,12 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className={inter.className}>
+        {/* <a href="#main-content" className="skip-link">Skip to content</a> */}
         <ThemeProvider>
           <AuthProvider>
             <UserProvider>
               <PlatformProvider>
                 {children}
-
                 {/*
                  * ✅ CRITICAL: Toaster must be inside providers but at root level.
                  * Without this component, react-hot-toast calls (toast.success,

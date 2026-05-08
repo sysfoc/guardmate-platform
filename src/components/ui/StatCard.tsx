@@ -57,7 +57,7 @@ export function StatCard({
         <div className={`flex items-center gap-0.5 text-[10px] font-bold ${
           isUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
         }`}>
-          {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+          {isUp ? <TrendingUp className="h-3 w-3" aria-hidden="true" /> : <TrendingDown className="h-3 w-3" aria-hidden="true" />}
           {isUp ? '+' : ''}{trend.value}%
         </div>
       );
@@ -69,9 +69,9 @@ export function StatCard({
         trendDirection === 'down' ? 'text-rose-600 dark:text-rose-400' :
         'text-[var(--color-text-tertiary)]'
       }`}>
-        {trendDirection === 'up' && <TrendingUp className="h-3 w-3" />}
-        {trendDirection === 'down' && <TrendingDown className="h-3 w-3" />}
-        {trendDirection === 'neutral' && <Minus className="h-3 w-3" />}
+        {trendDirection === 'up' && <TrendingUp className="h-3 w-3" aria-hidden="true" />}
+        {trendDirection === 'down' && <TrendingDown className="h-3 w-3" aria-hidden="true" />}
+        {trendDirection === 'neutral' && <Minus className="h-3 w-3" aria-hidden="true" />}
         {trend}
       </div>
     );
@@ -83,6 +83,7 @@ export function StatCard({
         <div className={`p-1.5 rounded-lg ${colors.bg}`}>
           {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, {
             className: `h-4 w-4 ${colors.icon}`,
+            'aria-hidden': true,
           }) : icon}
         </div>
         {renderTrend()}
