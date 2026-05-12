@@ -120,15 +120,27 @@ export default function BossDashboard() {
             <Button href="/dashboard/boss/profile" variant="ghost" size="sm" className="font-bold border border-[var(--color-border-primary)]">
               View Profile
             </Button>
-            <Button
-              href={isVerified ? "/dashboard/boss/jobs/new" : undefined}
-              disabled={!isVerified}
-              size="sm"
-              className="shadow-md shadow-[var(--color-primary)]/10 px-5"
-              leftIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
-            >
-              Post Job
-            </Button>
+            {/* Subscription-aware Post Job button */}
+            {platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed ? (
+              <Button
+                href="/dashboard/boss/subscription"
+                size="sm"
+                className="shadow-md shadow-[var(--color-primary)]/10 px-5"
+                leftIcon={<CreditCard className="h-4 w-4" aria-hidden="true" />}
+              >
+                Subscribe to Post
+              </Button>
+            ) : (
+              <Button
+                href={isVerified ? "/dashboard/boss/jobs/new" : undefined}
+                disabled={!isVerified}
+                size="sm"
+                className="shadow-md shadow-[var(--color-primary)]/10 px-5"
+                leftIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+              >
+                Post Job
+              </Button>
+            )}
           </div>
         </div>
 
@@ -200,40 +212,6 @@ export default function BossDashboard() {
             </div>
           )}
 
-          {/* Phase 8: Subscription Status Card */}
-          {platformSettings?.bossSubscriptionEnabled && subStatus && (
-            <Card className={`p-4 border ${
-              subStatus.isSubscribed
-                ? subStatus.status === 'ACTIVE' ? 'border-emerald-200 bg-emerald-50/30' : 'border-amber-200 bg-amber-50/30'
-                : 'border-red-200 bg-red-50/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl ${
-                    subStatus.isSubscribed
-                      ? subStatus.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
-                      : 'bg-red-500/10 text-red-500'
-                  }`}>
-                    <CreditCard className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-0.5">Subscription</p>
-                    <h3 className={`text-sm font-black ${
-                      subStatus.isSubscribed ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-danger)]'
-                    }`}>
-                      {subStatus.status === 'ACTIVE' ? 'ACTIVE' : subStatus.status === 'CANCELLED' ? 'CANCELLED' : 'SUBSCRIBE NOW'}
-                    </h3>
-                    {subStatus.daysRemaining !== null && subStatus.daysRemaining > 0 && (
-                      <p className="text-[9px] text-[var(--color-text-tertiary)] font-medium">{subStatus.daysRemaining} day{subStatus.daysRemaining !== 1 ? 's' : ''} remaining</p>
-                    )}
-                  </div>
-                </div>
-                <Button href="/dashboard/boss/subscription" size="sm" variant={subStatus.isSubscribed ? 'ghost' : 'primary'} className="text-[10px] font-bold">
-                  {subStatus.isSubscribed ? 'Manage' : 'Subscribe'}
-                </Button>
-              </div>
-            </Card>
-          )}
         </div>
 
         {/* Secondary Insight Row */}
@@ -275,7 +253,7 @@ export default function BossDashboard() {
                         <div className="flex flex-col items-center gap-2">
                           <Briefcase className="h-6 w-6 text-[var(--color-text-muted)] opacity-40" />
                           <p className="text-[11px] text-[var(--color-text-tertiary)]">No jobs posted yet. Create your first listing!</p>
-                          {isVerified && (
+                          {isVerified && !(platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed) && (
                             <Button href="/dashboard/boss/jobs/new" size="sm" variant="ghost" className="text-[10px] border border-[var(--color-border-primary)] mt-1">
                               Post a Job
                             </Button>

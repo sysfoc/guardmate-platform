@@ -5,20 +5,31 @@ import { useRouter } from 'next/navigation';
 import { Shield, LogOut, LayoutDashboard, Briefcase, Send, Tag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui/Dropdown';
 import { User, Settings, LogOut as LogOutIcon, ChevronDown, Star, Wallet, CreditCard, ShieldAlert } from 'lucide-react';
 import { GlobalChatListener } from '@/components/chat/GlobalChatListener';
+import { subscriptionApi } from '@/lib/api/subscription.api';
+import type { ISubscriptionStatus } from '@/types/subscription.types';
 
 export function Navbar() {
   const router = useRouter();
   const { firebaseUser, logout } = useAuth();
   const { user, getDashboardPath } = useUser();
+  const { platformSettings } = usePlatformContext();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [subStatus, setSubStatus] = useState<ISubscriptionStatus | null>(null);
+
+  useEffect(() => {
+    if (user?.role === 'BOSS' && platformSettings?.bossSubscriptionEnabled) {
+      subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
+    }
+  }, [user?.role, platformSettings?.bossSubscriptionEnabled]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -66,6 +77,17 @@ export function Navbar() {
               <Button href={getDashboardPath()} variant="ghost" size="sm" leftIcon={<LayoutDashboard className="h-4 w-4" aria-hidden="true" />}>
                 <span className="hidden sm:inline">Dashboard</span>
               </Button>
+              {user.role === 'BOSS' && platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed && (
+                <Button
+                  href="/dashboard/boss/subscription"
+                  size="sm"
+                  variant="primary"
+                  className="hidden sm:flex text-[10px] font-bold"
+                  leftIcon={<CreditCard className="h-3.5 w-3.5" />}
+                >
+                  Subscribe
+                </Button>
+              )}
               <div className="flex items-center gap-2 pl-2 border-l border-[var(--color-surface-border)]">
                 <GlobalChatListener userId={user.uid} role={user.role} />
                 <DarkModeToggle />

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
 import { createJob } from '@/lib/api/job.api';
+import { subscriptionApi } from '@/lib/api/subscription.api';
+import type { ISubscriptionStatus } from '@/types/subscription.types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -50,11 +52,28 @@ interface DayScheduleInput {
 export default function NewJobPage() {
   const router = useRouter();
   const { user, isLoading } = useUser();
-  const { platformCurrency, minimumHourlyRate, minimumRateEnforced, platformCommissionBoss } = usePlatformContext();
+  const { platformCurrency, minimumHourlyRate, minimumRateEnforced, platformCommissionBoss, platformSettings } = usePlatformContext();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdJobId, setCreatedJobId] = useState('');
+  const [subStatus, setSubStatus] = useState<ISubscriptionStatus | null>(null);
+  const [checkingSub, setCheckingSub] = useState(true);
+
+  // ─── Subscription Gate ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!platformSettings?.bossSubscriptionEnabled) {
+      setCheckingSub(false);
+      return;
+    }
+    subscriptionApi.getStatus().then((status) => {
+      setSubStatus(status);
+      if (!status?.isSubscribed) {
+        router.push('/dashboard/boss/subscription');
+      }
+      setCheckingSub(false);
+    }).catch(() => setCheckingSub(false));
+  }, [platformSettings?.bossSubscriptionEnabled, router]);
 
   const [form, setForm] = useState<Partial<CreateJobPayload>>({
     title: '', description: '', jobType: JobType.ONE_TIME,
@@ -101,8 +120,10 @@ export default function NewJobPage() {
   }, [regenerateSchedule]);
 
 
-  if (isLoading) return <DashboardSkeleton />;
+  if (isLoading || checkingSub) return <DashboardSkeleton />;
   if (!user) return null;
+  // If subscriptions are required and boss is not subscribed, redirect handled in useEffect above
+  // This prevents rendering the form while redirect is in progress
 
   const update = (data: Partial<CreateJobPayload>) => setForm((p) => ({ ...p, ...data }));
 

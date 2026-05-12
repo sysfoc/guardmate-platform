@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { getMyJobs } from '@/lib/api/job.api';
 import { JobCard } from '@/components/jobs/JobCard';
 import { Pagination } from '@/components/ui/Pagination';
@@ -11,8 +12,10 @@ import { Button } from '@/components/ui/Button';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
 import { Card } from '@/components/ui/Card';
 import type { IJob } from '@/types/job.types';
+import type { ISubscriptionStatus } from '@/types/subscription.types';
 import { JobStatus } from '@/types/enums';
-import { Plus, Briefcase, Loader2 } from 'lucide-react';
+import { subscriptionApi } from '@/lib/api/subscription.api';
+import { Plus, Briefcase, Loader2, CreditCard } from 'lucide-react';
 
 const TABS = [
   { key: '', label: 'All' },
@@ -25,6 +28,7 @@ const TABS = [
 
 function BossJobsContent() {
   const { user, isLoading: userLoading } = useUser();
+  const { platformSettings } = usePlatformContext();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -33,6 +37,14 @@ function BossJobsContent() {
   const [totalPages, setTotalPages] = useState(0);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [subStatus, setSubStatus] = useState<ISubscriptionStatus | null>(null);
+
+  // Fetch subscription status
+  useEffect(() => {
+    if (platformSettings?.bossSubscriptionEnabled) {
+      subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
+    }
+  }, [platformSettings?.bossSubscriptionEnabled]);
 
   const currentTab = searchParams.get('status') || '';
   const currentPage = parseInt(searchParams.get('page') || '1');
@@ -82,9 +94,15 @@ function BossJobsContent() {
             <h1 className="text-xl font-black text-[var(--color-text-primary)] tracking-tight">My Jobs</h1>
             <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{total} total jobs</p>
           </div>
-          <Link href="/dashboard/boss/jobs/new">
-            <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} className="shadow-md shadow-[var(--color-primary)]/10">Post New Job</Button>
-          </Link>
+          {platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed ? (
+            <Link href="/dashboard/boss/subscription">
+              <Button size="sm" leftIcon={<CreditCard className="h-4 w-4" />} className="shadow-md shadow-[var(--color-primary)]/10">Subscribe to Post</Button>
+            </Link>
+          ) : (
+            <Link href="/dashboard/boss/jobs/new">
+              <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} className="shadow-md shadow-[var(--color-primary)]/10">Post New Job</Button>
+            </Link>
+          )}
         </div>
 
         {/* Tabs */}
@@ -116,9 +134,15 @@ function BossJobsContent() {
             <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
               {currentTab ? 'No jobs match this status filter.' : "You haven't posted any jobs yet."}
             </p>
-            <Link href="/dashboard/boss/jobs/new" className="block w-full sm:w-auto">
-              <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} className="whitespace-nowrap w-full sm:w-auto">Post Your First Job</Button>
-            </Link>
+            {platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed ? (
+              <Link href="/dashboard/boss/subscription" className="block w-full sm:w-auto">
+                <Button size="sm" leftIcon={<CreditCard className="h-4 w-4" />} className="whitespace-nowrap w-full sm:w-auto">Subscribe to Post</Button>
+              </Link>
+            ) : (
+              <Link href="/dashboard/boss/jobs/new" className="block w-full sm:w-auto">
+                <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} className="whitespace-nowrap w-full sm:w-auto">Post Your First Job</Button>
+              </Link>
+            )}
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

@@ -14,9 +14,12 @@ import { Footer } from '@/components/landing/Footer';
 import { ReviewCarousel } from '@/components/landing/ReviewCarousel';
 import { ContactSection } from '@/components/landing/ContactSection';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { UserRole } from '@/types/enums';
 import { getMyReviewsPage, getPublicReviews } from '@/lib/api/review.api';
+import { subscriptionApi } from '@/lib/api/subscription.api';
 import type { Review } from '@/types/review.types';
+import type { ISubscriptionStatus } from '@/types/subscription.types';
 import type { BossProfile, MateProfile } from '@/types/user.types';
 
 /* ────────────────────────────────────────────────────────────── */
@@ -173,7 +176,9 @@ function GuardHome() {
 
 function BossHome() {
   const { user } = useUser();
+  const { platformSettings } = usePlatformContext();
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [subStatus, setSubStatus] = useState<ISubscriptionStatus | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -182,12 +187,26 @@ function BossHome() {
       if (cancelled) return;
       if (revRes.success && revRes.data) setReviews(revRes.data.reviews || []);
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true };
   }, []);
 
+  useEffect(() => {
+    if (platformSettings?.bossSubscriptionEnabled) {
+      subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
+    }
+  }, [platformSettings?.bossSubscriptionEnabled]);
 
   const boss = user as BossProfile | null;
   const displayName = boss?.companyName || boss?.firstName || 'Business';
+
+  const quickActions = [
+    platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed
+      ? { icon: CreditCard, label: 'Subscribe', href: '/dashboard/boss/subscription', desc: 'Unlock posting' }
+      : { icon: Briefcase, label: 'Post a Job', href: '/dashboard/boss/jobs/new', desc: 'New shift' },
+    { icon: LayoutDashboard, label: 'My Jobs', href: '/dashboard/boss/jobs', desc: 'Manage shifts' },
+    { icon: CreditCard, label: 'Payments', href: '/dashboard/boss/payments', desc: 'Escrow & billing' },
+    { icon: User, label: 'Profile', href: '/dashboard/boss/profile', desc: 'Company details' },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--color-bg-base)]">
@@ -209,12 +228,7 @@ function BossHome() {
         <section className="pb-5 sm:pb-6">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {[
-                { icon: Briefcase, label: 'Post a Job', href: '/dashboard/boss/jobs', desc: 'New shift' },
-                { icon: LayoutDashboard, label: 'My Jobs', href: '/dashboard/boss/jobs', desc: 'Manage shifts' },
-                { icon: CreditCard, label: 'Payments', href: '/dashboard/boss/payments', desc: 'Escrow & billing' },
-                { icon: User, label: 'Profile', href: '/dashboard/boss/profile', desc: 'Company details' },
-              ].map((card) => (
+              {quickActions.map((card) => (
                 <Link key={card.label} href={card.href} className="group rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] p-4 hover:shadow-md transition-all hover:-translate-y-0.5">
                   <card.icon className="h-5 w-5 text-[var(--color-primary)] mb-2" aria-hidden="true" />
                   <p className="text-sm font-bold text-[var(--color-text-primary)]">{card.label}</p>
