@@ -150,6 +150,18 @@ function SubscriptionContent() {
   const [acquiredOffer, setAcquiredOffer] = useState<IOffer | null>(null);
   const [offerDiscountLabel, setOfferDiscountLabel] = useState<string | null>(null);
 
+  // Payment method availability derived from platform settings
+  const stripeAvailable = platformSettings?.stripeEnabled ?? false;
+  const paypalAvailable = platformSettings?.paypalEnabled ?? false;
+  const anyPaymentAvailable = stripeAvailable || paypalAvailable;
+
+  // Auto-select the first available payment method when settings load
+  useEffect(() => {
+    if (stripeAvailable && !paypalAvailable) setPaymentMethod('stripe');
+    else if (!stripeAvailable && paypalAvailable) setPaymentMethod('paypal');
+    // If both are available, keep whatever is already selected (default 'stripe')
+  }, [stripeAvailable, paypalAvailable]);
+
   useEffect(() => {
     // Fetch acquired subscription offer (only active AND unconsumed)
     offerApi.getMyOffers()
@@ -410,53 +422,69 @@ function SubscriptionContent() {
 
             {!showStripeForm ? (
               <>
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <button
-                    onClick={() => setPaymentMethod('stripe')}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      paymentMethod === 'stripe'
-                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
-                        : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
-                    }`}
-                  >
-                    <CreditCard className="h-6 w-6 mb-2 text-[var(--color-primary)] mx-auto" />
-                    <p className="text-sm font-bold text-[var(--color-text-primary)] text-center">Card Payment</p>
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod('paypal')}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      paymentMethod === 'paypal'
-                        ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
-                        : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
-                    }`}
-                  >
-                    <DollarSign className="h-6 w-6 mb-2 text-blue-600 mx-auto" />
-                    <p className="text-sm font-bold text-[var(--color-text-primary)] text-center">PayPal</p>
-                  </button>
-                </div>
+                {anyPaymentAvailable ? (
+                  <>
+                    <div className={`grid gap-4 mb-6 ${stripeAvailable && paypalAvailable ? 'grid-cols-2' : 'grid-cols-1 max-w-xs mx-auto'}`}>
+                      {stripeAvailable && (
+                        <button
+                          onClick={() => setPaymentMethod('stripe')}
+                          className={`p-4 rounded-xl border-2 transition-all ${
+                            paymentMethod === 'stripe'
+                              ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
+                              : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
+                          }`}
+                        >
+                          <CreditCard className="h-6 w-6 mb-2 text-[var(--color-primary)] mx-auto" />
+                          <p className="text-sm font-bold text-[var(--color-text-primary)] text-center">Card Payment</p>
+                        </button>
+                      )}
+                      {paypalAvailable && (
+                        <button
+                          onClick={() => setPaymentMethod('paypal')}
+                          className={`p-4 rounded-xl border-2 transition-all ${
+                            paymentMethod === 'paypal'
+                              ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
+                              : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
+                          }`}
+                        >
+                          <DollarSign className="h-6 w-6 mb-2 text-blue-600 mx-auto" />
+                          <p className="text-sm font-bold text-[var(--color-text-primary)] text-center">PayPal</p>
+                        </button>
+                      )}
+                    </div>
 
-                {acquiredOffer && !isSubscribed && (
-                  <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                    <p className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5" />
-                      Offer Applied: {acquiredOffer.name} ({offerDiscountLabel})
-                    </p>
-                    {displayedAmount !== baseSubscriptionAmount && (
-                      <p className="text-[10px] text-emerald-700 mt-1">
-                        Original price: ${baseSubscriptionAmount.toFixed(2)}/mo →{' '}
-                        <span className="font-bold">${displayedAmount.toFixed(2)}/mo</span>
-                      </p>
+                    {acquiredOffer && !isSubscribed && (
+                      <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                        <p className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                          <Tag className="h-3.5 w-3.5" />
+                          Offer Applied: {acquiredOffer.name} ({offerDiscountLabel})
+                        </p>
+                        {displayedAmount !== baseSubscriptionAmount && (
+                          <p className="text-[10px] text-emerald-700 mt-1">
+                            Original price: ${baseSubscriptionAmount.toFixed(2)}/mo →{' '}
+                            <span className="font-bold">${displayedAmount.toFixed(2)}/mo</span>
+                          </p>
+                        )}
+                      </div>
                     )}
+
+                    <Button
+                      onClick={handleSubscribe}
+                      disabled={subscribing}
+                      className="w-full h-12 text-base font-bold shadow-lg shadow-[var(--color-primary)]/20"
+                    >
+                      {subscribing ? 'Processing...' : `Subscribe for $${displayedAmount.toFixed(2)}/month`}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-center">
+                    <AlertTriangle className="h-6 w-6 text-amber-600 mx-auto mb-2" />
+                    <p className="text-sm font-bold text-amber-800">Payment Methods Not Configured</p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      No payment providers are currently available. Please contact support.
+                    </p>
                   </div>
                 )}
-
-                <Button
-                  onClick={handleSubscribe}
-                  disabled={subscribing}
-                  className="w-full h-12 text-base font-bold shadow-lg shadow-[var(--color-primary)]/20"
-                >
-                  {subscribing ? 'Processing...' : `Subscribe for $${displayedAmount.toFixed(2)}/month`}
-                </Button>
               </>
             ) : (
               <div className="mt-4">
@@ -569,23 +597,37 @@ function SubscriptionContent() {
             </p>
             {!showStripeForm ? (
               <>
-                <div className="flex justify-center gap-4 mb-4">
-                   <button
-                    onClick={() => setPaymentMethod('stripe')}
-                    className={`px-4 py-2 rounded-lg border-2 text-sm font-bold ${paymentMethod === 'stripe' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-slate-500'}`}
-                  >Card</button>
-                  <button
-                    onClick={() => setPaymentMethod('paypal')}
-                    className={`px-4 py-2 rounded-lg border-2 text-sm font-bold ${paymentMethod === 'paypal' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-slate-500'}`}
-                  >PayPal</button>
-                </div>
-                <Button
-                  onClick={handleSubscribe}
-                  disabled={subscribing}
-                  className="px-8 h-11 font-bold shadow-lg shadow-[var(--color-primary)]/20"
-                >
-                  {subscribing ? 'Processing...' : `Resubscribe for $${(subStatus?.amount ?? 0).toFixed(2)}/month`}
-                </Button>
+                {anyPaymentAvailable ? (
+                  <>
+                    {stripeAvailable && paypalAvailable && (
+                      <div className="flex justify-center gap-4 mb-4">
+                        <button
+                          onClick={() => setPaymentMethod('stripe')}
+                          className={`px-4 py-2 rounded-lg border-2 text-sm font-bold ${paymentMethod === 'stripe' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-slate-500'}`}
+                        >Card</button>
+                        <button
+                          onClick={() => setPaymentMethod('paypal')}
+                          className={`px-4 py-2 rounded-lg border-2 text-sm font-bold ${paymentMethod === 'paypal' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-slate-500'}`}
+                        >PayPal</button>
+                      </div>
+                    )}
+                    <Button
+                      onClick={handleSubscribe}
+                      disabled={subscribing}
+                      className="px-8 h-11 font-bold shadow-lg shadow-[var(--color-primary)]/20"
+                    >
+                      {subscribing ? 'Processing...' : `Resubscribe for $${(subStatus?.amount ?? 0).toFixed(2)}/month`}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-center">
+                    <AlertTriangle className="h-6 w-6 text-amber-600 mx-auto mb-2" />
+                    <p className="text-sm font-bold text-amber-800">Payment Methods Not Configured</p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      No payment providers are currently available. Please contact support.
+                    </p>
+                  </div>
+                )}
               </>
             ) : (
               <div className="mt-4 text-left">
