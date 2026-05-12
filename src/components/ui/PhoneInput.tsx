@@ -37,11 +37,12 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   
   // React to lock changes
   React.useEffect(() => {
-    if (lockedCountry && lockedCountry.code !== selectedCountry.code) {
+    if (lockedCountry) {
       setSelectedCountry(lockedCountry);
       onCountryChange?.(lockedCountry);
     }
-  }, [lockedCountry, selectedCountry.code, onCountryChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedCountry?.code]);
 
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);

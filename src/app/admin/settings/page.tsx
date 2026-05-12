@@ -4,18 +4,23 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
-import { Settings, Save, Mail, AlertTriangle, Eye, EyeOff, Send } from 'lucide-react';
+import { Settings, Save, Mail, AlertTriangle, Eye, EyeOff, Send, Shield } from 'lucide-react';
 import { emailApi } from '@/lib/api/email.api';
 import { settingsApi } from '@/lib/api/settings.api';
 import { IEmailSettings, NotificationEventType } from '@/types/email.types';
+import type { AdminProfile } from '@/types/user.types';
 import { IPlatformSettings, IPlatformCountry } from '@/types/settings.types';
 import { countries, Country } from '@/components/ui/PhoneInput';
 import { usePlatformContext } from '@/context/PlatformContext';
+import { useUser } from '@/context/UserContext';
+import { sendAdminInvite, getAdminManagement, AdminManagementData } from '@/lib/api/adminAuth.api';
+import { AdminLevel } from '@/types/enums';
 
 export default function AdminSettingsPage() {
   const { refreshSettings } = usePlatformContext();
+  const { user: currentUser } = useUser();
 
-  const [activeTab, setActiveTab] = useState<'config' | 'toggles' | 'platform' | 'finance'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'toggles' | 'platform' | 'finance' | 'admin_management'>('config');
   const [settings, setSettings] = useState<IEmailSettings | null>(null);
   
   const [platformSettings, setPlatformSettings] = useState<IPlatformSettings | null>(null);
@@ -48,6 +53,12 @@ export default function AdminSettingsPage() {
   const [bossSubscriptionEnabled, setBossSubscriptionEnabled] = useState<boolean>(false);
   const [bossSubscriptionAmount, setBossSubscriptionAmount] = useState<number | null>(null);
 
+  // Phase 9: Admin Management State
+  const [adminManagement, setAdminManagement] = useState<AdminManagementData | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviting, setInviting] = useState(false);
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -58,6 +69,12 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     loadAllSettings();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'admin_management' && (currentUser as AdminProfile | null)?.adminLevel === AdminLevel.SUPER) {
+      loadAdminManagement();
+    }
+  }, [activeTab, currentUser]);
 
   const loadAllSettings = async () => {
     try {
@@ -234,6 +251,40 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const loadAdminManagement = async () => {
+    try {
+      setLoadingAdmins(true);
+      const resp = await getAdminManagement();
+      if (resp.success) {
+        setAdminManagement(resp.data);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to load admin management data');
+    } finally {
+      setLoadingAdmins(false);
+    }
+  };
+
+  const handleSendInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+    try {
+      setInviting(true);
+      setErrorMsg('');
+      setSuccessMsg('');
+      const resp = await sendAdminInvite(inviteEmail.trim());
+      if (resp.success) {
+        setSuccessMsg(`Invitation sent to ${inviteEmail}`);
+        setInviteEmail('');
+        loadAdminManagement();
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to send invite');
+    } finally {
+      setInviting(false);
+    }
+  };
+
   if (loading || !settings || !platformSettings) {
     return <div className="p-8 text-center text-slate-500">Loading settings...</div>;
   }
@@ -384,6 +435,16 @@ export default function AdminSettingsPage() {
         >
           Payments & Finance
         </button>
+        {(currentUser as AdminProfile | null)?.adminLevel === AdminLevel.SUPER && (
+          <button
+            onClick={() => setActiveTab('admin_management')}
+            className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === 'admin_management' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Admin Management
+          </button>
+        )}
       </div>
 
       {activeTab === 'config' && (
@@ -897,6 +958,83 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </Card>
+      )}
+
+      {activeTab === 'admin_management' && (currentUser as AdminProfile | null)?.adminLevel === AdminLevel.SUPER && (
+        <div className="space-y-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-indigo-500" />
+              Invite New Admin
+            </h3>
+            <form onSubmit={handleSendInvite} className="flex gap-4 items-end">
+              <div className="flex-1">
+                <InputField
+                  label="Email Address"
+                  value={inviteEmail}
+                  onChange={setInviteEmail}
+                  placeholder="admin@guardmate.com"
+                  type="email"
+                />
+              </div>
+              <Button type="submit" disabled={inviting || !inviteEmail} leftIcon={<Send className="h-4 w-4" />}>
+                {inviting ? 'Sending...' : 'Send Invitation'}
+              </Button>
+            </form>
+          </Card>
+
+          {loadingAdmins ? (
+            <div className="p-8 text-center text-slate-500">Loading admin data...</div>
+          ) : adminManagement ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">
+                  Current Admins
+                </h3>
+                <div className="space-y-4">
+                  {adminManagement.admins.map(admin => (
+                    <div key={admin.uid} className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                      <div>
+                        <p className="font-semibold text-slate-800">{admin.firstName} {admin.lastName}</p>
+                        <p className="text-sm text-slate-500">{admin.email}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-800 text-xs font-bold rounded-full uppercase tracking-wider mb-1">
+                          {admin.adminLevel}
+                        </span>
+                        <p className="text-xs text-slate-400">
+                          {new Date(admin.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">
+                  Pending Invitations
+                </h3>
+                <div className="space-y-4">
+                  {adminManagement.pendingInvites.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-4">No pending invitations.</p>
+                  ) : (
+                    adminManagement.pendingInvites.map(invite => (
+                      <div key={invite.id} className="flex flex-col gap-1 p-3 rounded-lg border border-amber-200 bg-amber-50">
+                        <div className="flex justify-between items-start">
+                          <p className="font-medium text-amber-900">{invite.email}</p>
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-amber-600">Pending</span>
+                        </div>
+                        <p className="text-xs text-amber-700">Invited by: {invite.invitedByName}</p>
+                        <p className="text-xs text-amber-600">Expires: {new Date(invite.expiresAt).toLocaleString()}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </Card>
+            </div>
+          ) : null}
+        </div>
       )}
 
     </div>

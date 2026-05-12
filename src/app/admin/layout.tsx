@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, notFound } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
 import { UserRole } from '@/types/enums';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
@@ -10,18 +10,21 @@ import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  const pathname = usePathname();
   const { user, isLoading } = useUser();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // ── Auth guard ────────────────────────────────────────────────────────────
-  React.useEffect(() => {
-    if (!isLoading && (!user || user.role !== UserRole.ADMIN)) {
-      router.replace('/login?redirectTo=/admin');
-    }
-  }, [user, isLoading, router]);
+  // ── Public auth pages ────────────────────────────────────────────────────
+  // /admin/login and /admin/register are public — no auth required.
+  const isPublicAuthPage = pathname === '/admin/login' || pathname?.startsWith('/admin/register');
 
+  // Public pages render immediately
+  if (isPublicAuthPage) {
+    return <>{children}</>;
+  }
+
+  // ── Loading state ───────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[var(--color-bg-base)]">
@@ -39,10 +42,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  // ── Not admin → 404 ───────────────────────────────────────────────────────
   if (!user || user.role !== UserRole.ADMIN) {
-    return null;
+    notFound();
   }
 
+  // ── Authenticated admin layout ────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[var(--color-bg-base)]">
       {/* ── Top Navbar ──────────────────────────────────────────── */}

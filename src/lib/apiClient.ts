@@ -22,10 +22,16 @@ function buildUrl(path: string): string {
 }
 
 // Get current Firebase ID token, fallback to cookie
+// Use a cached reference to avoid repeated module resolution
+let _authRef: typeof import('./firebase/firebaseClient').auth | null = null;
+
 async function getAuthToken(): Promise<string | null> {
   try {
-    const { auth } = await import('./firebase/firebaseClient');
-    const user = auth.currentUser;
+    if (!_authRef) {
+      const mod = await import('./firebase/firebaseClient');
+      _authRef = mod.auth;
+    }
+    const user = _authRef.currentUser;
     if (user) {
       return await user.getIdToken(false);
     }

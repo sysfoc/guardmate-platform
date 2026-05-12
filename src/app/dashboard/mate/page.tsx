@@ -104,33 +104,31 @@ export default function MateDashboard() {
           </div>
         )}
 
-        <div className="min-h-[72px]">
-          {pendingCount > 0 && !hideReviewBanner && (
-            <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)] text-[var(--color-primary-dark)] px-4 py-3 rounded-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-[var(--color-primary)]/10 rounded-full">
-                  <Star className="h-5 w-5 text-[var(--color-primary)]" fill="var(--color-primary)" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold">Action Required: Rate your Bosses</h3>
-                  <p className="text-xs font-medium opacity-90 mt-0.5">
-                    You have {pendingCount} completed job{pendingCount !== 1 ? 's' : ''} awaiting your review. Reviews help build trust on the platform.
-                  </p>
-                </div>
+        {pendingCount > 0 && !hideReviewBanner && (
+          <div className="bg-[var(--color-primary-light)] border border-[var(--color-primary)] text-[var(--color-primary-dark)] px-4 py-3 rounded-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[var(--color-primary)]/10 rounded-full">
+                <Star className="h-5 w-5 text-[var(--color-primary)]" fill="var(--color-primary)" aria-hidden="true" />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button href="/dashboard/mate/bids?status=ACCEPTED" size="sm" variant="primary">Leave Reviews</Button>
-                <button
-                  onClick={() => setHideReviewBanner(true)}
-                  className="p-1.5 hover:bg-[var(--color-primary)]/10 rounded-full transition-colors"
-                  aria-label="Dismiss"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+              <div>
+                <h3 className="text-sm font-bold">Action Required: Rate your Bosses</h3>
+                <p className="text-xs font-medium opacity-90 mt-0.5">
+                  You have {pendingCount} completed job{pendingCount !== 1 ? 's' : ''} awaiting your review. Reviews help build trust on the platform.
+                </p>
               </div>
             </div>
-          )}
-        </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button href="/dashboard/mate/bids?status=ACCEPTED" size="sm" variant="primary">Leave Reviews</Button>
+              <button
+                onClick={() => setHideReviewBanner(true)}
+                className="p-1.5 hover:bg-[var(--color-primary)]/10 rounded-full transition-colors"
+                aria-label="Dismiss"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Welcome & Earnings Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

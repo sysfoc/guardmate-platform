@@ -627,4 +627,129 @@ export const sendManualWithdrawalRequested = async (
   });
 };
 
+// ─── Admin Authentication Emails (Direct SMTP — critical path) ────────────────
 
+/**
+ * Send a 6-digit OTP code for admin login verification.
+ * Uses direct SMTP for reliability — admin login should never be blocked
+ * by the template system being unconfigured.
+ */
+export const sendAdminOtp = async (email: string, code: string) => {
+  try {
+    const dbConnect = (await import('@/lib/mongodb')).default;
+    await dbConnect();
+    const EmailSettingsModel = (await import('@/models/EmailSettings.model')).default;
+    const settings = await EmailSettingsModel.findOne().lean() as any;
+
+    if (!settings?.gmailUser || !settings?.gmailAppPassword) {
+      console.warn('⚠️ sendAdminOtp skipped: SMTP not configured.');
+      return;
+    }
+
+    const { createNodemailerClient } = await import('./nodemailerClient');
+    const transporter = createNodemailerClient(settings.gmailUser, settings.gmailAppPassword);
+
+    await transporter.sendMail({
+      from: `"${settings.fromName || 'GuardMate'}" <${settings.fromEmail || settings.gmailUser}>`,
+      to: email,
+      subject: `Admin Login Code: ${code}`,
+      text: `Your GuardMate admin login verification code is: ${code}\n\nThis code expires in 5 minutes. Do not share it with anyone.\n\nIf you did not request this, please ignore this email.`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); padding: 32px; border-radius: 16px 16px 0 0; text-align: center;">
+            <div style="display: inline-block; background: rgba(255,255,255,0.15); padding: 10px; border-radius: 12px; margin-bottom: 16px;">
+              <span style="color: white; font-size: 24px; font-weight: bold;">🔐</span>
+            </div>
+            <h1 style="color: white; font-size: 22px; margin: 0;">Admin Login Verification</h1>
+            <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 8px;">Enter this code to complete your sign-in</p>
+          </div>
+          <div style="background: #ffffff; padding: 32px; border: 1px solid #e2e8f0; border-top: none;">
+            <div style="background: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
+              <p style="color: #64748b; font-size: 12px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Your verification code</p>
+              <p style="color: #1e293b; font-size: 36px; font-weight: 800; letter-spacing: 10px; margin: 0; font-family: 'Courier New', monospace;">${code}</p>
+            </div>
+            <p style="color: #94a3b8; font-size: 13px; text-align: center; margin: 0;">
+              ⏱ This code expires in <strong>5 minutes</strong>
+            </p>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 0 0 16px 16px; border: 1px solid #e2e8f0; border-top: none; text-align: center;">
+            <p style="color: #94a3b8; font-size: 11px; margin: 0;">If you didn't request this code, you can safely ignore this email.</p>
+            <p style="color: #cbd5e1; font-size: 11px; margin: 8px 0 0;">© ${new Date().getFullYear()} GuardMate</p>
+          </div>
+        </div>
+      `,
+    });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ Admin OTP sent to: ${email}`);
+    }
+  } catch (error) {
+    console.error('❌ Failed to send admin OTP email:', error);
+    throw error; // Re-throw so the caller can handle fallback
+  }
+};
+
+/**
+ * Send an admin invitation email with a registration link.
+ */
+export const sendAdminInvite = async (email: string, invitedByName: string, inviteUrl: string) => {
+  try {
+    const dbConnect = (await import('@/lib/mongodb')).default;
+    await dbConnect();
+    const EmailSettingsModel = (await import('@/models/EmailSettings.model')).default;
+    const settings = await EmailSettingsModel.findOne().lean() as any;
+
+    if (!settings?.gmailUser || !settings?.gmailAppPassword) {
+      console.warn('⚠️ sendAdminInvite skipped: SMTP not configured.');
+      return;
+    }
+
+    const { createNodemailerClient } = await import('./nodemailerClient');
+    const transporter = createNodemailerClient(settings.gmailUser, settings.gmailAppPassword);
+
+    await transporter.sendMail({
+      from: `"${settings.fromName || 'GuardMate'}" <${settings.fromEmail || settings.gmailUser}>`,
+      to: email,
+      subject: `You're invited to join GuardMate as an Admin`,
+      text: `${invitedByName} has invited you to join GuardMate as an administrator.\n\nClick the link below to create your admin account:\n${inviteUrl}\n\nThis invitation expires in 24 hours.`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); padding: 40px 32px; border-radius: 16px 16px 0 0; text-align: center;">
+            <div style="display: inline-block; background: rgba(255,255,255,0.15); padding: 12px; border-radius: 14px; margin-bottom: 20px;">
+              <span style="color: white; font-size: 28px; font-weight: bold;">G</span>
+            </div>
+            <h1 style="color: white; font-size: 24px; margin: 0;">You're Invited</h1>
+            <p style="color: rgba(255,255,255,0.7); font-size: 15px; margin-top: 8px;">Join the GuardMate admin team</p>
+          </div>
+          <div style="background: #ffffff; padding: 32px; border: 1px solid #e2e8f0; border-top: none;">
+            <p style="color: #334155; font-size: 15px; line-height: 1.7; margin-top: 0;">
+              <strong>${invitedByName}</strong> has invited you to join the GuardMate platform as an administrator.
+            </p>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
+              As an admin, you'll be able to manage users, oversee jobs, handle disputes, and configure platform settings.
+            </p>
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; font-weight: 700; font-size: 15px; padding: 14px 40px; border-radius: 10px; text-decoration: none; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
+                Accept Invitation →
+              </a>
+            </div>
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-top: 24px;">
+              <p style="color: #92400e; font-size: 13px; margin: 0; font-weight: 500;">⏱ This invitation expires in 24 hours</p>
+            </div>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 0 0 16px 16px; border: 1px solid #e2e8f0; border-top: none; text-align: center;">
+            <p style="color: #94a3b8; font-size: 11px; margin: 0;">If you didn't expect this invitation, you can safely ignore this email.</p>
+            <p style="color: #cbd5e1; font-size: 11px; margin: 8px 0 0;">© ${new Date().getFullYear()} GuardMate</p>
+          </div>
+        </div>
+      `,
+    });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ Admin invite email sent to: ${email}`);
+    }
+  } catch (error) {
+    console.error('❌ Failed to send admin invite email:', error);
+    throw error;
+  }
+};

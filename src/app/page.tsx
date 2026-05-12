@@ -636,6 +636,21 @@ function PublicHome() {
 export default function Home() {
   const { user, isLoading } = useUser();
 
+  // Fast path: if no session cookie exists, render PublicHome immediately.
+  // Don't wait for Firebase + /api/auth/me + MongoDB to all resolve.
+  const [hasSession] = useState(() => {
+    if (typeof document !== 'undefined') {
+      return document.cookie.includes('__session=');
+    }
+    return false;
+  });
+
+  // No cookie → instant public page (no loading spinner)
+  if (!hasSession && isLoading) {
+    return <PublicHome />;
+  }
+
+  // Has cookie but still loading → show skeleton (authenticated users only)
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-[var(--color-bg-base)]">

@@ -10,9 +10,8 @@ export function ProfileCompletionBanner() {
   const { user, isProfileComplete } = useUser();
   const [isDismissed, setIsDismissed] = useState(false);
 
-  // If loading, no user, already complete, or dismissed, render empty placeholder to reserve space
   if (!user || isProfileComplete || isDismissed) {
-    return <div className="min-h-[100px]" aria-hidden="true" />;
+    return null;
   }
 
   // Define required fields by role

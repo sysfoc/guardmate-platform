@@ -97,9 +97,9 @@ export default function BossProfileEdit() {
   }, [hasUnsavedChanges]);
 
   const requiredFields = [
-    'firstName', 'lastName', 'phone', 
+    'firstName', 'lastName', 'phone',
     'companyName', 'companyRegistrationNumber', 'companyLicenseNumber',
-    'companyLicenseExpiry', 'companyAddress', 'companyCity', 'companyCountry', 
+    'companyLicenseExpiry', 'companyAddress', 'companyCity', 'companyCountry',
     'companyPhone', 'companyEmail', 'companyDescription', 'industry', 'companyPostalCode'
   ];
 
@@ -112,7 +112,7 @@ export default function BossProfileEdit() {
 
     const hasDoc = !!(localCompanyLicenseDoc || boss?.companyLicenseDocument);
     const totalFilled = filledCount + (hasDoc ? 1 : 0);
-    const totalRequired = requiredFields.length + 1; 
+    const totalRequired = requiredFields.length + 1;
 
     return Math.round((totalFilled / totalRequired) * 100);
   };
@@ -150,11 +150,11 @@ export default function BossProfileEdit() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    
+
     if (formData.companyEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.companyEmail)) {
       newErrors.companyEmail = 'Invalid email format';
     }
@@ -253,10 +253,10 @@ export default function BossProfileEdit() {
             {/* Banner containing Avatar and Info */}
             <div className="w-full bg-gradient-to-r from-[var(--color-primary)] to-indigo-700 px-5 sm:px-6 py-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
               <div className="relative group shrink-0">
-                <Avatar 
-                  src={boss?.profilePhoto} 
-                  name={displayName} 
-                  size="xl" 
+                <Avatar
+                  src={boss?.profilePhoto}
+                  name={displayName}
+                  size="xl"
                   className="ring-4 ring-white/20 shadow-xl"
                 />
                 <button
@@ -275,7 +275,7 @@ export default function BossProfileEdit() {
                   accept="image/*"
                 />
               </div>
-              
+
               <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-1.5 md:gap-3 text-center sm:text-left">
                 <h1 className="text-xl sm:text-2xl font-black text-white leading-tight truncate">
                   {boss?.firstName} {boss?.lastName}
@@ -291,20 +291,20 @@ export default function BossProfileEdit() {
               <div className="flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-4 w-full">
                 <div className="hidden sm:block flex-1 text-xs text-[var(--color-text-secondary)]">Account: {boss?.email}</div>
                 <div className="flex items-center justify-center gap-2 w-full sm:w-auto">
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={handleGoBack}
                     className="flex-1 sm:flex-none"
                     leftIcon={<ChevronLeft className="h-4 w-4" />}
                   >
                     Back
                   </Button>
-                  <Button 
-                    type="submit" 
-                    size="sm" 
-                    loading={isSaving} 
+                  <Button
+                    type="submit"
+                    size="sm"
+                    loading={isSaving}
                     className="whitespace-nowrap flex-1 sm:flex-none"
                     leftIcon={<Save className="h-4 w-4" />}
                   >
@@ -363,13 +363,14 @@ export default function BossProfileEdit() {
                   <Input label="Last Name" value={formData.lastName} onChange={(e) => handleChange('lastName', e.target.value)} error={errors.lastName} />
                 </div>
                 <div className="mt-3">
-                  <PhoneInput 
-                    label="Personal Phone" 
-                    value={formData.phone} 
-                    defaultCountry={formData.phoneCountryCode as any} 
-                    onChange={(v: string) => { setFormData(prev => ({ ...prev, phone: v })); setHasUnsavedChanges(true); }} 
+                  <PhoneInput
+                    label="Personal Phone"
+                    value={formData.phone}
+                    defaultCountry={formData.phoneCountryCode as any}
+                    onChange={(v: string) => { setFormData(prev => ({ ...prev, phone: v })); setHasUnsavedChanges(true); }}
+                    onCountryChange={(c) => { setFormData(prev => ({ ...prev, phoneCountryCode: c.code })); setHasUnsavedChanges(true); }}
                     lockedCountry={lockedCountry}
-                    error={errors.phone} 
+                    error={errors.phone}
                   />
                 </div>
               </Card>
@@ -389,7 +390,7 @@ export default function BossProfileEdit() {
                     <Input label="License Number" value={formData.companyLicenseNumber} onChange={(e) => handleChange('companyLicenseNumber', e.target.value)} error={errors.companyLicenseNumber} />
                     <Input label="License Expiry" type="date" value={formData.companyLicenseExpiry} onChange={(e) => handleChange('companyLicenseExpiry', e.target.value)} error={errors.companyLicenseExpiry} />
                   </div>
-                  
+
                   <div className="pt-1.5">
                     <label className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider block mb-1.5">License Document</label>
                     <DocUploadRow
@@ -435,12 +436,12 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
   );
 }
 
-function DocUploadRow({ 
-  label, url, isUploading, onUpload, onReview, status 
-}: { 
-  label: string; 
-  url?: string; 
-  isUploading: boolean; 
+function DocUploadRow({
+  label, url, isUploading, onUpload, onReview, status
+}: {
+  label: string;
+  url?: string;
+  isUploading: boolean;
   onUpload: () => void;
   onReview?: (url: string) => void;
   status?: LicenseStatus | VerificationStatus | string;
@@ -455,15 +456,15 @@ function DocUploadRow({
           <p className="text-[11px] font-bold tracking-tight leading-none truncate">{label}</p>
           <div className="mt-1">
             {url ? (
-               <Badge 
-               variant={
-                 status === LicenseStatus.VALID || status === VerificationStatus.VERIFIED ? 'success' : 
-                 status === LicenseStatus.EXPIRED || status === VerificationStatus.REJECTED ? 'danger' : 'warning'
-               } 
-               className="text-[9px] h-4 py-0 font-bold"
-             >
-               {status || 'PENDING'}
-             </Badge>
+              <Badge
+                variant={
+                  status === LicenseStatus.VALID || status === VerificationStatus.VERIFIED ? 'success' :
+                    status === LicenseStatus.EXPIRED || status === VerificationStatus.REJECTED ? 'danger' : 'warning'
+                }
+                className="text-[9px] h-4 py-0 font-bold"
+              >
+                {status || 'PENDING'}
+              </Badge>
             ) : (
               <span className="text-[9px] text-[var(--color-text-tertiary)] font-bold uppercase">Not Uploaded</span>
             )}

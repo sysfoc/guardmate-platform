@@ -9,7 +9,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Pagination } from '@/components/ui/Pagination';
 import { UserProfileModal } from '@/components/admin/UserProfileModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { getUsers, updateUserStatus, promoteToAdmin } from '@/lib/api/admin.api';
+import { getUsers, updateUserStatus } from '@/lib/api/admin.api';
 import type { UserProfile } from '@/types/user.types';
 import { UserRole, UserStatus } from '@/types/enums';
 import {
@@ -20,8 +20,6 @@ import {
   Eye,
   Ban,
   XCircle,
-  Crown,
-  MapPin,
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
@@ -85,7 +83,6 @@ function AllUsersPageInner() {
   const search = searchParams.get('search') || '';
   const role = searchParams.get('role') || '';
   const status = searchParams.get('status') || '';
-  const country = searchParams.get('country') || '';
   const dateFrom = searchParams.get('dateFrom') || '';
   const dateTo = searchParams.get('dateTo') || '';
   const sortBy = searchParams.get('sortBy') || 'createdAt';
@@ -101,12 +98,11 @@ function AllUsersPageInner() {
   const [profileUid, setProfileUid] = useState<string | null>(null);
   const [rejectDialog, setRejectDialog] = useState<{ uid: string; name: string; action: 'reject' | 'suspend' } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [promoteConfirm, setPromoteConfirm] = useState<{ uid: string; name: string } | null>(null);
+
   const [actionLoading, setActionLoading] = useState(false);
 
   // Input states for debouncing
   const [searchInput, setSearchInput] = useState(search);
-  const [countryInput, setCountryInput] = useState(country);
 
   const updateUrl = useCallback((params: Record<string, string | null>) => {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -124,7 +120,7 @@ function AllUsersPageInner() {
     setIsLoading(true);
     try {
       const resp = await getUsers({
-        search, role, status, country, dateFrom, dateTo, sortBy, sortOrder, page, limit: ITEMS_PER_PAGE,
+        search, role, status, dateFrom, dateTo, sortBy, sortOrder, page, limit: ITEMS_PER_PAGE,
       });
       if (resp.success) {
         setUsers(resp.data.users);
@@ -136,7 +132,7 @@ function AllUsersPageInner() {
     } finally {
       setIsLoading(false);
     }
-  }, [search, role, status, country, dateFrom, dateTo, sortBy, sortOrder, page]);
+  }, [search, role, status, dateFrom, dateTo, sortBy, sortOrder, page]);
 
   useEffect(() => {
     fetchUserList();
@@ -144,12 +140,12 @@ function AllUsersPageInner() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchInput !== search || countryInput !== country) {
-        updateUrl({ search: searchInput, country: countryInput, page: '1' });
+      if (searchInput !== search) {
+        updateUrl({ search: searchInput, page: '1' });
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchInput, countryInput]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchInput, search, updateUrl]);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
@@ -193,33 +189,22 @@ function AllUsersPageInner() {
     finally { setActionLoading(false); }
   };
 
-  const handlePromote = async () => {
-    if (!promoteConfirm) return;
-    setActionLoading(true);
-    try {
-      const resp = await promoteToAdmin(promoteConfirm.uid);
-      if (resp.success) {
-        toast.success(`Promoted ${promoteConfirm.name} to Admin!`);
-        setPromoteConfirm(null); fetchUserList();
-      }
-    } catch { toast.error('Promotion failed.'); }
-    finally { setActionLoading(false); }
-  };
+
 
   const handleExportCSV = async () => {
     setExporting(true);
     try {
-      const resp = await getUsers({ search, role, status, country, dateFrom, dateTo, sortBy, sortOrder, page: 1, limit: 10000 });
+      const resp = await getUsers({ search, role, status, dateFrom, dateTo, sortBy, sortOrder, page: 1, limit: 10000 });
       if (!resp.success) throw new Error('Failed to fetch export data');
       const data = resp.data.users;
       if (data.length === 0) { toast.error('No users to export.'); return; }
 
-      const headers = ['UID', 'First Name', 'Last Name', 'Email', 'Phone', 'Role', 'Status', 'Country', 'Registered'];
+      const headers = ['UID', 'First Name', 'Last Name', 'Email', 'Phone', 'Role', 'Status', 'Registered'];
       const csvContent = [
         headers.join(','),
         ...data.map(u => [
           `"${u.uid}"`, `"${u.firstName}"`, `"${u.lastName}"`, `"${u.email}"`,
-          `"${u.phone || ''}"`, `"${u.role}"`, `"${u.status}"`, `"${u.country || ''}"`,
+          `"${u.phone || ''}"`, `"${u.role}"`, `"${u.status}"`,
           `"${new Date(u.createdAt).toISOString()}"`
         ].join(','))
       ].join('\n');
@@ -242,7 +227,7 @@ function AllUsersPageInner() {
       : <ArrowDown className="h-3 w-3 inline text-[var(--color-primary)] ml-1" />;
   };
 
-  const hasActiveFilters = search || role || status || country || dateFrom || dateTo;
+  const hasActiveFilters = search || role || status || dateFrom || dateTo;
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500">
@@ -313,21 +298,6 @@ function AllUsersPageInner() {
             >
               {statuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
-          </div>
-
-          {/* Country */}
-          <div className="relative flex flex-col gap-0.5 min-w-[130px]">
-            <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider px-0.5">Country</label>
-            <div className="relative">
-              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--color-text-muted)]" />
-              <input
-                type="text"
-                placeholder="Any country…"
-                className="w-full pl-8 pr-3 py-2 rounded-lg bg-white border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
-                value={countryInput}
-                onChange={(e) => setCountryInput(e.target.value)}
-              />
-            </div>
           </div>
 
           {/* Divider */}
@@ -416,9 +386,6 @@ function AllUsersPageInner() {
                   >
                     Role <SortIcon field="role" />
                   </th>
-                  <th className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider hidden xl:table-cell whitespace-nowrap">
-                    Location
-                  </th>
                   <th
                     className="px-4 py-3 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider cursor-pointer hover:bg-[var(--color-surface-hover)] select-none whitespace-nowrap"
                     onClick={() => handleSort('status')}
@@ -471,13 +438,6 @@ function AllUsersPageInner() {
                     {/* Role */}
                     <td className="px-4 py-3 hidden lg:table-cell">
                       <RoleBadge role={user.role} />
-                    </td>
-
-                    {/* Location */}
-                    <td className="px-4 py-3 hidden xl:table-cell">
-                      <p className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
-                        {(user.city || user.country) ? [user.city, user.country].filter(Boolean).join(', ') : '—'}
-                      </p>
                     </td>
 
                     {/* Status */}
@@ -553,16 +513,7 @@ function AllUsersPageInner() {
                           </button>
                         )}
 
-                        {/* Promote */}
-                        {(user.status === UserStatus.PENDING || user.status === UserStatus.ACTIVE) && user.role !== UserRole.ADMIN && (
-                          <button
-                            onClick={() => setPromoteConfirm({ uid: user.uid, name: user.fullName })}
-                            title="Promote to Admin"
-                            className="p-1.5 rounded-lg opacity-60 group-hover:opacity-100 hover:bg-[var(--color-role-admin-light)] text-[var(--color-text-muted)] hover:text-[var(--color-role-admin)] transition-all hidden md:block"
-                          >
-                            <Crown className="h-4 w-4" />
-                          </button>
-                        )}
+
                       </div>
                     </td>
                   </tr>
@@ -626,16 +577,7 @@ function AllUsersPageInner() {
         }
       />
 
-      <ConfirmDialog
-        isOpen={!!promoteConfirm}
-        onConfirm={handlePromote}
-        onCancel={() => setPromoteConfirm(null)}
-        title="Promote to Admin"
-        message={`This will irreversibly promote "${promoteConfirm?.name}" to an Admin role. They will gain admin privileges. This action cannot be undone.`}
-        confirmLabel="Promote to Admin"
-        cancelLabel="Cancel"
-        variant="danger"
-      />
+
     </div>
   );
 }

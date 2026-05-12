@@ -56,41 +56,46 @@ export function middleware(request: NextRequest) {
     return response; // Allow them to stay on their notice page
   }
 
+  // ── Admin Auth Pages: /admin/login and /admin/register are PUBLIC ─────────────
+  const isAdminAuthPage = pathname === '/admin/login' || pathname.startsWith('/admin/register');
+
   // ── 2. Logged-in user hitting auth pages → redirect to their dashboard ──────
-  if (session && AUTH_ONLY_PAGES.some((page) => pathname.startsWith(page))) {
-    // If they are banned/suspended, handled above. 
-    // If they are active:
+  // Exclude admin auth pages (/admin/login, /admin/register) — they handle their own access
+  if (session && !isAdminAuthPage && AUTH_ONLY_PAGES.some((page) => pathname.startsWith(page))) {
     if (role && DASHBOARD_PATHS[role]) {
-      // Send to onboarding first if role assigned but profile incomplete
       if (!onboardingComplete) {
         return NextResponse.redirect(new URL(ONBOARDING_PATH, request.url));
       }
       return NextResponse.redirect(new URL(DASHBOARD_PATHS[role], request.url));
     }
-    // Has session but no role → send to onboarding
     return NextResponse.redirect(new URL(ONBOARDING_PATH, request.url));
   }
 
-  // ── 2. Protected route detection ─────────────────────────────────────────────
+  // If logged-in admin hits /admin/login → redirect to admin dashboard
+  if (session && role === UserRole.ADMIN && pathname === '/admin/login') {
+    return NextResponse.redirect(new URL('/admin', request.url));
+  }
+
+  // ── 3. Protected route detection ─────────────────────────────────────────────
   const isProtectedPath =
     pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/admin') ||
     pathname.startsWith('/onboarding') ||
     pathname.startsWith('/verify-email');
 
-  // ── 3. No session → redirect to login ────────────────────────────────────────
+  // ── 4. No session → redirect to login ────────────────────────────────────────
+  // NOTE: Admin routes are NOT here. Unauthorized admin access → 404 (handled by layout)
   if (!session && isProtectedPath) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirectTo', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // ── 4. Has session but no role → onboarding (except if already going there) ──
+  // ── 5. Has session but no role → onboarding (except if already going there) ──
   if (session && !role && isProtectedPath && !pathname.startsWith(ONBOARDING_PATH)) {
     return NextResponse.redirect(new URL(ONBOARDING_PATH, request.url));
   }
 
-  // ── 5. Incomplete Profile → Onboarding guard ──────────────────────────────────
+  // ── 6. Incomplete Profile → Onboarding guard ──────────────────────────────────
   // If hitting a protected subpage but onboarding is not complete, redirect there
   // EXCEPTION: Admins do not have an onboarding flow, so they bypass this guard
   if (
@@ -104,7 +109,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(ONBOARDING_PATH, request.url));
   }
 
-  // ── 6. Role-based access guards ───────────────────────────────────────────────
+  // ── 7. Role-based access guards ───────────────────────────────────────────────
 
   // Boss dashboard: only BOSS
   if (pathname.startsWith('/dashboard/boss') && role !== UserRole.BOSS) {
@@ -116,14 +121,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(UNAUTHORIZED_PATH, request.url));
   }
 
-  // Admin panel: only ADMIN (pages + API routes)
-  const isAdminPath =
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/api/admin');
-
-  if (isAdminPath && role !== UserRole.ADMIN) {
-    return NextResponse.redirect(new URL(UNAUTHORIZED_PATH, request.url));
-  }
+  // Admin routes: role check removed from middleware.
+  // Unauthorized admin access → 404 (handled by admin/layout.tsx)
+  // API routes are excluded by the matcher config below.
 
   return response;
 }
@@ -133,11 +133,12 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Run middleware on all paths EXCEPT:
+     * Run middleware on PAGE routes only. Exclude:
      * - Next.js internals (_next/static, _next/image)
      * - Static assets (favicon, sitemap, robots)
-     * - Public API auth endpoints (register, google, assign-role)
+     * - ALL API routes (they handle auth via verifyAndGetUser in serverAuth)
+     * - Status pages (banned, suspended)
      */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/auth/register|api/auth/google|api/auth/assign-role|api/auth/logout|banned|suspended).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/|banned|suspended).*)',
   ],
 };

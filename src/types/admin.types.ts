@@ -25,6 +25,8 @@ export enum AdminActionType {
   CONTENT_DELETE = 'CONTENT_DELETE',
   PAYMENT_REFUND = 'PAYMENT_REFUND',
   PAYMENT_ADJUST = 'PAYMENT_ADJUST',
+  ADMIN_INVITE = 'ADMIN_INVITE',
+  ADMIN_REGISTER = 'ADMIN_REGISTER',
 }
 
 // ─── Admin Activity Log Entry ─────────────────────────────────────────────────

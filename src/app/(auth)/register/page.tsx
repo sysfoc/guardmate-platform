@@ -413,6 +413,7 @@ function RegisterForm() {
             <PhoneInput
               label="Phone Number"
               value={formData.phone}
+              defaultCountry={formData.phoneCountryCode as any}
               onChange={(val) => setFormData({ ...formData, phone: val })}
               onCountryChange={(c) => setFormData({ ...formData, phoneCountryCode: c.code })}
               lockedCountry={lockedCountry}

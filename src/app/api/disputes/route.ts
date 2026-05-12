@@ -15,12 +15,6 @@ import User from '@/models/User.model';
 import { validateUploadedFiles } from '@/lib/utils/fileValidation';
 import { checkRateLimit } from '@/lib/utils/rateLimit';
 
-export const config = {
-  api: {
-    bodyParser: false, // We use formData()
-  },
-};
-
 /**
  * POST /api/disputes
  * Raise a new dispute

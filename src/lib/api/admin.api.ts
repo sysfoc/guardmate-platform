@@ -48,11 +48,7 @@ export async function updateUserStatus(
   return apiPatch<UserProfile>(`/api/admin/users/${uid}/status`, { status, reason });
 }
 
-// ─── Promote to Admin ─────────────────────────────────────────────────────────
 
-export async function promoteToAdmin(uid: string): Promise<ApiResponse<{ uid: string; role: string; fullName: string }>> {
-  return apiPost<{ uid: string; role: string; fullName: string }>(`/api/admin/users/${uid}/promote`, {});
-}
 
 // ─── Bulk Status Update ───────────────────────────────────────────────────────
 

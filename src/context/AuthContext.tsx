@@ -54,7 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user) {
         try {
           // By default, onAuthChange refreshes use a 14-day token if session exists
-          const token = await user.getIdToken(true);
+          // Use false — onAuthChange already provides a fresh user; true forces
+          // a redundant network roundtrip to Firebase on every page load (~300-800ms)
+          const token = await user.getIdToken(false);
           const isPersisted = Cookies.get('__persisted') === 'true';
           const currentRole = Cookies.get('__role');
           const currentStatus = Cookies.get('__status');

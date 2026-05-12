@@ -19,7 +19,7 @@ export default function AdminProfileEdit() {
   const router = useRouter();
   const { user, fetchUser } = useUser();
   const { platformCountry } = usePlatformContext();
-  
+
   const admin = user as AdminProfile | null;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -162,7 +162,7 @@ export default function AdminProfileEdit() {
 
   return (
     <div className="p-6 lg:p-10 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300">
-      
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
@@ -176,9 +176,9 @@ export default function AdminProfileEdit() {
             <p className="text-sm text-[var(--color-text-secondary)]">Manage your personal admin account</p>
           </div>
         </div>
-        <Button 
-          onClick={handleSubmit} 
-          loading={isSaving} 
+        <Button
+          onClick={handleSubmit}
+          loading={isSaving}
           leftIcon={<Save className="h-4 w-4" />}
         >
           Save Changes
@@ -186,7 +186,7 @@ export default function AdminProfileEdit() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        
+
         {/* Left Col: Avatar & Status */}
         <Card className="col-span-1 p-6 space-y-6 flex flex-col items-center text-center h-fit">
           <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
@@ -206,15 +206,15 @@ export default function AdminProfileEdit() {
                 <span className="text-xs text-white font-medium">Upload</span>
               </div>
             )}
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
               accept="image/png, image/jpeg, image/jpg, image/webp"
               onChange={handlePhotoUpload}
             />
           </div>
-          
+
           <div>
             <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
               {admin.firstName} {admin.lastName}
@@ -226,7 +226,7 @@ export default function AdminProfileEdit() {
         {/* Right Col: Form Fields */}
         <Card className="col-span-1 md:col-span-2 p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            
+
             <div className="space-y-4">
               <h3 className="text-base font-bold text-[var(--color-text-primary)] border-b pb-2">Personal Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -243,11 +243,12 @@ export default function AdminProfileEdit() {
                   onChange={(e) => handleChange('lastName', e.target.value)}
                 />
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <PhoneInput
                   label="Phone Number"
                   value={formData.phone}
+                  defaultCountry={formData.phoneCountryCode as any}
                   onChange={(val) => handleChange('phone', val)}
                   onCountryChange={(c) => handleChange('phoneCountryCode', c.code)}
                   lockedCountry={lockedCountry}

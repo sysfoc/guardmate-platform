@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CertificateBadges } from '@/components/ui/CertificateBadges';
-import { getUserProfile, updateUserStatus, promoteToAdmin, updateVerificationStatus } from '@/lib/api/admin.api';
+import { getUserProfile, updateUserStatus, updateVerificationStatus } from '@/lib/api/admin.api';
 import { ExpiryBadge } from '@/components/ui/ExpiryBadge';
 import type { UserProfile, MateProfile, BossProfile, AdminProfile, LoginHistoryEntry } from '@/types/user.types';
 import { UserRole, UserStatus, LicenseStatus, VerificationStatus, CertificateStatus } from '@/types/enums';
@@ -21,7 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   Ban,
-  Crown,
+
   RefreshCw,
   Globe,
   Monitor,
@@ -113,7 +113,7 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('personal');
   const [actionLoading, setActionLoading] = useState(false);
-  const [promoteConfirm, setPromoteConfirm] = useState(false);
+
   const [rejectDialog, setRejectDialog] = useState<{ action: 'reject' | 'suspend' } | null>(null);
   const [reason, setReason] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -188,20 +188,7 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
     finally { setActionLoading(false); }
   };
 
-  const handlePromote = async () => {
-    if (!user) return;
-    setActionLoading(true);
-    try {
-      const resp = await promoteToAdmin(user.uid);
-      if (resp.success) {
-        toast.success('User promoted to Admin!');
-        setPromoteConfirm(false);
-        fetchUser();
-        onStatusChanged?.();
-      }
-    } catch { toast.error('Promotion failed.'); }
-    finally { setActionLoading(false); }
-  };
+
 
   // ── Tab Content ───────────────────────────────────────────
   const renderTabContent = () => {
@@ -468,12 +455,7 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
                     <XCircle className="h-4 w-4 mr-1" /> Ban
                   </Button>
                 )}
-                {user.role !== UserRole.ADMIN && user.status !== UserStatus.SUSPENDED && user.status !== UserStatus.BANNED && (
-                  <Button size="sm" variant="ghost" onClick={() => setPromoteConfirm(true)} disabled={actionLoading}
-                    className="text-[var(--color-role-admin)] hover:bg-[var(--color-role-admin-light)]">
-                    <Crown className="h-4 w-4 mr-1" /> Promote to Admin
-                  </Button>
-                )}
+
               </div>
             </div>
 
@@ -613,17 +595,7 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
         </div>
       </Modal>
 
-      {/* Promote Confirmation */}
-      <ConfirmDialog
-        isOpen={promoteConfirm}
-        onConfirm={handlePromote}
-        onCancel={() => setPromoteConfirm(false)}
-        title="Promote to Admin"
-        message={`This will irreversibly promote "${user?.fullName}" to Admin role. This action cannot be undone.`}
-        confirmLabel="Promote"
-        cancelLabel="Cancel"
-        variant="danger"
-      />
+
     </>
   );
 }

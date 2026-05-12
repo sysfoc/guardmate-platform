@@ -9,7 +9,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Pagination } from '@/components/ui/Pagination';
 import { UserProfileModal } from '@/components/admin/UserProfileModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { getUsers, updateUserStatus, promoteToAdmin, bulkUpdateStatus } from '@/lib/api/admin.api';
+import { getUsers, updateUserStatus, bulkUpdateStatus } from '@/lib/api/admin.api';
 import type { UserProfile, BossProfile } from '@/types/user.types';
 import { UserRole, UserStatus } from '@/types/enums';
 import {
@@ -19,8 +19,6 @@ import {
   CheckCircle2,
   XCircle,
   Ban,
-  Crown,
-  FileText,
   Filter,
   RefreshCw,
 } from 'lucide-react';
@@ -90,7 +88,6 @@ function BossesPageInner() {
   const [profileUid, setProfileUid] = useState<string | null>(null);
   const [rejectModal, setRejectModal] = useState<{ uid: string; name: string; action: 'reject' | 'suspend' } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [promoteConfirm, setPromoteConfirm] = useState<{ uid: string; name: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   const updateUrl = useCallback(
@@ -165,23 +162,6 @@ function BossesPageInner() {
       }
     } catch {
       toast.error('Action failed.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handlePromote = async () => {
-    if (!promoteConfirm) return;
-    try {
-      setActionLoading(true);
-      const resp = await promoteToAdmin(promoteConfirm.uid);
-      if (resp.success) {
-        toast.success(`${promoteConfirm.name} promoted to Admin!`);
-        setPromoteConfirm(null);
-        fetchBosses();
-      }
-    } catch {
-      toast.error('Promotion failed.');
     } finally {
       setActionLoading(false);
     }
@@ -451,15 +431,6 @@ function BossesPageInner() {
                               <RefreshCw className="h-4 w-4" />
                             </button>
                           )}
-                          {(user.status === UserStatus.PENDING || user.status === UserStatus.ACTIVE) && (
-                            <button
-                              onClick={() => setPromoteConfirm({ uid: user.uid, name: user.fullName })}
-                              title="Promote to Admin"
-                              className="p-1.5 rounded-md hover:bg-[var(--color-role-admin-light)] text-[var(--color-text-muted)] hover:text-[var(--color-role-admin)] transition-colors"
-                            >
-                              <Crown className="h-4 w-4" />
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -521,17 +492,6 @@ function BossesPageInner() {
         }
       />
 
-      {/* Promote Confirmation */}
-      <ConfirmDialog
-        isOpen={!!promoteConfirm}
-        onConfirm={handlePromote}
-        onCancel={() => setPromoteConfirm(null)}
-        title="Promote to Admin"
-        message={`This will irreversibly promote "${promoteConfirm?.name}" to Admin role. They will gain admin privileges. This action cannot be undone.`}
-        confirmLabel="Promote to Admin"
-        cancelLabel="Cancel"
-        variant="danger"
-      />
     </div>
   );
 }

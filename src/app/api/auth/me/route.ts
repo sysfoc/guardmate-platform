@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
-import { verifyAndGetUser, getClientIp, createApiResponse } from '@/lib/serverAuth';
-import User from '@/models/User.model';
+import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,16 +11,9 @@ export async function GET(request: NextRequest) {
 
     const { decodedToken, user } = authContext;
 
-    // Silently update standard login times
-    await User.updateOne(
-      { uid: decodedToken.uid },
-      {
-        $set: {
-          lastLoginAt: new Date().toISOString(),
-          lastLoginIp: getClientIp(request),
-        }
-      }
-    );
+    // NOTE: lastLoginAt is updated by updateLoginMeta() after actual login,
+    // NOT here. Previously this did a DB write on every /me call (every page load)
+    // which added ~50-200ms latency per navigation.
 
     const profileData = user.toObject();
     
