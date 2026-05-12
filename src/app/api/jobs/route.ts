@@ -66,8 +66,24 @@ export async function POST(request: NextRequest) {
     const platformSettings = await PlatformSettings.findOne().lean();
     const minimumRateEnforced = platformSettings?.minimumRateEnforced ?? false;
     const minimumHourlyRate = platformSettings?.minimumHourlyRate ?? null;
-    const minimumFixedRate = platformSettings?.minimumFixedRate ?? null;
     const currency = platformSettings?.platformCurrency || 'AUD';
+
+    // Compute total scheduled hours for fixed-rate minimum validation
+    let totalScheduledHours = 0;
+    if (body.shiftSchedule && Array.isArray(body.shiftSchedule)) {
+      for (const day of body.shiftSchedule as ShiftScheduleDay[]) {
+        for (const slot of day.slots) {
+          totalScheduledHours += calculateShiftDuration(slot.startTime, slot.endTime);
+        }
+      }
+    } else if (body.startTime && body.endTime && body.startDate && body.endDate) {
+      const start = new Date(body.startDate);
+      const end = new Date(body.endDate);
+      const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      const guardsNeeded = body.numberOfGuardsNeeded || 1;
+      const duration = calculateShiftDuration(body.startTime, body.endTime);
+      totalScheduledHours = days * duration * guardsNeeded;
+    }
 
     if (minimumRateEnforced) {
       // Validate budget amount is provided
@@ -86,12 +102,13 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (body.budgetType === BudgetType.FIXED && minimumFixedRate !== null) {
-        if (body.budgetAmount < minimumFixedRate) {
+      if (body.budgetType === BudgetType.FIXED && minimumHourlyRate !== null && totalScheduledHours > 0) {
+        const minFixedAmount = minimumHourlyRate * totalScheduledHours;
+        if (body.budgetAmount < minFixedAmount) {
           return createApiResponse(
             false,
             null,
-            `The minimum fixed rate on this platform is ${currency}${minimumFixedRate.toFixed(2)}. Your posted amount of ${currency}${body.budgetAmount.toFixed(2)} is below the minimum. Please increase your budget.`,
+            `The minimum fixed budget for ${totalScheduledHours.toFixed(1)} hours is ${currency}${minFixedAmount.toFixed(2)} (${currency}${minimumHourlyRate.toFixed(2)}/hr). Your posted amount of ${currency}${body.budgetAmount.toFixed(2)} is below the minimum. Please increase your budget.`,
             400
           );
         }
@@ -130,7 +147,6 @@ export async function POST(request: NextRequest) {
 
     // Process shiftSchedule — enrich each slot with computed fields
     let shiftSchedule: ShiftScheduleDay[] = [];
-    let totalScheduledHours = 0;
     let totalHours = 0;
 
     if (body.shiftSchedule && Array.isArray(body.shiftSchedule) && body.shiftSchedule.length > 0) {

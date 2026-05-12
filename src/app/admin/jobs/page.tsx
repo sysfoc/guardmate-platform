@@ -28,7 +28,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function AdminJobsPage() {
-  const { minimumHourlyRate, minimumFixedRate } = usePlatformContext();
+  const { minimumHourlyRate } = usePlatformContext();
   const [jobs, setJobs] = useState<IJob[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -45,8 +45,9 @@ export default function AdminJobsPage() {
     if (job.budgetType === BudgetType.HOURLY && minimumHourlyRate !== null) {
       return Math.abs(job.budgetAmount - minimumHourlyRate) < 0.01;
     }
-    if (job.budgetType === BudgetType.FIXED && minimumFixedRate !== null) {
-      return Math.abs(job.budgetAmount - minimumFixedRate) < 0.01;
+    if (job.budgetType === BudgetType.FIXED && minimumHourlyRate !== null && job.totalScheduledHours) {
+      const minFixedAmount = minimumHourlyRate * job.totalScheduledHours;
+      return Math.abs(job.budgetAmount - minFixedAmount) < 0.01;
     }
     return false;
   };

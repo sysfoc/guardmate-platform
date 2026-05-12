@@ -110,8 +110,29 @@ export async function PATCH(
       const platformSettings = await PlatformSettings.findOne().lean();
       const minimumRateEnforced = platformSettings?.minimumRateEnforced ?? false;
       const minimumHourlyRate = platformSettings?.minimumHourlyRate ?? null;
-      const minimumFixedRate = platformSettings?.minimumFixedRate ?? null;
       const currency = platformSettings?.platformCurrency || 'AUD';
+
+      // Determine total hours: use updated schedule if provided, otherwise recalc from legacy fields or fallback to existing job value
+      let totalHours = job.totalScheduledHours || 0;
+      if (body.shiftSchedule && Array.isArray(body.shiftSchedule)) {
+        totalHours = 0;
+        for (const day of body.shiftSchedule as ShiftScheduleDay[]) {
+          for (const slot of day.slots) {
+            totalHours += calculateShiftDuration(slot.startTime, slot.endTime);
+          }
+        }
+      } else if (body.startDate || body.endDate || body.startTime || body.endTime) {
+        const sTime = body.startTime || job.startTime;
+        const eTime = body.endTime || job.endTime;
+        if (sTime && eTime) {
+          const sDate = new Date(body.startDate || job.startDate);
+          const eDate = new Date(body.endDate || job.endDate);
+          const days = Math.max(1, Math.ceil((eDate.getTime() - sDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+          const guardsNeeded = body.numberOfGuardsNeeded || job.numberOfGuardsNeeded || 1;
+          const duration = calculateShiftDuration(sTime, eTime);
+          totalHours = Math.round(days * duration * guardsNeeded * 10) / 10;
+        }
+      }
 
       // Determine the budget type: use body value if provided, otherwise use existing job value
       const budgetType = body.budgetType || job.budgetType;
@@ -133,12 +154,13 @@ export async function PATCH(
           }
         }
 
-        if (budgetType === BudgetType.FIXED && minimumFixedRate !== null) {
-          if (body.budgetAmount < minimumFixedRate) {
+        if (budgetType === BudgetType.FIXED && minimumHourlyRate !== null && totalHours > 0) {
+          const minFixedAmount = minimumHourlyRate * totalHours;
+          if (body.budgetAmount < minFixedAmount) {
             return createApiResponse(
               false,
               null,
-              `The minimum fixed rate on this platform is ${currency}${minimumFixedRate.toFixed(2)}. Your posted amount of ${currency}${body.budgetAmount.toFixed(2)} is below the minimum. Please increase your budget.`,
+              `The minimum fixed budget for ${totalHours.toFixed(1)} hours is ${currency}${minFixedAmount.toFixed(2)} (${currency}${minimumHourlyRate.toFixed(2)}/hr). Your posted amount of ${currency}${body.budgetAmount.toFixed(2)} is below the minimum. Please increase your budget.`,
               400
             );
           }

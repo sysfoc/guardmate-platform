@@ -50,7 +50,7 @@ interface DayScheduleInput {
 export default function NewJobPage() {
   const router = useRouter();
   const { user, isLoading } = useUser();
-  const { platformCurrency, minimumHourlyRate, minimumFixedRate, minimumRateEnforced, platformCommissionBoss } = usePlatformContext();
+  const { platformCurrency, minimumHourlyRate, minimumRateEnforced, platformCommissionBoss } = usePlatformContext();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -202,9 +202,10 @@ export default function NewJobPage() {
             e.budgetAmount = `Minimum hourly rate is ${platformCurrency}${minimumHourlyRate.toFixed(2)}. You cannot post below this rate.`;
           }
         }
-        if (form.budgetType === BudgetType.FIXED && minimumFixedRate !== null) {
-          if (form.budgetAmount < minimumFixedRate) {
-            e.budgetAmount = `Minimum fixed budget is ${platformCurrency}${minimumFixedRate.toFixed(2)}. You cannot post below this amount.`;
+        if (form.budgetType === BudgetType.FIXED && minimumHourlyRate !== null) {
+          const minFixedAmount = minimumHourlyRate * totalScheduledHours;
+          if (form.budgetAmount < minFixedAmount) {
+            e.budgetAmount = `Minimum fixed budget for ${totalScheduledHours.toFixed(1)} hours is ${platformCurrency}${minFixedAmount.toFixed(2)} (${platformCurrency}${minimumHourlyRate.toFixed(2)}/hr). You cannot post below this amount.`;
           }
         }
       }
@@ -600,8 +601,8 @@ export default function NewJobPage() {
                   <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
                     {form.budgetType === BudgetType.HOURLY && minimumHourlyRate !== null
                       ? `Platform minimum: ${platformCurrency}${minimumHourlyRate.toFixed(2)}/hr`
-                      : form.budgetType === BudgetType.FIXED && minimumFixedRate !== null
-                        ? `Platform minimum: ${platformCurrency}${minimumFixedRate.toFixed(2)}`
+                      : form.budgetType === BudgetType.FIXED && minimumHourlyRate !== null
+                        ? `Platform minimum: ${platformCurrency}${(minimumHourlyRate * totalScheduledHours).toFixed(2)} for ${totalScheduledHours.toFixed(1)} hrs`
                         : ''}
                   </p>
                 )}

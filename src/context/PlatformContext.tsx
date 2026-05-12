@@ -9,7 +9,6 @@ interface PlatformContextType {
   platformCountry: IPlatformCountry | null;
   platformCurrency: string;
   minimumHourlyRate: number | null;
-  minimumFixedRate: number | null;
   minimumRateEnforced: boolean;
   // Phase 6: Payment context
   platformCommissionBoss: number;
@@ -48,7 +47,6 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     platformCountry: platformSettings?.platformCountry || null,
     platformCurrency: platformSettings?.platformCurrency || 'AUD',
     minimumHourlyRate: platformSettings?.minimumHourlyRate ?? null,
-    minimumFixedRate: platformSettings?.minimumFixedRate ?? null,
     minimumRateEnforced: platformSettings?.minimumRateEnforced ?? false,
     // Phase 6: Payment context
     platformCommissionBoss: platformSettings?.platformCommissionBoss ?? 10,

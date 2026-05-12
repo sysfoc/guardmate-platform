@@ -31,10 +31,6 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
     type: Number,
     default: null,
   },
-  minimumFixedRate: {
-    type: Number,
-    default: null,
-  },
   minimumRateEnforced: {
     type: Boolean,
     default: false,

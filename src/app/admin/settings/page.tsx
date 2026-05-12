@@ -32,7 +32,6 @@ export default function AdminSettingsPage() {
   // Minimum Rate Enforcement State
   const [minimumRateEnforced, setMinimumRateEnforced] = useState<boolean>(false);
   const [minimumHourlyRate, setMinimumHourlyRate] = useState<number | null>(null);
-  const [minimumFixedRate, setMinimumFixedRate] = useState<number | null>(null);
   const [platformCurrency, setPlatformCurrency] = useState<string>('AUD');
 
   // Phase 6: Payment & Finance State
@@ -91,7 +90,6 @@ export default function AdminSettingsPage() {
       // Load minimum rate enforcement settings
       setMinimumRateEnforced(platformData.minimumRateEnforced ?? false);
       setMinimumHourlyRate(platformData.minimumHourlyRate ?? null);
-      setMinimumFixedRate(platformData.minimumFixedRate ?? null);
       setPlatformCurrency(platformData.platformCurrency || 'AUD');
 
       // Phase 6: Load Payment Settings
@@ -157,11 +155,10 @@ export default function AdminSettingsPage() {
       setErrorMsg('');
       setSuccessMsg('');
 
-      // Validation: If minimumRateEnforced is true, both rates must be set
+      // Validation: If minimumRateEnforced is true, hourly rate must be set
       if (minimumRateEnforced) {
-        if (minimumHourlyRate === null || minimumHourlyRate === undefined || minimumHourlyRate <= 0 ||
-            minimumFixedRate === null || minimumFixedRate === undefined || minimumFixedRate <= 0) {
-          setErrorMsg('Please set both minimum rates before enabling enforcement');
+        if (minimumHourlyRate === null || minimumHourlyRate === undefined || minimumHourlyRate <= 0) {
+          setErrorMsg('Please set the minimum hourly rate before enabling enforcement');
           setPlatformSaving(false);
           return;
         }
@@ -191,7 +188,6 @@ export default function AdminSettingsPage() {
         abrVerificationEnabled,
         minimumRateEnforced,
         minimumHourlyRate: minimumHourlyRate ?? null,
-        minimumFixedRate: minimumFixedRate ?? null,
 
         // Phase 6: Payment Settings Payload
         platformCommissionBoss,
@@ -221,7 +217,6 @@ export default function AdminSettingsPage() {
       // Update minimum rate fields with server response (includes audit fields)
       setMinimumRateEnforced(updated.minimumRateEnforced ?? false);
       setMinimumHourlyRate(updated.minimumHourlyRate ?? null);
-      setMinimumFixedRate(updated.minimumFixedRate ?? null);
 
       setPlatformCommissionBoss(updated.platformCommissionBoss ?? 10);
       setPlatformCommissionGuard(updated.platformCommissionGuard ?? 5);
@@ -629,7 +624,7 @@ export default function AdminSettingsPage() {
             <div className="pt-6 border-t border-[var(--color-border-primary)]">
               <h3 className="text-lg font-bold text-[var(--color-text-primary)]">Minimum Rate Enforcement</h3>
               <p className="text-sm text-[var(--color-text-secondary)] mt-1 mb-4">
-                Set minimum hourly and fixed rates that all jobs must meet. When enabled, Bosses cannot post jobs below these rates.
+                Set the minimum hourly rate that all jobs must meet. When enabled, Bosses cannot post jobs below this rate. Fixed-rate jobs automatically require a budget equal to this hourly rate multiplied by the total scheduled hours.
               </p>
 
               {/* Enable Toggle */}
@@ -647,7 +642,7 @@ export default function AdminSettingsPage() {
               </div>
 
               {/* Rate Inputs */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 gap-4 mb-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-[var(--color-input-label)]">
                     Minimum Hourly Rate
@@ -669,26 +664,6 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[var(--color-input-label)]">
-                    Minimum Fixed Rate
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">
-                      {platformCurrency}
-                    </span>
-                    <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={minimumFixedRate ?? ''}
-                      onChange={(e) => setMinimumFixedRate(e.target.value ? Number(e.target.value) : null)}
-                      placeholder="e.g. 50.00"
-                      disabled={!minimumRateEnforced}
-                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 pl-12 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-                </div>
               </div>
 
               {/* Info Box */}

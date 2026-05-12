@@ -12,7 +12,6 @@ export interface IPlatformSettings {
   abrVerificationEnabled: boolean;
   platformCurrency: string;
   minimumHourlyRate: number | null;
-  minimumFixedRate: number | null;
   minimumRateEnforced: boolean;
   minimumRateLastUpdatedAt: string | Date | null;
   minimumRateLastUpdatedBy: string | null;

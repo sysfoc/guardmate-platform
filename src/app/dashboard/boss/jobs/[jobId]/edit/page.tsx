@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
+import { usePlatformContext } from '@/context/PlatformContext';
 import { getJobById, updateJob } from '@/lib/api/job.api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -25,6 +26,7 @@ export default function EditJobPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const router = useRouter();
   const { user, isLoading: userLoading } = useUser();
+  const { platformCurrency, minimumHourlyRate, minimumRateEnforced } = usePlatformContext();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -121,6 +123,23 @@ export default function EditJobPage() {
       if (!form.applicationDeadline) e.applicationDeadline = 'Deadline required';
     } else if (step === 2) {
       if (!form.budgetAmount || form.budgetAmount <= 0) e.budgetAmount = 'Enter a valid budget';
+
+      // ─── MINIMUM RATE VALIDATION ────────────────────────────────────────────
+      if (minimumRateEnforced && form.budgetAmount && form.budgetAmount > 0) {
+        const totalHours = calcHours();
+        if (form.budgetType === BudgetType.HOURLY && minimumHourlyRate !== null) {
+          if (form.budgetAmount < minimumHourlyRate) {
+            e.budgetAmount = `Minimum hourly rate is ${platformCurrency}${minimumHourlyRate.toFixed(2)}. You cannot post below this rate.`;
+          }
+        }
+        if (form.budgetType === BudgetType.FIXED && minimumHourlyRate !== null && totalHours > 0) {
+          const minFixedAmount = minimumHourlyRate * totalHours;
+          if (form.budgetAmount < minFixedAmount) {
+            e.budgetAmount = `Minimum fixed budget for ${totalHours.toFixed(1)} hours is ${platformCurrency}${minFixedAmount.toFixed(2)} (${platformCurrency}${minimumHourlyRate.toFixed(2)}/hr). You cannot post below this amount.`;
+          }
+        }
+      }
+      // ─── END MINIMUM RATE VALIDATION ─────────────────────────────────────────
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -302,9 +321,19 @@ export default function EditJobPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Budget Amount (£) *</label>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">£</span>
+                <label className={labelCls}>Budget Amount ({platformCurrency}) *</label>
+                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">{platformCurrency}</span>
                 <input type="number" min={0} step="0.01" value={form.budgetAmount || ''} onChange={(e) => update({ budgetAmount: Number(e.target.value) })} className={`${inputCls} pl-8`} /></div>
+                {/* Minimum rate hint */}
+                {minimumRateEnforced && (
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                    {form.budgetType === BudgetType.HOURLY && minimumHourlyRate !== null
+                      ? `Platform minimum: ${platformCurrency}${minimumHourlyRate.toFixed(2)}/hr`
+                      : form.budgetType === BudgetType.FIXED && minimumHourlyRate !== null
+                        ? `Platform minimum: ${platformCurrency}${(minimumHourlyRate * calcHours()).toFixed(2)} for ${calcHours().toFixed(1)} hrs`
+                        : ''}
+                  </p>
+                )}
                 {errors.budgetAmount && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.budgetAmount}</p>}
               </div>
               <div>

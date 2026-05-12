@@ -73,13 +73,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     // When saving minimum rates, update audit fields
-    if (body.minimumHourlyRate !== undefined || body.minimumFixedRate !== undefined) {
-      if (body.minimumHourlyRate !== undefined) {
-        updatePayload.minimumHourlyRate = body.minimumHourlyRate;
-      }
-      if (body.minimumFixedRate !== undefined) {
-        updatePayload.minimumFixedRate = body.minimumFixedRate;
-      }
+    if (body.minimumHourlyRate !== undefined) {
+      updatePayload.minimumHourlyRate = body.minimumHourlyRate;
       // Update audit fields when rates are changed
       updatePayload.minimumRateLastUpdatedAt = new Date();
       updatePayload.minimumRateLastUpdatedBy = auth.user.uid;
@@ -176,10 +171,6 @@ export async function PATCH(request: NextRequest) {
     if (body.minimumHourlyRate !== undefined) {
       detailsParts.push(`Minimum Hourly Rate: ${body.minimumHourlyRate}`);
     }
-    if (body.minimumFixedRate !== undefined) {
-      detailsParts.push(`Minimum Fixed Rate: ${body.minimumFixedRate}`);
-    }
-
     if (priceChangeSummary) {
       detailsParts.push(priceChangeSummary);
     }
