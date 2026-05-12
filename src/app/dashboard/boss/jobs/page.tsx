@@ -94,7 +94,7 @@ function BossJobsContent() {
             <h1 className="text-xl font-black text-[var(--color-text-primary)] tracking-tight">My Jobs</h1>
             <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{total} total jobs</p>
           </div>
-          {platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed ? (
+          {platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed) ? (
             <Link href="/dashboard/boss/subscription">
               <Button size="sm" leftIcon={<CreditCard className="h-4 w-4" />} className="shadow-md shadow-[var(--color-primary)]/10">Subscribe to Post</Button>
             </Link>
@@ -134,7 +134,7 @@ function BossJobsContent() {
             <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
               {currentTab ? 'No jobs match this status filter.' : "You haven't posted any jobs yet."}
             </p>
-            {platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed ? (
+            {platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed) ? (
               <Link href="/dashboard/boss/subscription" className="block w-full sm:w-auto">
                 <Button size="sm" leftIcon={<CreditCard className="h-4 w-4" />} className="whitespace-nowrap w-full sm:w-auto">Subscribe to Post</Button>
               </Link>

@@ -77,7 +77,7 @@ export function Navbar() {
               <Button href={getDashboardPath()} variant="ghost" size="sm" leftIcon={<LayoutDashboard className="h-4 w-4" aria-hidden="true" />}>
                 <span className="hidden sm:inline">Dashboard</span>
               </Button>
-              {user.role === 'BOSS' && platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed && (
+              {user.role === 'BOSS' && platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed) && (
                 <Button
                   href="/dashboard/boss/subscription"
                   size="sm"

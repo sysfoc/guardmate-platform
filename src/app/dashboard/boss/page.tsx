@@ -121,7 +121,7 @@ export default function BossDashboard() {
               View Profile
             </Button>
             {/* Subscription-aware Post Job button */}
-            {platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed ? (
+            {platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed) ? (
               <Button
                 href="/dashboard/boss/subscription"
                 size="sm"
@@ -253,7 +253,7 @@ export default function BossDashboard() {
                         <div className="flex flex-col items-center gap-2">
                           <Briefcase className="h-6 w-6 text-[var(--color-text-muted)] opacity-40" />
                           <p className="text-[11px] text-[var(--color-text-tertiary)]">No jobs posted yet. Create your first listing!</p>
-                          {isVerified && !(platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed) && (
+                          {isVerified && !(platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed)) && (
                             <Button href="/dashboard/boss/jobs/new" size="sm" variant="ghost" className="text-[10px] border border-[var(--color-border-primary)] mt-1">
                               Post a Job
                             </Button>

@@ -200,7 +200,7 @@ function BossHome() {
   const displayName = boss?.companyName || boss?.firstName || 'Business';
 
   const quickActions = [
-    platformSettings?.bossSubscriptionEnabled && subStatus && !subStatus.isSubscribed
+    platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed)
       ? { icon: CreditCard, label: 'Subscribe', href: '/dashboard/boss/subscription', desc: 'Unlock posting' }
       : { icon: Briefcase, label: 'Post a Job', href: '/dashboard/boss/jobs/new', desc: 'New shift' },
     { icon: LayoutDashboard, label: 'My Jobs', href: '/dashboard/boss/jobs', desc: 'Manage shifts' },
