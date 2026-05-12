@@ -99,43 +99,7 @@ export async function apiRequest<T>(
     throw error;
   }
 
-  // Handle 401
-  if (response.status === 401) {
-    // Clear cookies
-    if (typeof document !== 'undefined') {
-      document.cookie = '__session=; Max-Age=0; path=/';
-      document.cookie = '__role=; Max-Age=0; path=/';
-    }
-
-    // IMPORTANT: Do NOT redirect for /api/auth/me.
-    // This endpoint returns 401 on every unauthenticated page load -- that is normal.
-    // UserContext catches this error and sets needsRoleAssignment or clears user state.
-    // Redirecting here creates an infinite loop:
-    //   /api/auth/me 401 -> redirect /login -> page loads -> /api/auth/me 401 -> ...
-    //
-    // Only redirect for mid-session expiry on protected actions.
-    const isPassiveCheck = path.includes('/api/auth/me');
-
-    if (!isPassiveCheck && typeof window !== 'undefined') {
-      const currentPath = window.location.pathname;
-      const onAuthPage = ['/login', '/register', '/forgot-password', '/verify-email'].some(
-        (p) => currentPath.startsWith(p)
-      );
-      if (!onAuthPage) {
-        toast.error('Session expired. Please log in again.');
-        window.location.href = '/login';
-      }
-    }
-
-    const error: ApiRequestError = {
-      success: false,
-      message: 'Session expired. Please log in again.',
-      statusCode: 401,
-    };
-    throw error;
-  }
-
-  // Parse JSON
+  // Parse JSON first so we can preserve actual API error messages
   let payload: unknown;
   try {
     payload = await response.json();
@@ -144,6 +108,23 @@ export async function apiRequest<T>(
       success: false,
       message: 'Server returned an invalid response.',
       statusCode: response.status,
+    };
+    throw error;
+  }
+
+  // Handle 401
+  if (response.status === 401) {
+    // Clear cookies
+    if (typeof document !== 'undefined') {
+      document.cookie = '__session=; Max-Age=0; path=/';
+      document.cookie = '__role=; Max-Age=0; path=/';
+    }
+
+    const apiErr = payload as Partial<ApiRequestError>;
+    const error: ApiRequestError = {
+      success: false,
+      message: apiErr.message ?? 'Session expired. Please log in again.',
+      statusCode: 401,
     };
     throw error;
   }

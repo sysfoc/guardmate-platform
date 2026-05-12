@@ -25,7 +25,7 @@ import { getMyPendingReviews } from '@/lib/api/review.api';
 import type { MateActivityItem } from '@/lib/api/job.api';
 import type { MateProfile } from '@/types/user.types';
 import type { IJob } from '@/types/job.types';
-import { VerificationStatus, LicenseStatus } from '@/types/enums';
+import { VerificationStatus, LicenseStatus, UserRole } from '@/types/enums';
 import toast from 'react-hot-toast';
 
 export default function MateDashboard() {
@@ -59,6 +59,7 @@ export default function MateDashboard() {
 
   if (isLoading) return <DashboardSkeleton />;
   if (!user) return null;
+  if (user.role !== UserRole.MATE) return null;
 
   const mate = user as MateProfile;
   const isVerified = mate.licenseStatus === LicenseStatus.VALID && mate.idVerificationStatus === VerificationStatus.VERIFIED;

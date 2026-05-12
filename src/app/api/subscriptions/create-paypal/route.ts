@@ -5,7 +5,7 @@ import BossSubscription from '@/models/BossSubscription.model';
 import UserOffer from '@/models/UserOffer.model';
 import Offer from '@/models/Offer.model';
 import { verifyFirebaseToken } from '@/lib/firebase/firebaseAdmin';
-import { SubscriptionStatus, DiscountType } from '@/types/enums';
+import { SubscriptionStatus, DiscountType, UserRole } from '@/types/enums';
 import { getPayPalAccessToken, getPayPalConfig } from '@/lib/payments/paypalClient';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,6 +28,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
     const bossUid = decoded.uid;
+
+    // Verify the user is a BOSS
+    const User = (await import('@/models/User.model')).default;
+    const user = await User.findOne({ uid: bossUid }).lean();
+    if (!user || user.role !== UserRole.BOSS) {
+      return NextResponse.json({ error: 'Only Boss accounts can create subscriptions.' }, { status: 403 });
+    }
 
     // ── Platform Settings ──────────────────────────────────────────────────
     const settings = await PlatformSettings.findOne().lean();

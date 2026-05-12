@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const authResult = await verifyAndGetUser(request);
     if (!authResult) return createApiResponse(false, null, "Unauthorized.", 401);
     const { user } = authResult;
-    console.log('[stripe-capture] 🔐 Authenticated bossUid:', user.uid);
+    console.log('[stripe-capture] Authenticated bossUid:', user.uid);
     if (user.role !== UserRole.BOSS) {
       return createApiResponse(false, null, "Only Boss accounts.", 403);
     }

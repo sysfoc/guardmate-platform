@@ -138,7 +138,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // ─── Dashboard Path Helper ──────────────────────────────────────────────────
   const getDashboardPath = useCallback((): string => {
-    if (!user) return '/login';
+    if (!user) return '/';
     switch (user.role) {
       case UserRole.BOSS:  return '/dashboard/boss';
       case UserRole.MATE:  return '/dashboard/mate';

@@ -18,6 +18,7 @@ function AdminRegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   if (!token) {
     return (
@@ -50,7 +51,7 @@ function AdminRegisterForm() {
           <p className="text-sm text-[var(--color-text-secondary)] mb-6">
             Your admin account has been set up. You can now sign in using your credentials.
           </p>
-          <button onClick={() => router.push('/admin/login')}
+          <button onClick={() => router.push(`/admin/login?email=${encodeURIComponent(registeredEmail)}&from=invite`)}
             className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/25">
             Sign In Now <ArrowRight className="h-4 w-4" />
           </button>
@@ -68,7 +69,7 @@ function AdminRegisterForm() {
     setIsLoading(true);
     try {
       const resp = await adminRegister(token, firstName.trim(), lastName.trim(), password);
-      if (resp.success) { setSuccess(true); toast.success('Admin account created!'); }
+      if (resp.success) { setRegisteredEmail(resp.data.email); setSuccess(true); toast.success('Admin account created!'); }
     } catch (err: any) { setError(err.message || 'Registration failed.'); }
     finally { setIsLoading(false); }
   };

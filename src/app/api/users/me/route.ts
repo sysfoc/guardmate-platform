@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User.model';
+import PlatformSettings from '@/models/PlatformSettings.model';
 
 /**
  * GET /api/users/me
@@ -46,7 +47,31 @@ export async function PATCH(request: NextRequest) {
     protectedFields.forEach(field => delete body[field]);
 
     await connectDB();
-    
+
+    // ── Phone country lock enforcement (grandfather policy) ───────────────
+    // When the admin has configured a platform country, clients may only
+    // submit `phoneCountryCode` values that are EITHER:
+    //   (a) the current platform country, OR
+    //   (b) the user's already-saved country (grandfathered).
+    // Any other value is rejected to prevent bypassing the lock from a
+    // malicious client.
+    if (Object.prototype.hasOwnProperty.call(body, 'phoneCountryCode')) {
+      const submitted: string | null = body.phoneCountryCode ?? null;
+      if (submitted) {
+        const settings = await PlatformSettings.findOne().lean() as { platformCountry?: { countryCode?: string } | null } | null;
+        const platformCode = settings?.platformCountry?.countryCode ?? null;
+        const savedCode = user.phoneCountryCode ?? null;
+        if (platformCode && submitted !== platformCode && submitted !== savedCode) {
+          return createApiResponse(
+            false,
+            null,
+            'Phone country must match the platform country or your existing country.',
+            400,
+          );
+        }
+      }
+    }
+
     // Perform update
     const updatedUser = await User.findOneAndUpdate(
       { uid: decodedToken.uid },

@@ -25,7 +25,7 @@ export function useRequireAuth(options: UseRequireAuthOptions = {}) {
 
     // 1. Unauthenticated completely
     if (!firebaseUser) {
-      router.push(options.redirectTo || ROUTES.LOGIN);
+      router.push(options.redirectTo || '/');
       return;
     }
 

@@ -62,7 +62,7 @@ function RegisterForm() {
     lastName: '',
     email: '',
     phone: '',
-    phoneCountryCode: 'GB',
+    phoneCountryCode: '',
     password: '',
     confirmPassword: '',
     termsAccepted: false,
@@ -96,6 +96,14 @@ function RegisterForm() {
     dialCode: platformCountry.dialCode,
     flag: platformCountry.flag,
   } : null, [platformCountry]);
+
+  // Force form value to match the admin-enforced platform country (no hardcoded fallback).
+  React.useEffect(() => {
+    if (lockedCountry && formData.phoneCountryCode !== lockedCountry.code) {
+      setFormData(prev => ({ ...prev, phoneCountryCode: lockedCountry.code }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedCountry?.code]);
 
   // ── Role Selection ─────────────────────────────────────────────────────────
   const handleRoleSelect = (selectedRole: UserRole) => {
@@ -187,8 +195,13 @@ function RegisterForm() {
         setIsLoading(false);
         return;
       }
-      if (platformCountry && formData.phoneCountryCode !== platformCountry.countryCode) {
+      if (platformCountry && formData.phoneCountryCode && formData.phoneCountryCode !== platformCountry.countryCode) {
         toast.error(`Only ${platformCountry.countryName} phone numbers are accepted on this platform.`);
+        setIsLoading(false);
+        return;
+      }
+      if (formData.phone.trim() && !formData.phoneCountryCode && !platformCountry) {
+        toast.error('Please select a country for your phone number.');
         setIsLoading(false);
         return;
       }
@@ -213,6 +226,11 @@ function RegisterForm() {
       //   2. Gets token
       //   3. Creates MongoDB document
       //   4. Sends verification email
+      // Source of truth for the phone country code (no hardcoded fallback):
+      const resolvedPhoneCountryCode = platformCountry
+        ? platformCountry.countryCode
+        : (formData.phoneCountryCode || '');
+
       await register(
         {
           role,
@@ -220,7 +238,7 @@ function RegisterForm() {
           lastName:         formData.lastName.trim(),
           email:            formData.email.trim(),
           phone:            formData.phone,
-          phoneCountryCode: formData.phoneCountryCode,
+          phoneCountryCode: resolvedPhoneCountryCode,
         },
         formData.password
       );

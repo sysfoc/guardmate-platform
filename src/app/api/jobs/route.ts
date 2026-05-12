@@ -364,7 +364,7 @@ export async function GET(request: NextRequest) {
       query.postedBy = user.uid;
       if (status) query.status = status;
     } else {
-      if (status) query.status = status;
+      return createApiResponse(false, null, 'Access denied.', 403);
     }
 
     if (locationCity) {

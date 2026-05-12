@@ -7,6 +7,8 @@ import { DisputesView } from '@/components/disputes/DisputesView';
 export default function MateDisputesPage() {
   const { user } = useUser();
 
+  if (!user) return null;
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 px-4 md:px-0">
       <div>
@@ -14,7 +16,7 @@ export default function MateDisputesPage() {
         <p className="text-sm text-[var(--color-text-secondary)] mt-1">Manage and track your active and past disputes.</p>
       </div>
 
-      {user && <DisputesView userRole="MATE" userUid={user.uid} />}
+      <DisputesView userRole="MATE" userUid={user.uid} />
     </div>
   );
 }

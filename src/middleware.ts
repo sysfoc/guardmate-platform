@@ -82,12 +82,10 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/onboarding') ||
     pathname.startsWith('/verify-email');
 
-  // ── 4. No session → redirect to login ────────────────────────────────────────
+  // ── 4. No session → redirect to home ────────────────────────────────────────
   // NOTE: Admin routes are NOT here. Unauthorized admin access → 404 (handled by layout)
   if (!session && isProtectedPath) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   // ── 5. Has session but no role → onboarding (except if already going there) ──

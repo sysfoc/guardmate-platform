@@ -20,7 +20,7 @@ import { getBossActivity } from '@/lib/api/job.api';
 import { getMyPendingReviews } from '@/lib/api/review.api';
 import type { BossActivityItem } from '@/lib/api/job.api';
 import type { BossProfile } from '@/types/user.types';
-import { VerificationStatus, LicenseStatus } from '@/types/enums';
+import { VerificationStatus, LicenseStatus, UserRole } from '@/types/enums';
 import { subscriptionApi } from '@/lib/api/subscription.api';
 import type { ISubscriptionStatus } from '@/types/subscription.types';
 import { usePlatformContext } from '@/context/PlatformContext';
@@ -58,6 +58,7 @@ export default function BossDashboard() {
 
   if (isLoading) return <DashboardSkeleton />;
   if (!user) return null;
+  if (user.role !== UserRole.BOSS) return null;
 
   const boss = user as BossProfile;
   const isVerified = boss.isCompanyVerified && boss.companyLicenseStatus === LicenseStatus.VALID;

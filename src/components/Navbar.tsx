@@ -25,7 +25,7 @@ export function Navbar() {
     try {
       await logout();
       toast.success('Logged out successfully.');
-      router.push('/login');
+      router.push('/');
     } catch {
       toast.error('Logout failed. Please try again.');
     } finally {

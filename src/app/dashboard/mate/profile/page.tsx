@@ -18,9 +18,15 @@ import { updateUserProfile, uploadProfilePhoto, uploadDocument, verifyABN } from
 import type { MateProfile, MateProfileUpdatePayload } from '@/types/user.types';
 import { VerificationStatus, LicenseStatus, CertificateStatus } from '@/types/enums';
 import { ABNStatus, AustralianState, AustralianStateNames } from '@/types/abr.types';
+import {
+  resolvePhoneCountryLock,
+  isGrandfatheredCountry,
+  validatePhoneCountrySubmission,
+} from '@/lib/utils/phoneCountry';
+import { countries as allCountries } from '@/constants/countries';
 import toast from 'react-hot-toast';
 import {
-  Camera, Save, Loader2, Upload, FileText, AlertCircle, Heart,
+  Camera, Save, Loader2, Upload, FileText, AlertCircle, Heart, Info,
   User, Shield, Briefcase, MapPin, Mail, Star, Clock, Plus, X, Globe, Calendar, Trash2, ChevronLeft, HardHat,
   Building2, CheckCircle2, AlertTriangle
 } from 'lucide-react';
@@ -75,7 +81,7 @@ export default function MateProfileEdit() {
     firstName: '',
     lastName: '',
     phone: '',
-    phoneCountryCode: 'GB',
+    phoneCountryCode: '',
     bio: '',
     city: '',
     state: '',
@@ -103,7 +109,7 @@ export default function MateProfileEdit() {
         firstName: mate.firstName || '',
         lastName: mate.lastName || '',
         phone: mate.phone || '',
-        phoneCountryCode: mate.phoneCountryCode || 'GB',
+        phoneCountryCode: mate.phoneCountryCode || '',
         bio: mate.bio || '',
         address: mate.address || '',
         city: mate.city || '',
@@ -131,12 +137,50 @@ export default function MateProfileEdit() {
     }
   }, [mate]);
 
-  const lockedCountry = React.useMemo(() => platformCountry ? {
-    name: platformCountry.countryName,
-    code: platformCountry.countryCode,
-    dialCode: platformCountry.dialCode,
-    flag: platformCountry.flag,
-  } : null, [platformCountry]);
+  // Grandfather policy: a user who registered while the lock was, say, PK keeps
+  // their PK number even after the admin switches the platform to US. They can
+  // optionally opt in to migrate to the new platform country.
+  const userSavedCountry = mate?.phoneCountryCode ?? null;
+  const [forceSwitchToPlatform, setForceSwitchToPlatform] = useState(false);
+
+  const lockedCountry = React.useMemo(
+    () => resolvePhoneCountryLock(platformCountry, userSavedCountry, forceSwitchToPlatform),
+    [platformCountry, userSavedCountry, forceSwitchToPlatform],
+  );
+
+  const grandfathered = !forceSwitchToPlatform && isGrandfatheredCountry(platformCountry, userSavedCountry);
+  const userCountryMeta = React.useMemo(
+    () => (userSavedCountry ? allCountries.find((c) => c.code === userSavedCountry) ?? null : null),
+    [userSavedCountry],
+  );
+
+  React.useEffect(() => {
+    if (lockedCountry && formData.phoneCountryCode !== lockedCountry.code) {
+      setFormData((prev) => ({ ...prev, phoneCountryCode: lockedCountry.code }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedCountry?.code]);
+
+  const handleSwitchToPlatformCountry = () => {
+    if (!platformCountry) return;
+    setForceSwitchToPlatform(true);
+    setFormData((prev) => ({
+      ...prev,
+      phone: '',
+      phoneCountryCode: platformCountry.countryCode,
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleUndoSwitch = () => {
+    setForceSwitchToPlatform(false);
+    setFormData((prev) => ({
+      ...prev,
+      phone: mate?.phone ?? '',
+      phoneCountryCode: userSavedCountry ?? prev.phoneCountryCode,
+    }));
+    setHasUnsavedChanges(true);
+  };
 
   if (!mate) return null;
 
@@ -263,10 +307,30 @@ export default function MateProfileEdit() {
       return;
     }
 
+    const phoneCountryError = validatePhoneCountrySubmission({
+      submitted: formData.phoneCountryCode || null,
+      platformCountry,
+      userSavedCountry,
+      phoneIsEmpty: !formData.phone.trim(),
+    });
+    if (phoneCountryError) {
+      toast.error(phoneCountryError);
+      return;
+    }
+
+    // Source of truth for the phone country code (grandfather policy):
+    // - If a lock is resolved (platform lock OR the user's grandfathered
+    //   country), that is what we persist.
+    // - Otherwise whatever the user explicitly chose from the dropdown.
+    const resolvedPhoneCountryCode = lockedCountry
+      ? lockedCountry.code
+      : (formData.phoneCountryCode || null);
+
     setIsSaving(true);
     try {
       const payload: Partial<MateProfileUpdatePayload> = {
         ...formData,
+        phoneCountryCode: resolvedPhoneCountryCode,
         idExpiry: formData.idExpiry ? new Date(formData.idExpiry).toISOString() : null,
         licenseExpiry: formData.licenseExpiry ? new Date(formData.licenseExpiry).toISOString() : null,
         licenseDocument: localLicenseDoc || mate.licenseDocument || undefined,
@@ -388,6 +452,41 @@ export default function MateProfileEdit() {
                   lockedCountry={lockedCountry}
                 />
               </div>
+              {grandfathered && platformCountry && userCountryMeta && (
+                <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-[var(--color-text-primary)]">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div className="flex-1">
+                    <p className="font-medium">
+                      This platform now operates in {platformCountry.countryName} ({platformCountry.flag}).
+                    </p>
+                    <p className="mt-0.5 text-[var(--color-text-secondary)]">
+                      Your registered phone number is on record as a {userCountryMeta.name} ({userCountryMeta.flag}) number. You may keep it, or switch to a {platformCountry.countryName} number.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleSwitchToPlatformCountry}
+                      className="mt-2 inline-flex items-center rounded-md bg-amber-500/20 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-500/30 dark:text-amber-300"
+                    >
+                      Switch to a {platformCountry.countryName} number
+                    </button>
+                  </div>
+                </div>
+              )}
+              {forceSwitchToPlatform && platformCountry && userCountryMeta && (
+                <div className="mt-3 flex items-start gap-2 rounded-lg border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5 p-3 text-xs text-[var(--color-text-primary)]">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary)]" />
+                  <div className="flex-1">
+                    <p className="font-medium">Enter your new {platformCountry.countryName} number below.</p>
+                    <button
+                      type="button"
+                      onClick={handleUndoSwitch}
+                      className="mt-1 text-[11px] font-semibold text-[var(--color-primary)] hover:underline"
+                    >
+                      Undo and keep my {userCountryMeta.name} number
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="mt-3">
                 <Input label="Street Address" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} placeholder="House #, Street" />
               </div>

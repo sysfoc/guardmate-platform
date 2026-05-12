@@ -13,6 +13,7 @@ export interface PhoneInputProps {
   value: string;
   onChange: (value: string) => void;
   onCountryChange?: (country: Country) => void;
+  /** Optional ISO country code to preselect. If not provided, no country is selected by default. */
   defaultCountry?: string;
   lockedCountry?: Country | null;
   error?: string;
@@ -25,17 +26,24 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   value,
   onChange,
   onCountryChange,
-  defaultCountry = 'US',
+  defaultCountry,
   lockedCountry,
   error,
   disabled,
   required,
 }) => {
-  const [selectedCountry, setSelectedCountry] = React.useState<Country>(
-    lockedCountry || countries.find((c) => c.code === defaultCountry) || countries[0]
-  );
-  
-  // React to lock changes
+  const resolveInitial = (): Country | null => {
+    if (lockedCountry) return lockedCountry;
+    if (defaultCountry) {
+      const found = countries.find((c) => c.code === defaultCountry);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const [selectedCountry, setSelectedCountry] = React.useState<Country | null>(resolveInitial);
+
+  // React to lock changes (admin sets/unsets platform country lock)
   React.useEffect(() => {
     if (lockedCountry) {
       setSelectedCountry(lockedCountry);
@@ -43,6 +51,17 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockedCountry?.code]);
+
+  // React to externally provided defaultCountry changes when no lock is active
+  // (e.g., parent loads user data asynchronously and supplies the persisted country).
+  React.useEffect(() => {
+    if (lockedCountry) return;
+    if (!defaultCountry) return;
+    if (selectedCountry?.code === defaultCountry) return;
+    const found = countries.find((c) => c.code === defaultCountry);
+    if (found) setSelectedCountry(found);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultCountry, lockedCountry?.code]);
 
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -94,8 +113,14 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
             )}
           >
             <span className="flex items-center gap-1.5">
-              <span className="text-xl leading-none flex items-center justify-center -mt-1">{selectedCountry.flag}</span>
-              <span className="text-sm font-medium leading-none">{selectedCountry.dialCode}</span>
+              {selectedCountry ? (
+                <>
+                  <span className="text-xl leading-none flex items-center justify-center -mt-1">{selectedCountry.flag}</span>
+                  <span className="text-sm font-medium leading-none">{selectedCountry.dialCode}</span>
+                </>
+              ) : (
+                <span className="text-sm font-medium leading-none text-[var(--color-text-muted)]">Select</span>
+              )}
             </span>
             {!lockedCountry && <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} />}
           </button>

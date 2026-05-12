@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
-import { Shield, Mail, Lock, KeyRound, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Shield, Mail, Lock, KeyRound, ArrowRight, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { adminLogin, adminVerifyOtp, adminResendOtp } from '@/lib/api/adminAuth.api';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/lib/firebase/firebaseClient';
@@ -40,8 +40,12 @@ function OtpInput({ value, onChange, disabled }: { value: string; onChange: (v: 
 
 function AdminLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const emailParam = searchParams.get('email') || '';
+  const fromInvite = searchParams.get('from') === 'invite';
+
   const [step, setStep] = useState<1 | 2>(1);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(emailParam);
   const [password, setPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -117,6 +121,12 @@ function AdminLoginForm() {
                 <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Admin Sign In</h1>
                 <p className="text-sm text-[var(--color-text-secondary)] mt-1">Enter your admin credentials to continue</p>
               </div>
+              {fromInvite && !error && (
+                <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-emerald-700">Account created successfully! Please sign in with your new password.</p>
+                </div>
+              )}
               {error && <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200"><AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" /><p className="text-sm text-red-700">{error}</p></div>}
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">

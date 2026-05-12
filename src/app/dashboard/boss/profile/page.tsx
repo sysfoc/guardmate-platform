@@ -14,9 +14,15 @@ import { Badge } from '@/components/ui/Badge';
 import { updateUserProfile, uploadProfilePhoto, uploadDocument } from '@/lib/api/user.api';
 import type { BossProfile, BossProfileUpdatePayload } from '@/types/user.types';
 import { VerificationStatus, LicenseStatus } from '@/types/enums';
+import {
+  resolvePhoneCountryLock,
+  isGrandfatheredCountry,
+  validatePhoneCountrySubmission,
+} from '@/lib/utils/phoneCountry';
+import { countries as allCountries } from '@/constants/countries';
 import toast from 'react-hot-toast';
 import {
-  Camera, Save, Loader2, Building2, User, Globe, MapPin, Phone, Mail, FileText, Upload, ChevronLeft,
+  Camera, Save, Loader2, Building2, User, Globe, MapPin, Phone, Mail, FileText, Upload, ChevronLeft, Info,
 } from 'lucide-react';
 
 export default function BossProfileEdit() {
@@ -41,7 +47,7 @@ export default function BossProfileEdit() {
     firstName: '',
     lastName: '',
     phone: '',
-    phoneCountryCode: 'GB',
+    phoneCountryCode: '',
     companyName: '',
     companyRegistrationNumber: '',
     industry: '',
@@ -66,7 +72,7 @@ export default function BossProfileEdit() {
         firstName: boss.firstName || '',
         lastName: boss.lastName || '',
         phone: boss.phone || '',
-        phoneCountryCode: boss.phoneCountryCode || 'GB',
+        phoneCountryCode: boss.phoneCountryCode || '',
         companyName: boss.companyName || '',
         companyRegistrationNumber: boss.companyRegistrationNumber || '',
         industry: boss.industry || '',
@@ -119,12 +125,58 @@ export default function BossProfileEdit() {
 
   const completion = calculateCompletion();
 
-  const lockedCountry = React.useMemo(() => platformCountry ? {
-    name: platformCountry.countryName,
-    code: platformCountry.countryCode,
-    dialCode: platformCountry.dialCode,
-    flag: platformCountry.flag,
-  } : null, [platformCountry]);
+  // Grandfather policy: a user who registered while the lock was, say, PK keeps
+  // their PK number even after the admin switches the platform to US. They can
+  // optionally opt in to migrate to the new platform country.
+  const userSavedCountry = boss?.phoneCountryCode ?? null;
+  const [forceSwitchToPlatform, setForceSwitchToPlatform] = useState(false);
+
+  const lockedCountry = React.useMemo(
+    () => resolvePhoneCountryLock(platformCountry, userSavedCountry, forceSwitchToPlatform),
+    [platformCountry, userSavedCountry, forceSwitchToPlatform],
+  );
+
+  const grandfathered = !forceSwitchToPlatform && isGrandfatheredCountry(platformCountry, userSavedCountry);
+  const userCountryMeta = React.useMemo(
+    () => (userSavedCountry ? allCountries.find((c) => c.code === userSavedCountry) ?? null : null),
+    [userSavedCountry],
+  );
+
+  // Keep the form's country code in sync with the resolved lock. The lock is
+  // the source of truth whenever one is active (platform lock or grandfather).
+  React.useEffect(() => {
+    if (lockedCountry && formData.phoneCountryCode !== lockedCountry.code) {
+      setFormData((prev) => ({ ...prev, phoneCountryCode: lockedCountry.code }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedCountry?.code]);
+
+  const handleSwitchToPlatformCountry = () => {
+    if (!platformCountry) return;
+    setForceSwitchToPlatform(true);
+    setFormData((prev) => ({
+      ...prev,
+      phone: '',
+      phoneCountryCode: platformCountry.countryCode,
+    }));
+    setHasUnsavedChanges(true);
+    if (errors.phone) {
+      setErrors((prev) => {
+        const { phone, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
+  const handleUndoSwitch = () => {
+    setForceSwitchToPlatform(false);
+    setFormData((prev) => ({
+      ...prev,
+      phone: boss?.phone ?? '',
+      phoneCountryCode: userSavedCountry ?? prev.phoneCountryCode,
+    }));
+    setHasUnsavedChanges(true);
+  };
 
   if (!boss) return null;
 
@@ -154,6 +206,13 @@ export default function BossProfileEdit() {
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+    const phoneCountryError = validatePhoneCountrySubmission({
+      submitted: formData.phoneCountryCode || null,
+      platformCountry,
+      userSavedCountry,
+      phoneIsEmpty: !formData.phone.trim(),
+    });
+    if (phoneCountryError) newErrors.phone = phoneCountryError;
 
     if (formData.companyEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.companyEmail)) {
       newErrors.companyEmail = 'Invalid email format';
@@ -223,8 +282,18 @@ export default function BossProfileEdit() {
 
     setIsSaving(true);
     try {
+      // Source of truth for the phone country code (grandfather policy):
+      // - If a lock is resolved (platform lock OR the user's grandfathered
+      //   country), that is what we persist.
+      // - Otherwise whatever the user explicitly chose from the dropdown.
+      // We never fall back to a hard-coded default.
+      const resolvedPhoneCountryCode = lockedCountry
+        ? lockedCountry.code
+        : (formData.phoneCountryCode || null);
+
       await updateUserProfile({
         ...formData,
+        phoneCountryCode: resolvedPhoneCountryCode,
         companyLicenseExpiry: formData.companyLicenseExpiry ? new Date(formData.companyLicenseExpiry).toISOString() : null,
         companyLicenseDocument: localCompanyLicenseDoc || boss.companyLicenseDocument,
         isProfileComplete: completion >= 100,
@@ -362,7 +431,42 @@ export default function BossProfileEdit() {
                   <Input label="First Name" value={formData.firstName} onChange={(e) => handleChange('firstName', e.target.value)} error={errors.firstName} />
                   <Input label="Last Name" value={formData.lastName} onChange={(e) => handleChange('lastName', e.target.value)} error={errors.lastName} />
                 </div>
-                <div className="mt-3">
+                <div className="mt-3 space-y-2">
+                  {grandfathered && platformCountry && userCountryMeta && (
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-[var(--color-text-primary)]">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <div className="flex-1">
+                        <p className="font-medium">
+                          This platform now operates in {platformCountry.countryName} ({platformCountry.flag}).
+                        </p>
+                        <p className="mt-0.5 text-[var(--color-text-secondary)]">
+                          Your registered phone number is on record as a {userCountryMeta.name} ({userCountryMeta.flag}) number. You may keep it, or switch to a {platformCountry.countryName} number.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleSwitchToPlatformCountry}
+                          className="mt-2 inline-flex items-center rounded-md bg-amber-500/20 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-500/30 dark:text-amber-300"
+                        >
+                          Switch to a {platformCountry.countryName} number
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {forceSwitchToPlatform && platformCountry && userCountryMeta && (
+                    <div className="flex items-start gap-2 rounded-lg border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5 p-3 text-xs text-[var(--color-text-primary)]">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-primary)]" />
+                      <div className="flex-1">
+                        <p className="font-medium">Enter your new {platformCountry.countryName} number below.</p>
+                        <button
+                          type="button"
+                          onClick={handleUndoSwitch}
+                          className="mt-1 text-[11px] font-semibold text-[var(--color-primary)] hover:underline"
+                        >
+                          Undo and keep my {userCountryMeta.name} number
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <PhoneInput
                     label="Personal Phone"
                     value={formData.phone}
