@@ -70,6 +70,8 @@ export interface AdminDashboardStats {
   totalRevenue: number;
   totalJobsPosted: number;
   activeJobs: number;
+  activeSubscriptions: number;
+  totalSubscriptionRevenue: number;
   recentPending: AdminPendingUser[];
   recentActivity: AdminActivity[];
 }
@@ -171,16 +173,12 @@ export interface JobsMarketplaceStats {
     cancelled: number;
     expired: number;
   };
-  jobsByType: {
-    oneTime: number;
-    recurring: number;
-    contract: number;
-  };
 }
 
 export interface RevenueByPeriodItem {
   date: string;
   revenue: number;
+  subscriptionRevenue: number;
   transactions: number;
 }
 
@@ -193,6 +191,10 @@ export interface RevenueFinanceStats {
   totalPaidOut: number;
   totalWithdrawals: number;
   averageJobValue: number;
+  totalSubscriptionRevenue: number;
+  subscriptionRevenueThisPeriod: number;
+  activeSubscriptions: number;
+  monthlyRecurringRevenue: number;
   revenueByMethod: {
     stripe: number;
     paypal: number;

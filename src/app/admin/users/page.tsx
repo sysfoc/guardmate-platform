@@ -418,9 +418,9 @@ function AllUsersPageInner() {
                           {/* Show email inline on small screens */}
                           <p className="text-xs text-[var(--color-text-muted)] truncate md:hidden">{user.email}</p>
                           {/* Show role inline on medium screens */}
-                          <p className="text-xs text-[var(--color-text-muted)] lg:hidden hidden md:block mt-0.5">
+                          <div className="text-xs text-[var(--color-text-muted)] lg:hidden hidden md:block mt-0.5">
                             <RoleBadge role={user.role} />
-                          </p>
+                          </div>
                         </div>
                       </div>
                     </td>

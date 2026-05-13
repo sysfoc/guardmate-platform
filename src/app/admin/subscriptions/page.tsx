@@ -88,60 +88,58 @@ export default function AdminSubscriptionsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto pb-12">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-[var(--color-text-primary)] flex items-center gap-2">
-          <CreditCard className="h-6 w-6 text-[var(--color-primary)]" />
-          Boss Subscriptions
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          Monitor and manage Boss monthly subscription plans.
-        </p>
+      {/* Header + Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--color-text-primary)] flex items-center gap-2">
+            <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-[var(--color-primary)]" />
+            Boss Subscriptions
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] mt-1">
+            Monitor and manage Boss monthly subscription plans.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm">
+            <Filter className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
+            <select
+              value={filterStatus}
+              onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+              className="bg-transparent text-sm text-[var(--color-text-primary)] outline-none cursor-pointer"
+            >
+              <option value="">All Statuses</option>
+              <option value={SubscriptionStatus.ACTIVE}>Active</option>
+              <option value={SubscriptionStatus.LAPSED}>Lapsed</option>
+              <option value={SubscriptionStatus.CANCELLED}>Cancelled</option>
+            </select>
+          </div>
+          {filterStatus && (
+            <button
+              onClick={() => { setFilterStatus(''); setPage(1); }}
+              className="flex items-center gap-1 text-xs font-bold text-[var(--color-danger)] hover:opacity-70 transition-opacity px-2 py-1"
+            >
+              <X className="h-3 w-3" /> Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <StatCard label="Total" value={stats.total} icon={<Users />} variant="blue" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <StatCard label="Total Subscriptions" value={stats.total} icon={<Users />} variant="blue" />
           <StatCard label="Active" value={stats.active} icon={<CreditCard />} variant="emerald" />
           <StatCard label="Lapsed" value={stats.lapsed} icon={<AlertTriangle />} variant="rose" />
           <StatCard label="Cancelled" value={stats.cancelled} icon={<X />} variant="amber" />
           <StatCard
-            label="MRR"
+            label="Monthly Recurring Revenue"
             value={`$${stats.monthlyRecurringRevenue.toLocaleString()}`}
             icon={<TrendingUp />}
             variant="emerald"
           />
         </div>
       )}
-
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-text-tertiary)]">
-            <Filter className="h-4 w-4" />
-            Filter:
-          </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            className="h-9 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none"
-          >
-            <option value="">All Statuses</option>
-            <option value={SubscriptionStatus.ACTIVE}>Active</option>
-            <option value={SubscriptionStatus.LAPSED}>Lapsed</option>
-            <option value={SubscriptionStatus.CANCELLED}>Cancelled</option>
-          </select>
-          {filterStatus && (
-            <button
-              onClick={() => { setFilterStatus(''); setPage(1); }}
-              className="text-xs text-[var(--color-danger)] hover:underline flex items-center gap-1"
-            >
-              <X className="h-3 w-3" /> Clear
-            </button>
-          )}
-        </div>
-      </Card>
 
       {/* Subscriptions Table */}
       <Card className="overflow-hidden">

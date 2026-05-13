@@ -347,21 +347,21 @@ export default function AdminOffersPage() {
       {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-[var(--color-bg-primary)] rounded-2xl shadow-2xl border border-[var(--color-border-primary)] w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm dark:bg-black/70" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {editingOffer ? 'Edit Offer' : 'Create New Offer'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-[var(--color-bg-tertiary)] rounded-lg">
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {editingOffer && editingOffer.usageCount > 0 && (
-              <div className="bg-amber-50 border-l-4 border-amber-500 p-3 rounded-md mb-4 flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-700">
+              <div className="bg-amber-50 dark:bg-amber-950/40 border-l-4 border-amber-500 dark:border-amber-600 p-3 rounded-lg mb-5 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-700 dark:text-amber-300">
                   This offer has been used {editingOffer.usageCount} time(s). Only the active toggle can be changed.
                 </p>
               </div>
@@ -369,34 +369,34 @@ export default function AdminOffersPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-[var(--color-text-primary)] mb-1 block">Name *</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Name *</label>
                 <input
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   disabled={editingOffer !== null && editingOffer.usageCount > 0}
-                  className="w-full h-10 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none disabled:opacity-50"
+                  className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent focus:outline-none disabled:opacity-50 transition-all"
                   placeholder="e.g. Launch Week Boss Discount"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-[var(--color-text-primary)] mb-1 block">Description *</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Description *</label>
                 <textarea
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   disabled={editingOffer !== null && editingOffer.usageCount > 0}
                   rows={2}
-                  className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none disabled:opacity-50 resize-none"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent focus:outline-none disabled:opacity-50 resize-none transition-all"
                   placeholder="Brief description of the offer..."
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-[var(--color-text-primary)] mb-1 block">Offer Type *</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Offer Type *</label>
                   <select
                     value={formOfferType}
                     onChange={(e) => setFormOfferType(e.target.value as OfferType)}
                     disabled={editingOffer !== null && editingOffer.usageCount > 0}
-                    className="w-full h-10 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none disabled:opacity-50"
+                    className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent focus:outline-none disabled:opacity-50 transition-all appearance-none"
                   >
                     {Object.entries(OFFER_TYPE_LABELS).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
@@ -404,12 +404,12 @@ export default function AdminOffersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-[var(--color-text-primary)] mb-1 block">Discount Type *</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Discount Type *</label>
                   <select
                     value={formDiscountType}
                     onChange={(e) => setFormDiscountType(e.target.value as DiscountType)}
                     disabled={editingOffer !== null && editingOffer.usageCount > 0}
-                    className="w-full h-10 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none disabled:opacity-50"
+                    className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent focus:outline-none disabled:opacity-50 transition-all appearance-none"
                   >
                     {Object.entries(DISCOUNT_TYPE_LABELS).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
@@ -419,7 +419,7 @@ export default function AdminOffersPage() {
               </div>
               {formDiscountType !== DiscountType.FULL_WAIVER && (
                 <div>
-                  <label className="text-sm font-medium text-[var(--color-text-primary)] mb-1 block">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                     Discount Value {formDiscountType === DiscountType.PERCENTAGE_OFF ? '(%)' : '(rate)'}
                   </label>
                   <input
@@ -428,19 +428,19 @@ export default function AdminOffersPage() {
                     onChange={(e) => setFormDiscountValue(e.target.value ? Number(e.target.value) : '')}
                     disabled={editingOffer !== null && editingOffer.usageCount > 0}
                     min={0}
-                    className="w-full h-10 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none disabled:opacity-50"
+                    className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent focus:outline-none disabled:opacity-50 transition-all"
                     placeholder="e.g. 50"
                   />
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-[var(--color-text-primary)] mb-1 block">Eligibility</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Eligibility</label>
                   <select
                     value={formEligibility}
                     onChange={(e) => setFormEligibility(e.target.value as OfferEligibility)}
                     disabled={editingOffer !== null && editingOffer.usageCount > 0}
-                    className="w-full h-10 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none disabled:opacity-50"
+                    className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent focus:outline-none disabled:opacity-50 transition-all appearance-none"
                   >
                     <option value={OfferEligibility.ALL_USERS}>All Users</option>
                     <option value={OfferEligibility.NEW_USERS_ONLY}>New Users Only</option>
@@ -448,44 +448,44 @@ export default function AdminOffersPage() {
                 </div>
                 {formEligibility === OfferEligibility.NEW_USERS_ONLY && (
                   <div>
-                    <label className="text-sm font-medium text-[var(--color-text-primary)] mb-1 block">New User Threshold (days)</label>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">New User Threshold (days)</label>
                     <input
                       type="number"
                       value={formNewUserDays}
                       onChange={(e) => setFormNewUserDays(Number(e.target.value) || 30)}
                       disabled={editingOffer !== null && editingOffer.usageCount > 0}
                       min={1}
-                      className="w-full h-10 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none disabled:opacity-50"
+                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent focus:outline-none disabled:opacity-50 transition-all"
                     />
                   </div>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-[var(--color-text-primary)] mb-1 block">Start Date *</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Start Date *</label>
                   <input
                     type="date"
                     value={formStartDate}
                     onChange={(e) => setFormStartDate(e.target.value)}
                     disabled={editingOffer !== null && editingOffer.usageCount > 0}
-                    className="w-full h-10 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none disabled:opacity-50"
+                    className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent focus:outline-none disabled:opacity-50 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-[var(--color-text-primary)] mb-1 block">End Date *</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">End Date *</label>
                   <input
                     type="date"
                     value={formEndDate}
                     onChange={(e) => setFormEndDate(e.target.value)}
                     disabled={editingOffer !== null && editingOffer.usageCount > 0}
-                    className="w-full h-10 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] focus:outline-none disabled:opacity-50"
+                    className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent focus:outline-none disabled:opacity-50 transition-all"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[var(--color-border-primary)]">
-              <Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button>
+            <div className="flex justify-end gap-3 mt-6 pt-5 border-t border-slate-200 dark:border-slate-700">
+              <Button variant="ghost" onClick={() => setShowModal(false)} className="text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</Button>
               <Button onClick={handleSubmit} disabled={saving}>
                 {saving ? 'Saving...' : editingOffer ? 'Update Offer' : 'Create Offer'}
               </Button>

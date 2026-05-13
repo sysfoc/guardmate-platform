@@ -56,9 +56,7 @@ export enum NotificationType {
 }
 
 export enum JobType {
-  ONE_TIME   = 'ONE_TIME',
-  RECURRING  = 'RECURRING',
-  CONTRACT   = 'CONTRACT',
+  ONE_TIME = 'ONE_TIME',
 }
 
 export enum BudgetType {

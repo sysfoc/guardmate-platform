@@ -163,12 +163,22 @@ export default function MapDisplayInner({
     // Draw path (location history trail)
     if (path && path.length > 1) {
       const latlngs = path.map((p) => [p.lat, p.lng] as L.LatLngExpression);
+      // Shadow/outline for the trail
+      L.polyline(latlngs, {
+        color: 'rgba(0,0,0,0.25)',
+        weight: 7,
+        opacity: 1,
+        lineCap: 'round',
+        lineJoin: 'round',
+      }).addTo(trackingLayerRef.current);
+      // Main trail
       L.polyline(latlngs, {
         color: '#10b981', // emerald-500
-        weight: 3,
-        opacity: 0.7,
-        dashArray: '5, 10',
+        weight: 5,
+        opacity: 0.9,
+        dashArray: '8, 6',
         lineCap: 'round',
+        lineJoin: 'round',
       }).addTo(trackingLayerRef.current);
     }
 
@@ -196,15 +206,17 @@ export default function MapDisplayInner({
     if (liveMarker) {
       const guardIcon = L.divIcon({
         html: `
-          <div style="position:relative;display:flex;align-items:center;justify-content:center;">
-            <svg width="28" height="28" viewBox="0 0 28 28">
-              <circle cx="14" cy="14" r="10" fill="#10b981" stroke="white" stroke-width="3"/>
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;width:48px;height:48px;">
+            <svg width="40" height="40" viewBox="0 0 40 40" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));z-index:2;">
+              <circle cx="20" cy="20" r="14" fill="#10b981" stroke="white" stroke-width="4"/>
+              <circle cx="20" cy="20" r="10" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
             </svg>
-            <div style="position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.3);animation:guardmate-pulse 1.5s infinite;"></div>
+            <div style="position:absolute;width:48px;height:48px;border-radius:50%;background:rgba(16,185,129,0.35);animation:guardmate-pulse 1.5s infinite;z-index:1;"></div>
+            <div style="position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);white-space:nowrap;background:rgba(16,185,129,0.9);color:white;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:0.5px;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,0.2);">GUARD</div>
           </div>`,
         className: 'guardmate-marker',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        iconSize: [48, 62],
+        iconAnchor: [24, 34],
       });
 
       L.marker([liveMarker.lat, liveMarker.lng], { icon: guardIcon })

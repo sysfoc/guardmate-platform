@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Users,
   ShieldAlert,
+  CreditCard,
 } from 'lucide-react';
 import { getAdminStats, getAdminAnalyticsOverview } from '@/lib/api/admin.api';
 import type { AdminDashboardStats, AdminActivity, AdminAnalyticsOverview } from '@/types/admin.types';
@@ -132,6 +133,13 @@ export default function AdminDashboardPage() {
       iconBg: 'bg-[var(--color-success-light)]',
       iconColor: 'text-[var(--color-success)]',
     },
+    {
+      label: 'Active Subscriptions',
+      value: stats.activeSubscriptions,
+      icon: CreditCard,
+      iconBg: 'bg-[var(--color-primary-light)]',
+      iconColor: 'text-[var(--color-primary)]',
+    },
   ];
 
   return (
@@ -201,7 +209,7 @@ export default function AdminDashboardPage() {
                 <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Revenue This Month</span>
               </div>
               <p className="text-base sm:text-lg font-bold text-[var(--color-text-primary)]">
-                ${analytics.revenueFinance.revenueThisPeriod.toLocaleString()}
+                ${(analytics.revenueFinance.revenueThisPeriod + analytics.revenueFinance.subscriptionRevenueThisPeriod).toLocaleString()}
               </p>
             </div>
             
@@ -247,124 +255,130 @@ export default function AdminDashboardPage() {
       {/* ─── Two-column: Recent Approvals + Activity ────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Recent Pending Approvals */}
-        <Card className="p-5 space-y-5 bg-white">
-          <div className="flex items-center justify-between border-b border-[var(--color-surface-border)] pb-4">
-            <h2 className="text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-              <Clock className="h-4 w-4 text-[var(--color-warning)]" />
-              Recent Approvals
-            </h2>
-            <Link
-              href="/admin/guards"
-              className="text-[10px] font-black text-[var(--color-primary)] hover:underline flex items-center gap-1 uppercase tracking-widest bg-[var(--color-primary)]/5 px-2 py-1 rounded-md"
-            >
-              View all <ChevronRight className="h-3 w-3" />
-            </Link>
-          </div>
-
-          {stats.recentPending.length === 0 ? (
-            <div className="text-center py-12 text-[var(--color-text-muted)] text-sm italic">
-              No pending approval requests.
+        <Card className="bg-white h-[350px] sm:h-[400px] md:h-[450px] overflow-hidden grid" padding="none">
+          <div className="flex flex-col h-full p-5">
+            <div className="flex items-center justify-between border-b border-[var(--color-surface-border)] pb-4 shrink-0 mb-5">
+              <h2 className="text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+                <Clock className="h-4 w-4 text-[var(--color-warning)]" />
+                Recent Approvals
+              </h2>
+              <Link
+                href="/admin/guards"
+                className="text-[10px] font-black text-[var(--color-primary)] hover:underline flex items-center gap-1 uppercase tracking-widest bg-[var(--color-primary)]/5 px-2 py-1 rounded-md"
+              >
+                View all <ChevronRight className="h-3 w-3" />
+              </Link>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {stats.recentPending.map((user) => (
-                <div
-                  key={user._id}
-                  className="flex items-center justify-between p-3.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-bg-subtle)]/20 hover:bg-[var(--color-surface-hover)] hover:shadow-sm transition-all group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Avatar
-                      src={user.profilePhoto || undefined}
-                      name={user.fullName}
-                      size="sm"
-                      className="h-9 w-9 ring-2 ring-white"
-                    />
-                    <div className="min-w-0">
-                      <p className="font-bold text-sm text-[var(--color-text-primary)] truncate">
-                        {user.fullName}
-                      </p>
-                      <p className="text-[11px] text-[var(--color-text-muted)] truncate mt-0.5">
-                        {user.email}
-                      </p>
+
+            {stats.recentPending.length === 0 ? (
+              <div className="text-center text-[var(--color-text-muted)] text-sm italic flex-1 flex items-center justify-center min-h-0">
+                No pending approval requests.
+              </div>
+            ) : (
+              <div className="overflow-y-auto flex-1 min-h-0 space-y-3 pr-2">
+                {stats.recentPending.map((user) => (
+                  <div
+                    key={user._id}
+                    className="flex items-center justify-between p-3.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-bg-subtle)]/20 hover:bg-[var(--color-surface-hover)] hover:shadow-sm transition-all group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar
+                        src={user.profilePhoto || undefined}
+                        name={user.fullName}
+                        size="sm"
+                        className="h-9 w-9 ring-2 ring-white"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-[var(--color-text-primary)] truncate">
+                          {user.fullName}
+                        </p>
+                        <p className="text-[11px] text-[var(--color-text-muted)] truncate mt-0.5">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge
+                        variant={user.role === 'MATE' ? 'mate' : 'boss'}
+                        className="text-[9px] px-2 py-0.5 rounded-md font-bold"
+                      >
+                        {user.role === 'MATE' ? 'Guard' : 'Boss'}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge
-                      variant={user.role === 'MATE' ? 'mate' : 'boss'}
-                      className="text-[9px] px-2 py-0.5 rounded-md font-bold"
-                    >
-                      {user.role === 'MATE' ? 'Guard' : 'Boss'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </Card>
 
         {/* Recent Activity Log */}
-        <Card className="p-5 space-y-5 bg-white relative overflow-hidden">
-          <div className="flex items-center justify-between border-b border-[var(--color-surface-border)] pb-4">
-            <h2 className="text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-              <Activity className="h-4 w-4 text-[var(--color-info)]" />
-              Live Activity
-            </h2>
-            <Link
-              href="/admin/activity"
-              className="text-[10px] font-black text-[var(--color-primary)] hover:underline flex items-center gap-1 uppercase tracking-widest bg-[var(--color-primary)]/5 px-2 py-1 rounded-md"
-            >
-              Full Log <ArrowUpRight className="h-3 w-3" />
-            </Link>
+        <Card className="bg-white h-[350px] sm:h-[400px] md:h-[450px] overflow-hidden grid" padding="none">
+          <div className="flex flex-col h-full p-5">
+            <div className="flex items-center justify-between border-b border-[var(--color-surface-border)] pb-4 shrink-0 mb-5">
+              <h2 className="text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+                <Activity className="h-4 w-4 text-[var(--color-info)]" />
+                Live Activity
+              </h2>
+              <Link
+                href="/admin/activity"
+                className="text-[10px] font-black text-[var(--color-primary)] hover:underline flex items-center gap-1 uppercase tracking-widest bg-[var(--color-primary)]/5 px-2 py-1 rounded-md"
+              >
+                Full Log <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            {stats.recentActivity.length === 0 ? (
+              <div className="text-center text-[var(--color-text-muted)] text-sm italic flex-1 flex items-center justify-center min-h-0">
+                No recent activity recorded.
+              </div>
+            ) : (
+              <div className="overflow-y-auto flex-1 min-h-0 pr-2">
+                <div className="relative space-y-5 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[1px] before:bg-[var(--color-surface-border)]">
+                  {stats.recentActivity.map((activity: AdminActivity) => {
+                    const display = actionTypeLabels[activity.actionType] || {
+                      label: activity.actionType,
+                      color: 'bg-[var(--color-badge-bg)] text-[var(--color-badge-text)]',
+                    };
+                    return (
+                      <div
+                        key={activity._id}
+                        className="relative pl-6 flex flex-col gap-1"
+                      >
+                        {/* Timeline Dot */}
+                        <div className="absolute left-0 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white bg-[var(--color-surface-border)] flex items-center justify-center z-10">
+                           <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]" />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-bold text-[var(--color-text-primary)] truncate">
+                            {activity.adminName}
+                          </p>
+                          <span className={`text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-tighter ${display.color}`}>
+                            {display.label}
+                          </span>
+                        </div>
+                        
+                        <p className="text-[11px] text-[var(--color-text-secondary)] leading-tight">
+                           Applied to <span className="font-bold text-[var(--color-text-primary)]">{activity.targetName || 'System'}</span>
+                        </p>
+                        
+                        <div className="flex items-center justify-between mt-0.5">
+                          <p className="text-[9px] text-[var(--color-text-muted)] flex items-center gap-1">
+                            <Clock className="h-2.5 w-2.5" />
+                            {new Date(activity.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          <p className="text-[9px] text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity">
+                            {new Date(activity.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-
-          {stats.recentActivity.length === 0 ? (
-            <div className="text-center py-12 text-[var(--color-text-muted)] text-sm italic">
-              No recent activity recorded.
-            </div>
-          ) : (
-            <div className="relative space-y-5 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[1px] before:bg-[var(--color-surface-border)]">
-              {stats.recentActivity.map((activity: AdminActivity) => {
-                const display = actionTypeLabels[activity.actionType] || {
-                  label: activity.actionType,
-                  color: 'bg-[var(--color-badge-bg)] text-[var(--color-badge-text)]',
-                };
-                return (
-                  <div
-                    key={activity._id}
-                    className="relative pl-6 flex flex-col gap-1"
-                  >
-                    {/* Timeline Dot */}
-                    <div className="absolute left-0 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white bg-[var(--color-surface-border)] flex items-center justify-center z-10">
-                       <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-muted)]" />
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-bold text-[var(--color-text-primary)] truncate">
-                        {activity.adminName}
-                      </p>
-                      <span className={`text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-tighter ${display.color}`}>
-                        {display.label}
-                      </span>
-                    </div>
-                    
-                    <p className="text-[11px] text-[var(--color-text-secondary)] leading-tight">
-                       Applied to <span className="font-bold text-[var(--color-text-primary)]">{activity.targetName || 'System'}</span>
-                    </p>
-                    
-                    <div className="flex items-center justify-between mt-0.5">
-                      <p className="text-[9px] text-[var(--color-text-muted)] flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5" />
-                        {new Date(activity.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                      <p className="text-[9px] text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity">
-                        {new Date(activity.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </Card>
       </div>
     </div>

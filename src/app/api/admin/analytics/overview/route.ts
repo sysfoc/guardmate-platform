@@ -11,7 +11,8 @@ import Dispute from '@/models/Dispute.model';
 import Review from '@/models/Review.model';
 import IncidentReport from '@/models/IncidentReport.model';
 import PlatformSettings from '@/models/PlatformSettings.model';
-import { UserRole, UserStatus, JobStatus, JobType, BidStatus, EscrowPaymentStatus, DisputeStatus, DisputeReason, AdminDecision, WithdrawalStatus, IncidentSeverity, PaymentMethod } from '@/types/enums';
+import BossSubscription from '@/models/BossSubscription.model';
+import { UserRole, UserStatus, JobStatus, BidStatus, EscrowPaymentStatus, DisputeStatus, DisputeReason, AdminDecision, WithdrawalStatus, IncidentSeverity, PaymentMethod, SubscriptionStatus } from '@/types/enums';
 import type { AdminAnalyticsOverview, AnalyticsPeriod } from '@/types/admin.types';
 
 // ─── In-Memory Cache ──────────────────────────────────────────────────────────
@@ -249,16 +250,6 @@ export async function GET(request: NextRequest) {
       expired: jobsByStatusAgg.find((s) => s._id === JobStatus.EXPIRED)?.count || 0,
     };
 
-    // Jobs by type
-    const jobsByTypeAgg = await Job.aggregate([
-      { $group: { _id: '$jobType', count: { $sum: 1 } } },
-    ]);
-    const jobsByType = {
-      oneTime: jobsByTypeAgg.find((t) => t._id === JobType.ONE_TIME)?.count || 0,
-      recurring: jobsByTypeAgg.find((t) => t._id === JobType.RECURRING)?.count || 0,
-      contract: jobsByTypeAgg.find((t) => t._id === JobType.CONTRACT)?.count || 0,
-    };
-
     // Average guards per job
     const avgGuardsAgg = await Job.aggregate([
       { $group: { _id: null, avg: { $avg: { $size: { $ifNull: ['$acceptedGuards', []] } } } } },
@@ -334,6 +325,36 @@ export async function GET(request: NextRequest) {
     const totalWithdrawals = totalWithdrawalsAgg[0]?.total || 0;
     const averageJobValue = Math.round((avgJobValueAgg[0]?.avg || 0) * 100) / 100;
 
+    // ─── Subscription Revenue ───────────────────────────────────────────────
+    const [
+      totalSubscriptionRevenueAgg,
+      subscriptionRevenueThisPeriodAgg,
+      activeSubscriptionsCount,
+      monthlyRecurringRevenueAgg,
+    ] = await Promise.all([
+      BossSubscription.aggregate([
+        { $match: { lastPaymentAt: { $ne: null } } },
+        { $group: { _id: null, total: { $sum: '$lastPaymentAmount' } } },
+      ]),
+      BossSubscription.aggregate([
+        {
+          $match: {
+            lastPaymentAt: { $gte: fromDate, $lte: toDate } as Record<string, unknown>,
+          },
+        },
+        { $group: { _id: null, total: { $sum: '$lastPaymentAmount' } } },
+      ]),
+      BossSubscription.countDocuments({ status: SubscriptionStatus.ACTIVE }),
+      BossSubscription.aggregate([
+        { $match: { status: SubscriptionStatus.ACTIVE } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
+    ]);
+
+    const totalSubscriptionRevenue = totalSubscriptionRevenueAgg[0]?.total || 0;
+    const subscriptionRevenueThisPeriod = subscriptionRevenueThisPeriodAgg[0]?.total || 0;
+    const monthlyRecurringRevenue = monthlyRecurringRevenueAgg[0]?.total || 0;
+
     // Revenue by method
     const revenueByMethodAgg = await Payment.aggregate([
       { $match: { paymentStatus: EscrowPaymentStatus.RELEASED } },
@@ -344,123 +365,170 @@ export async function GET(request: NextRequest) {
       paypal: revenueByMethodAgg.find((m) => m._id === PaymentMethod.PAYPAL)?.total || 0,
     };
 
-    // Revenue by period for chart
-    let revenueByPeriod: Array<{ date: string; revenue: number; transactions: number }> = [];
+    // Revenue by period for chart (job revenue + subscription revenue)
+    // Uses numeric indices derived from timestamps to avoid timezone mismatches
+    // between JS toISOString() and MongoDB $dateToString
+    let revenueByPeriod: Array<{ date: string; revenue: number; subscriptionRevenue: number; transactions: number }> = [];
+    const fromTimestamp = fromDate.getTime();
     
     if (period === 'today') {
-      // Hourly breakdown for today
-      const hourlyData = await Payment.aggregate([
-        { 
-          $match: { 
-            paymentStatus: EscrowPaymentStatus.RELEASED, 
-            releasedAt: { $gte: fromDate, $lte: toDate } 
-          } as Record<string, unknown>
-        },
-        {
-          $group: {
-            _id: { $hour: '$releasedAt' },
-            revenue: { $sum: '$platformRevenue' },
-            transactions: { $sum: 1 },
+      // Hourly buckets (every 2 hours)
+      const hourMs = 60 * 60 * 1000;
+      const [hourlyJobData, hourlySubData] = await Promise.all([
+        Payment.aggregate([
+          { $match: { paymentStatus: EscrowPaymentStatus.RELEASED, releasedAt: { $gte: fromDate, $lte: toDate } as Record<string, unknown> } },
+          {
+            $group: {
+              _id: { $floor: { $divide: [{ $subtract: [{ $toLong: '$releasedAt' }, fromTimestamp] }, hourMs * 2] } },
+              revenue: { $sum: '$platformRevenue' },
+              transactions: { $sum: 1 },
+            },
           },
-        },
-        { $sort: { _id: 1 } },
+          { $sort: { _id: 1 } },
+        ]),
+        BossSubscription.aggregate([
+          { $match: { lastPaymentAt: { $gte: fromDate, $lte: toDate } as Record<string, unknown> } },
+          {
+            $group: {
+              _id: { $floor: { $divide: [{ $subtract: [{ $toLong: '$lastPaymentAt' }, fromTimestamp] }, hourMs * 2] } },
+              revenue: { $sum: '$lastPaymentAmount' },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ]),
       ]);
       
-      for (let i = 0; i < 24; i += 2) {
-        const hourData = hourlyData.find((h) => h._id === i);
+      for (let i = 0; i < 12; i++) {
+        const hourJob = hourlyJobData.find((h) => h._id === i);
+        const hourSub = hourlySubData.find((h) => h._id === i);
         revenueByPeriod.push({
-          date: `${i}:00`,
-          revenue: hourData?.revenue || 0,
-          transactions: hourData?.transactions || 0,
+          date: `${i * 2}:00`,
+          revenue: hourJob?.revenue || 0,
+          subscriptionRevenue: hourSub?.revenue || 0,
+          transactions: hourJob?.transactions || 0,
         });
       }
     } else if (period === 'week') {
-      // Daily breakdown for week
-      const dailyData = await Payment.aggregate([
-        { 
-          $match: { 
-            paymentStatus: EscrowPaymentStatus.RELEASED, 
-            releasedAt: { $gte: fromDate, $lte: toDate } 
-          } as Record<string, unknown>
-        },
-        {
-          $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$releasedAt' } },
-            revenue: { $sum: '$platformRevenue' },
-            transactions: { $sum: 1 },
+      // Daily buckets — day index relative to period start
+      const dayMs = 24 * 60 * 60 * 1000;
+      const [dailyJobData, dailySubData] = await Promise.all([
+        Payment.aggregate([
+          { $match: { paymentStatus: EscrowPaymentStatus.RELEASED, releasedAt: { $gte: fromDate, $lte: toDate } as Record<string, unknown> } },
+          {
+            $group: {
+              _id: { $floor: { $divide: [{ $subtract: [{ $toLong: '$releasedAt' }, fromTimestamp] }, dayMs] } },
+              revenue: { $sum: '$platformRevenue' },
+              transactions: { $sum: 1 },
+            },
           },
-        },
-        { $sort: { _id: 1 } },
+          { $sort: { _id: 1 } },
+        ]),
+        BossSubscription.aggregate([
+          { $match: { lastPaymentAt: { $gte: fromDate, $lte: toDate } as Record<string, unknown> } },
+          {
+            $group: {
+              _id: { $floor: { $divide: [{ $subtract: [{ $toLong: '$lastPaymentAt' }, fromTimestamp] }, dayMs] } },
+              revenue: { $sum: '$lastPaymentAmount' },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ]),
       ]);
       
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const startDay = fromDate.getDay();
       for (let i = 0; i < 7; i++) {
-        const d = new Date(fromDate);
-        d.setDate(d.getDate() + i);
-        const dateStr = d.toISOString().split('T')[0];
-        const dayData = dailyData.find((d) => d._id === dateStr);
+        const dayJob = dailyJobData.find((d) => d._id === i);
+        const daySub = dailySubData.find((d) => d._id === i);
         revenueByPeriod.push({
-          date: dayNames[d.getDay()],
-          revenue: dayData?.revenue || 0,
-          transactions: dayData?.transactions || 0,
+          date: dayNames[(startDay + i) % 7],
+          revenue: dayJob?.revenue || 0,
+          subscriptionRevenue: daySub?.revenue || 0,
+          transactions: dayJob?.transactions || 0,
         });
       }
     } else if (period === 'month' || period === 'quarter') {
-      // Weekly breakdown
-      const weeklyData = await Payment.aggregate([
-        { 
-          $match: { 
-            paymentStatus: EscrowPaymentStatus.RELEASED, 
-            releasedAt: { $gte: fromDate, $lte: toDate } 
-          } as Record<string, unknown>
-        },
-        {
-          $group: {
-            _id: { $week: '$releasedAt' },
-            revenue: { $sum: '$platformRevenue' },
-            transactions: { $sum: 1 },
+      // Weekly buckets — week index relative to period start
+      const weekMs = 7 * 24 * 60 * 60 * 1000;
+      const [weeklyJobData, weeklySubData] = await Promise.all([
+        Payment.aggregate([
+          { $match: { paymentStatus: EscrowPaymentStatus.RELEASED, releasedAt: { $gte: fromDate, $lte: toDate } as Record<string, unknown> } },
+          {
+            $group: {
+              _id: { $floor: { $divide: [{ $subtract: [{ $toLong: '$releasedAt' }, fromTimestamp] }, weekMs] } },
+              revenue: { $sum: '$platformRevenue' },
+              transactions: { $sum: 1 },
+            },
           },
-        },
-        { $sort: { _id: 1 } },
+          { $sort: { _id: 1 } },
+        ]),
+        BossSubscription.aggregate([
+          { $match: { lastPaymentAt: { $gte: fromDate, $lte: toDate } as Record<string, unknown> } },
+          {
+            $group: {
+              _id: { $floor: { $divide: [{ $subtract: [{ $toLong: '$lastPaymentAt' }, fromTimestamp] }, weekMs] } },
+              revenue: { $sum: '$lastPaymentAmount' },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ]),
       ]);
-      
+
       const weeksInPeriod = period === 'month' ? 4 : 12;
-      for (let i = 1; i <= weeksInPeriod; i++) {
-        const weekData = weeklyData.find((w) => w._id === i);
+      for (let i = 0; i < weeksInPeriod; i++) {
+        const weekJob = weeklyJobData.find((w) => w._id === i);
+        const weekSub = weeklySubData.find((w) => w._id === i);
         revenueByPeriod.push({
-          date: `Week ${i}`,
-          revenue: weekData?.revenue || 0,
-          transactions: weekData?.transactions || 0,
+          date: `Week ${i + 1}`,
+          revenue: weekJob?.revenue || 0,
+          subscriptionRevenue: weekSub?.revenue || 0,
+          transactions: weekJob?.transactions || 0,
         });
       }
     } else {
-      // Monthly breakdown for year/custom
-      const monthlyData = await Payment.aggregate([
-        { 
-          $match: { 
-            paymentStatus: EscrowPaymentStatus.RELEASED, 
-            releasedAt: { $gte: fromDate, $lte: toDate } 
-          } as Record<string, unknown>
-        },
-        {
-          $group: {
-            _id: { $dateToString: { format: '%Y-%m', date: '$releasedAt' } },
-            revenue: { $sum: '$platformRevenue' },
-            transactions: { $sum: 1 },
+      // Monthly buckets — month index relative to period start
+      const monthMs = 30 * 24 * 60 * 60 * 1000; // approx month
+      const [monthlyJobData, monthlySubData] = await Promise.all([
+        Payment.aggregate([
+          { $match: { paymentStatus: EscrowPaymentStatus.RELEASED, releasedAt: { $gte: fromDate, $lte: toDate } as Record<string, unknown> } },
+          {
+            $group: {
+              _id: { $floor: { $divide: [{ $subtract: [{ $toLong: '$releasedAt' }, fromTimestamp] }, monthMs] } },
+              revenue: { $sum: '$platformRevenue' },
+              transactions: { $sum: 1 },
+            },
           },
-        },
-        { $sort: { _id: 1 } },
+          { $sort: { _id: 1 } },
+        ]),
+        BossSubscription.aggregate([
+          { $match: { lastPaymentAt: { $gte: fromDate, $lte: toDate } as Record<string, unknown> } },
+          {
+            $group: {
+              _id: { $floor: { $divide: [{ $subtract: [{ $toLong: '$lastPaymentAt' }, fromTimestamp] }, monthMs] } },
+              revenue: { $sum: '$lastPaymentAmount' },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ]),
       ]);
-      
+
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      monthlyData.forEach((m) => {
-        const [year, month] = m._id.split('-');
+      const startMonth = fromDate.getMonth();
+      const startYear = fromDate.getFullYear();
+      const allIndices = new Set([...monthlyJobData.map((m) => m._id), ...monthlySubData.map((m) => m._id)]);
+      const maxIndex = allIndices.size > 0 ? Math.max(...Array.from(allIndices).map(Number)) : 11;
+      for (let i = 0; i <= maxIndex; i++) {
+        const job = monthlyJobData.find((m) => m._id === i);
+        const sub = monthlySubData.find((m) => m._id === i);
+        const monthIndex = (startMonth + i) % 12;
+        const year = startYear + Math.floor((startMonth + i) / 12);
         revenueByPeriod.push({
-          date: `${monthNames[parseInt(month) - 1]} ${year}`,
-          revenue: m.revenue,
-          transactions: m.transactions,
+          date: `${monthNames[monthIndex]} ${year}`,
+          revenue: job?.revenue || 0,
+          subscriptionRevenue: sub?.revenue || 0,
+          transactions: job?.transactions || 0,
         });
-      });
+      }
     }
 
     // ─── GUARD PERFORMANCE ────────────────────────────────────────────────────
@@ -696,7 +764,6 @@ export async function GET(request: NextRequest) {
         totalBidsSubmitted,
         averageBidsPerJob,
         jobsByStatus,
-        jobsByType,
       },
       revenueFinance: {
         totalPlatformRevenue,
@@ -707,6 +774,10 @@ export async function GET(request: NextRequest) {
         totalPaidOut,
         totalWithdrawals,
         averageJobValue,
+        totalSubscriptionRevenue,
+        subscriptionRevenueThisPeriod,
+        activeSubscriptions: activeSubscriptionsCount,
+        monthlyRecurringRevenue,
         revenueByMethod,
         revenueByPeriod,
       },

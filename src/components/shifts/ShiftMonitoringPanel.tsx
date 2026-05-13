@@ -256,7 +256,7 @@ export default function ShiftMonitoringPanel({ jobId, jobTitle, jobCoordinates }
               <MapDisplay
                 center={guardLocation || jobCoordinates}
                 zoom={15}
-                height="250px"
+                height="300px"
                 interactive={true}
                 jobMarker={jobCoordinates ? { lat: jobCoordinates.lat, lng: jobCoordinates.lng, label: 'Job Site' } : null}
                 liveMarker={guardLocation ? { lat: guardLocation.lat, lng: guardLocation.lng, label: 'Guard Location' } : null}

@@ -72,11 +72,11 @@ function AdminActivityPageInner() {
       </div>
 
       {/* Filters */}
-      <Card className="p-4 flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-end bg-[var(--color-bg-subtle)]">
-        <div className="w-full sm:w-auto flex-1 md:flex-none md:w-64">
-          <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1">Action Type</label>
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+        <div className="flex-1 min-w-0">
+          <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">Action Type</label>
           <select
-            className="w-full px-3 py-2 rounded-lg bg-white border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+            className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent cursor-pointer"
             value={actionType}
             onChange={(e) => updateUrl({ actionType: e.target.value })}
           >
@@ -86,32 +86,30 @@ function AdminActivityPageInner() {
             ))}
           </select>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto md:w-auto">
-          <div className="flex-1 w-full sm:w-auto sm:min-w-[130px]">
-            <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1">From</label>
-            <input
-              type="date"
-              className="w-full px-3 py-2 rounded-lg bg-white border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              value={dateFrom}
-              onChange={(e) => updateUrl({ dateFrom: e.target.value })}
-            />
-          </div>
-          <div className="flex-1 w-full sm:w-auto sm:min-w-[130px]">
-            <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1">To</label>
-            <input
-              type="date"
-              className="w-full px-3 py-2 rounded-lg bg-white border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-              value={dateTo}
-              onChange={(e) => updateUrl({ dateTo: e.target.value })}
-            />
-          </div>
+        <div className="w-full sm:w-36 shrink-0">
+          <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">From</label>
+          <input
+            type="date"
+            className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+            value={dateFrom}
+            onChange={(e) => updateUrl({ dateFrom: e.target.value })}
+          />
+        </div>
+        <div className="w-full sm:w-36 shrink-0">
+          <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">To</label>
+          <input
+            type="date"
+            className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+            value={dateTo}
+            onChange={(e) => updateUrl({ dateTo: e.target.value })}
+          />
         </div>
         {(actionType || dateFrom || dateTo) && (
-          <Button variant="ghost" className="h-9 w-full sm:w-auto mt-2 sm:mt-0" onClick={() => router.push('/admin/activity')}>
+          <Button variant="ghost" className="h-10 w-full sm:w-auto shrink-0" onClick={() => router.push('/admin/activity')}>
             Clear
           </Button>
         )}
-      </Card>
+      </div>
 
       {/* Table */}
       <Card className="p-0 overflow-hidden">

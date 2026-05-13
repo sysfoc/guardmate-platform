@@ -1,19 +1,61 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { getAdminDisputes, getAdminDisputeStats, resolveDispute } from '@/lib/api/admin.api';
-import { Loader2, ShieldAlert, AlertTriangle, CheckCircle, Search, Clock, DollarSign, Activity, ShieldCheck } from 'lucide-react';
-import type { IDispute } from '@/types/dispute.types';
+import { Loader2, ShieldAlert, AlertTriangle, CheckCircle, Search, Clock, DollarSign, Activity, ShieldCheck, ChevronLeft, ChevronRight, Filter, XCircle } from 'lucide-react';
 import { AdminDecision } from '@/types/enums';
+import { cn } from '@/lib/utils';
+
+// API returns populated fields not in base IDispute type
+interface PopulatedDispute {
+  _id: string;
+  jobId: string;
+  paymentId: string;
+  jobTitle: string;
+  bossUid: string;
+  guardUid: string;
+  bossName: string;
+  guardName: string;
+  escrowAmount: number;
+  currency: string;
+  reason: string;
+  description: string;
+  status: string;
+  adminDecision: string | null;
+  adminNotes: string | null;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  disputeDeadline: string;
+  chargebackRaised: boolean;
+  chargebackId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface FeedbackState {
+  message: string;
+  type: 'success' | 'error';
+}
 
 export default function AdminDisputesPage() {
-  const [disputes, setDisputes] = useState<IDispute[]>([]);
+  const [disputes, setDisputes] = useState<PopulatedDispute[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+
   // Resolution states
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [decision, setDecision] = useState<AdminDecision | ''>('');
@@ -21,52 +63,98 @@ export default function AdminDisputesPage() {
   const [amount, setAmount] = useState<number>(0);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [statsResp, disputesResp] = await Promise.all([
         getAdminDisputeStats(),
-        getAdminDisputes()
+        getAdminDisputes({
+          page,
+          limit: 20,
+          status: statusFilter === 'ALL' ? undefined : statusFilter,
+          search: searchQuery || undefined,
+        })
       ]);
       if (statsResp.success) setStats(statsResp.data);
-      if (disputesResp.success) setDisputes(disputesResp.data.data);
+      if (disputesResp.success) {
+        setDisputes(disputesResp.data.data);
+        setTotalPages(disputesResp.data.totalPages);
+        setTotal(disputesResp.data.total);
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, statusFilter, searchQuery]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  // Auto-hide feedback
+  useEffect(() => {
+    if (feedback) {
+      const timer = setTimeout(() => setFeedback(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedback]);
 
   const handleResolve = async (disputeId: string) => {
-    if (!decision) return alert('Select a decision');
-    if (!adminNotes) return alert('Admin notes required');
-    
-    setSubmitLoading(true);
-    try {
-      await resolveDispute(disputeId, {
-        decision,
-        adminNotes,
-        adminDecisionAmount: decision === AdminDecision.PARTIAL ? amount : undefined
-      });
-      setResolvingId(null);
-      fetchData();
-    } catch (err: any) {
-      alert(err.message || 'Resolution failed');
-    } finally {
-      setSubmitLoading(false);
+    if (!decision) return setFeedback({ message: 'Select a decision', type: 'error' });
+    if (!adminNotes) return setFeedback({ message: 'Admin notes required', type: 'error' });
+    if (decision === AdminDecision.PARTIAL && (!amount || amount <= 0)) {
+      return setFeedback({ message: 'Enter a valid partial amount', type: 'error' });
     }
+
+    setSubmitLoading(true);
+    const resp = await resolveDispute(disputeId, {
+      decision,
+      adminNotes,
+      adminDecisionAmount: decision === AdminDecision.PARTIAL ? amount : undefined
+    });
+
+    if (resp.success) {
+      setFeedback({ message: 'Dispute resolved successfully.', type: 'success' });
+      setResolvingId(null);
+      setDecision('');
+      setAdminNotes('');
+      setAmount(0);
+      fetchData();
+    } else {
+      setFeedback({ message: resp.message || 'Resolution failed', type: 'error' });
+    }
+    setSubmitLoading(false);
   };
 
-  if (loading) {
-    return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" /></div>;
-  }
+  const handleSearch = () => {
+    setPage(1);
+    setSearchQuery(searchInput);
+  };
+
+  const clearFilters = () => {
+    setStatusFilter('ALL');
+    setSearchQuery('');
+    setSearchInput('');
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
+      {/* Feedback Toast */}
+      {feedback && (
+        <div className={cn(
+          'fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2',
+          feedback.type === 'success' ? 'bg-[var(--color-success)] text-white' : 'bg-[var(--color-danger)] text-white'
+        )}>
+          {feedback.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+          {feedback.message}
+          <button onClick={() => setFeedback(null)} className="ml-2 hover:opacity-70">
+            <XCircle className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">Dispute Management</h1>
         <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)] mt-0.5">Mediate and resolve escrow disputes between Bosses and Guards.</p>
@@ -105,13 +193,72 @@ export default function AdminDisputesPage() {
         </div>
       )}
 
-      <div className="space-y-4">
-        {disputes.length === 0 ? (
-           <Card className="p-12 text-center bg-white border-none shadow-sm ring-1 ring-[var(--color-surface-border)]">
-             <ShieldAlert className="h-12 w-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-             <p className="font-bold text-[var(--color-text-primary)]">No disputes found</p>
-           </Card>
-        ) : disputes.map((dispute: any) => (
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm flex-1 min-w-0">
+          <Search className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
+          <input
+            type="text"
+            placeholder="Search by job title..."
+            className="flex-1 bg-transparent text-sm text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-muted)] min-w-0"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          />
+          {searchInput && (
+            <button onClick={() => { setSearchInput(''); setSearchQuery(''); setPage(1); }} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]">
+              <XCircle className="h-4 w-4" />
+            </button>
+          )}
+          <Button size="sm" onClick={handleSearch} className="shrink-0">Search</Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm">
+            <Filter className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              className="bg-transparent text-sm text-[var(--color-text-primary)] outline-none cursor-pointer"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="OPEN">Open</option>
+              <option value="UNDER_REVIEW">Under Review</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </div>
+
+          {(statusFilter !== 'ALL' || searchQuery) && (
+            <Button size="sm" variant="ghost" onClick={clearFilters} className="gap-1">
+              <XCircle className="h-3.5 w-3.5" />
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {loading && disputes.length === 0 ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+            <span>Showing {disputes.length} of {total} disputes</span>
+            <span>Page {page} of {totalPages}</span>
+          </div>
+
+          <div className="space-y-4">
+            {disputes.length === 0 ? (
+              <Card className="p-12 text-center bg-white border-none shadow-sm ring-1 ring-[var(--color-surface-border)]">
+                <ShieldAlert className="h-12 w-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+                <p className="font-bold text-[var(--color-text-primary)]">No disputes found</p>
+                {(statusFilter !== 'ALL' || searchQuery) && (
+                  <p className="text-sm text-[var(--color-text-muted)] mt-1">Try adjusting your filters</p>
+                )}
+              </Card>
+            ) : disputes.map((dispute) => (
           <Card key={dispute._id} className="p-5 bg-white border-none shadow-sm ring-1 ring-[var(--color-surface-border)] relative overflow-hidden group">
             {dispute.status === 'RESOLVED' ? (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-success)]" />
@@ -224,7 +371,38 @@ export default function AdminDisputesPage() {
             )}
           </Card>
         ))}
-      </div>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-4">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || loading}
+                className="gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Prev
+              </Button>
+              <span className="text-sm font-medium text-[var(--color-text-muted)]">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages || loading}
+                className="gap-1"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

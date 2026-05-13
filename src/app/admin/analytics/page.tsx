@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  BarChart2,
   RefreshCw,
   Download,
   Users,
@@ -14,14 +13,12 @@ import {
   Clock,
   TrendingUp,
   TrendingDown,
-  ArrowUpRight,
-  ShieldCheck,
   Building2,
   Star,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   ChevronRight,
+  CreditCard,
 } from 'lucide-react';
 import {
   LineChart,
@@ -31,11 +28,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
   Legend,
 } from 'recharts';
 import { Card } from '@/components/ui/Card';
@@ -141,21 +133,6 @@ function formatNumber(value: number): string {
 
 // ─── Chart Colors ───────────────────────────────────────────────────────────
 
-const JOB_STATUS_COLORS = {
-  open: 'var(--color-info)',
-  filled: 'var(--color-warning)',
-  inProgress: 'var(--color-primary)',
-  completed: 'var(--color-success)',
-  cancelled: 'var(--color-danger)',
-  expired: 'var(--color-text-muted)',
-};
-
-const JOB_TYPE_COLORS = {
-  oneTime: 'var(--color-primary)',
-  recurring: 'var(--color-secondary)',
-  contract: 'var(--color-info)',
-};
-
 // ─── Main Page Component ────────────────────────────────────────────────────
 
 export default function AdminAnalyticsPage() {
@@ -215,7 +192,7 @@ export default function AdminAnalyticsPage() {
       summary: {
         totalUsers: data.platformOverview.totalUsers,
         totalJobs: data.jobsMarketplace.totalJobsPosted,
-        totalRevenue: data.revenueFinance.totalPlatformRevenue,
+        totalRevenue: data.revenueFinance.totalPlatformRevenue + data.revenueFinance.totalSubscriptionRevenue,
         openDisputes: data.disputes.openDisputes,
       },
       platformOverview: data.platformOverview,
@@ -255,8 +232,11 @@ export default function AdminAnalyticsPage() {
       },
       {
         icon: <DollarSign className="h-5 w-5" />,
-        label: 'Platform Revenue',
-        value: formatCurrency(revenueFinance.totalPlatformRevenue, currency),
+        label: 'Total Revenue',
+        value: formatCurrency(
+          revenueFinance.totalPlatformRevenue + revenueFinance.totalSubscriptionRevenue,
+          currency
+        ),
       },
       {
         icon: <DollarSign className="h-5 w-5" />,
@@ -275,46 +255,22 @@ export default function AdminAnalyticsPage() {
         value: formatNumber(platformOverview.pendingApprovals),
         badge: platformOverview.pendingApprovals > 0 ? { value: platformOverview.pendingApprovals, variant: 'warning' as const } : undefined,
       },
+      {
+        icon: <CreditCard className="h-5 w-5" />,
+        label: 'Active Subscriptions',
+        value: formatNumber(revenueFinance.activeSubscriptions),
+      },
+      {
+        icon: <DollarSign className="h-5 w-5" />,
+        label: 'Subscription Revenue',
+        value: formatCurrency(revenueFinance.totalSubscriptionRevenue, currency),
+      },
+      {
+        icon: <TrendingUp className="h-5 w-5" />,
+        label: 'Monthly Recurring Revenue',
+        value: formatCurrency(revenueFinance.monthlyRecurringRevenue, currency),
+      },
     ];
-  }, [data]);
-
-  // ─── Jobs Data for Charts ─────────────────────────────────────────────────
-  const jobsStatusData = useMemo(() => {
-    if (!data) return [];
-    const { jobsByStatus } = data.jobsMarketplace;
-    return [
-      { name: 'Open', value: jobsByStatus.open, key: 'open' },
-      { name: 'Filled', value: jobsByStatus.filled, key: 'filled' },
-      { name: 'In Progress', value: jobsByStatus.inProgress, key: 'inProgress' },
-      { name: 'Completed', value: jobsByStatus.completed, key: 'completed' },
-      { name: 'Cancelled', value: jobsByStatus.cancelled, key: 'cancelled' },
-      { name: 'Expired', value: jobsByStatus.expired, key: 'expired' },
-    ].filter((d) => d.value > 0);
-  }, [data]);
-
-  const jobsTypeData = useMemo(() => {
-    if (!data) return [];
-    const { jobsByType } = data.jobsMarketplace;
-    return [
-      { name: 'One-Time', value: jobsByType.oneTime, key: 'oneTime' },
-      { name: 'Recurring', value: jobsByType.recurring, key: 'recurring' },
-      { name: 'Contract', value: jobsByType.contract, key: 'contract' },
-    ];
-  }, [data]);
-
-  // ─── Dispute Data for Charts ──────────────────────────────────────────────
-  const disputesByReasonData = useMemo(() => {
-    if (!data) return [];
-    const { disputesByReason } = data.disputes;
-    return [
-      { name: 'No Show', value: disputesByReason.noShow },
-      { name: 'Partial Work', value: disputesByReason.partialWork },
-      { name: 'Misconduct', value: disputesByReason.misconduct },
-      { name: 'Payment', value: disputesByReason.paymentDispute },
-      { name: 'Quality', value: disputesByReason.qualityIssue },
-      { name: 'Hours', value: disputesByReason.hoursDispute },
-      { name: 'Other', value: disputesByReason.other },
-    ].filter((d) => d.value > 0).sort((a, b) => b.value - a.value);
   }, [data]);
 
   if (error) {
@@ -387,7 +343,7 @@ export default function AdminAnalyticsPage() {
       {/* ─── Platform Overview Stats ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {isLoading ? (
-          Array.from({ length: 6 }).map((_, i) => <StatCardSkeleton key={i} />)
+          Array.from({ length: 9 }).map((_, i) => <StatCardSkeleton key={i} />)
         ) : platformStats?.map((stat, index) => (
           <StatCard
             key={index}
@@ -440,11 +396,19 @@ export default function AdminAnalyticsPage() {
                 <Line 
                   type="monotone" 
                   dataKey="revenue" 
-                  name="Revenue" 
+                  name="Job Revenue" 
                   stroke="var(--color-primary)" 
                   strokeWidth={2}
                   dot={{ r: 3, fill: 'var(--color-primary)' }}
                   activeDot={{ r: 5 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="subscriptionRevenue" 
+                  name="Subscription Revenue" 
+                  stroke="#8b5cf6" 
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: '#8b5cf6' }}
                 />
                 <Line 
                   type="monotone" 
@@ -460,108 +424,8 @@ export default function AdminAnalyticsPage() {
         )}
       </Card>
 
-      {/* ─── Jobs & Marketplace Section ───────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-        {/* Job Status Breakdown */}
-        <Card className="p-4 sm:p-5">
-          <h2 className="text-sm sm:text-base font-semibold text-[var(--color-text-primary)] mb-4">
-            Job Status Breakdown
-          </h2>
-          
-          {isLoading ? (
-            <ChartSkeleton height={250} />
-          ) : jobsStatusData.length === 0 ? (
-            <div className="h-[250px] flex items-center justify-center text-[var(--color-text-muted)] text-sm">
-              No job data available
-            </div>
-          ) : (
-            <div className="h-[200px] sm:h-[250px] flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex-1 h-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={jobsStatusData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      dataKey="value"
-                    >
-                      {jobsStatusData.map((entry) => (
-                        <Cell key={entry.key} fill={JOB_STATUS_COLORS[entry.key as keyof typeof JOB_STATUS_COLORS]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'var(--color-bg-elevated)', 
-                        border: '1px solid var(--color-surface-border)',
-                        borderRadius: '8px',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap sm:flex-col gap-2 sm:gap-1 justify-center">
-                {jobsStatusData.map((entry) => (
-                  <div key={entry.key} className="flex items-center gap-2 text-xs">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: JOB_STATUS_COLORS[entry.key as keyof typeof JOB_STATUS_COLORS] }}
-                    />
-                    <span className="text-[var(--color-text-secondary)]">{entry.name}</span>
-                    <span className="font-medium text-[var(--color-text-primary)]">{entry.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Job Type Distribution */}
-        <Card className="p-4 sm:p-5">
-          <h2 className="text-sm sm:text-base font-semibold text-[var(--color-text-primary)] mb-4">
-            Job Type Distribution
-          </h2>
-          
-          {isLoading ? (
-            <ChartSkeleton height={250} />
-          ) : (
-            <div className="h-[200px] sm:h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={jobsTypeData} 
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-border)" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="name" 
-                    tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }}
-                    width={80}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'var(--color-bg-elevated)', 
-                      border: '1px solid var(--color-surface-border)',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {jobsTypeData.map((entry) => (
-                      <Cell key={entry.key} fill={JOB_TYPE_COLORS[entry.key as keyof typeof JOB_TYPE_COLORS]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </Card>
-      </div>
-
       {/* ─── Revenue Breakdown Section ──────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-5">
         {/* Commission Breakdown */}
         <Card className="p-4 sm:p-5">
           <h2 className="text-sm sm:text-base font-semibold text-[var(--color-text-primary)] mb-4">
@@ -606,49 +470,6 @@ export default function AdminAnalyticsPage() {
           )}
         </Card>
 
-        {/* Payment Methods */}
-        <Card className="p-4 sm:p-5">
-          <h2 className="text-sm sm:text-base font-semibold text-[var(--color-text-primary)] mb-4">
-            Payment Methods
-          </h2>
-          
-          {isLoading ? (
-            <div className="space-y-3">
-              <div className="h-12 bg-[var(--color-bg-subtle)] rounded animate-pulse" />
-              <div className="h-12 bg-[var(--color-bg-subtle)] rounded animate-pulse" />
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {[
-                { 
-                  name: 'Stripe', 
-                  value: data?.revenueFinance.revenueByMethod.stripe || 0,
-                  total: (data?.revenueFinance.revenueByMethod.stripe || 0) + (data?.revenueFinance.revenueByMethod.paypal || 0)
-                },
-                { 
-                  name: 'PayPal', 
-                  value: data?.revenueFinance.revenueByMethod.paypal || 0,
-                  total: (data?.revenueFinance.revenueByMethod.stripe || 0) + (data?.revenueFinance.revenueByMethod.paypal || 0)
-                },
-              ].map((method) => (
-                <div key={method.name} className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-subtle)]">
-                  <span className="text-sm font-medium text-[var(--color-text-secondary)]">{method.name}</span>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-[var(--color-text-primary)]">
-                      {formatCurrency(method.value, data?.currency || 'AUD')}
-                    </p>
-                    {method.total > 0 && (
-                      <p className="text-[10px] text-[var(--color-text-muted)]">
-                        {Math.round((method.value / method.total) * 100)}% of total
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
         {/* Financial Summary */}
         <Card className="p-4 sm:p-5">
           <h2 className="text-sm sm:text-base font-semibold text-[var(--color-text-primary)] mb-4">
@@ -657,7 +478,7 @@ export default function AdminAnalyticsPage() {
           
           {isLoading ? (
             <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
+              {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-10 bg-[var(--color-bg-subtle)] rounded animate-pulse" />
               ))}
             </div>
@@ -668,6 +489,8 @@ export default function AdminAnalyticsPage() {
                 { label: 'Held in Escrow', value: data?.revenueFinance.totalEscrowHeld || 0 },
                 { label: 'Average Job Value', value: data?.revenueFinance.averageJobValue || 0 },
                 { label: 'Total Withdrawals', value: data?.revenueFinance.totalWithdrawals || 0 },
+                { label: 'Subscription Revenue', value: data?.revenueFinance.totalSubscriptionRevenue || 0 },
+                { label: 'MRR (Active)', value: data?.revenueFinance.monthlyRecurringRevenue || 0 },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
                   <span className="text-xs text-[var(--color-text-muted)]">{item.label}</span>
@@ -964,174 +787,9 @@ export default function AdminAnalyticsPage() {
         </Card>
       </div>
 
-      {/* ─── Dispute Analytics Section ────────────────────────────────────── */}
-      <div className="space-y-4 sm:space-y-5">
-        <h2 className="text-base sm:text-lg font-semibold text-[var(--color-text-primary)]">
-          Dispute Analytics
-        </h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {/* Dispute Overview */}
-          <Card className="p-4 sm:p-5">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
-              Dispute Overview
-            </h3>
-            
-            {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-10 bg-[var(--color-bg-subtle)] rounded animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-subtle)]">
-                  <span className="text-xs text-[var(--color-text-muted)]">Total Disputes</span>
-                  <span className="text-sm font-bold text-[var(--color-text-primary)]">
-                    {data?.disputes.totalDisputes || 0}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-danger-light)]">
-                  <span className="text-xs text-[var(--color-danger)]">Open Disputes</span>
-                  <Badge variant="danger" className="text-xs">
-                    {data?.disputes.openDisputes || 0}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-subtle)]">
-                  <span className="text-xs text-[var(--color-text-muted)]">Avg Resolution Time</span>
-                  <span className="text-sm font-bold text-[var(--color-text-primary)]">
-                    {data?.disputes.averageResolutionHours.toFixed(1) || 0}h
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-subtle)]">
-                  <span className="text-xs text-[var(--color-text-muted)]">Resolution Rate</span>
-                  <span className={cn(
-                    'text-sm font-bold',
-                    (data?.disputes.disputeResolutionRate || 0) >= 80 ? 'text-[var(--color-success)]' : 'text-[var(--color-warning)]'
-                  )}>
-                    {data?.disputes.disputeResolutionRate.toFixed(0) || 0}%
-                  </span>
-                </div>
-              </div>
-            )}
-          </Card>
-
-          {/* Disputes by Reason */}
-          <Card className="p-4 sm:p-5">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
-              Disputes by Reason
-            </h3>
-            
-            {isLoading ? (
-              <ChartSkeleton height={200} />
-            ) : disputesByReasonData.length === 0 ? (
-              <div className="h-[200px] flex items-center justify-center text-[var(--color-text-muted)] text-sm">
-                No dispute data
-              </div>
-            ) : (
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
-                    data={disputesByReasonData} 
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-border)" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }} />
-                    <YAxis 
-                      type="category" 
-                      dataKey="name" 
-                      tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }}
-                      width={55}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'var(--color-bg-elevated)', 
-                        border: '1px solid var(--color-surface-border)',
-                        borderRadius: '8px',
-                      }}
-                    />
-                    <Bar dataKey="value" fill="var(--color-warning)" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </Card>
-
-          {/* Dispute Outcomes */}
-          <Card className="p-4 sm:p-5">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
-              Dispute Outcomes
-            </h3>
-            
-            {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-16 bg-[var(--color-bg-subtle)] rounded animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {[
-                  { 
-                    label: 'Released', 
-                    value: data?.disputes.disputesByOutcome.release || 0,
-                    color: 'var(--color-success)',
-                    total: (data?.disputes.disputesByOutcome.release || 0) + 
-                           (data?.disputes.disputesByOutcome.refund || 0) + 
-                           (data?.disputes.disputesByOutcome.partial || 0)
-                  },
-                  { 
-                    label: 'Refunded', 
-                    value: data?.disputes.disputesByOutcome.refund || 0,
-                    color: 'var(--color-danger)',
-                    total: (data?.disputes.disputesByOutcome.release || 0) + 
-                           (data?.disputes.disputesByOutcome.refund || 0) + 
-                           (data?.disputes.disputesByOutcome.partial || 0)
-                  },
-                  { 
-                    label: 'Partial', 
-                    value: data?.disputes.disputesByOutcome.partial || 0,
-                    color: 'var(--color-warning)',
-                    total: (data?.disputes.disputesByOutcome.release || 0) + 
-                           (data?.disputes.disputesByOutcome.refund || 0) + 
-                           (data?.disputes.disputesByOutcome.partial || 0)
-                  },
-                ].map((outcome) => (
-                  <div key={outcome.label} className="p-3 rounded-lg bg-[var(--color-bg-subtle)]">
-                    <div className="flex items-center justify-between mb-1">
-                      <span 
-                        className="text-sm font-medium"
-                        style={{ color: outcome.color }}
-                      >
-                        {outcome.label}
-                      </span>
-                      <span className="text-lg font-bold text-[var(--color-text-primary)]">
-                        {outcome.value}
-                      </span>
-                    </div>
-                    {outcome.total > 0 && (
-                      <p className="text-[10px] text-[var(--color-text-muted)]">
-                        {Math.round((outcome.value / outcome.total) * 100)}% of resolved
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
-      </div>
-
       {/* ─── Quick Actions Section ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {[
-          { 
-            label: 'View All Disputes', 
-            href: '/admin/disputes', 
-            icon: <ShieldAlert className="h-4 w-4" />,
-            count: data?.disputes.openDisputes,
-          },
           { 
             label: 'Pending Approvals', 
             href: '/admin/guards', 

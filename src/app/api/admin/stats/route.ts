@@ -1,9 +1,11 @@
 import { NextRequest } from 'next/server';
-import { verifyAndGetUser, createApiResponse, getClientIp, getDeviceInfo } from '@/lib/serverAuth';
+import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User.model';
 import Job from '@/models/Job.model';
-import { UserRole, UserStatus, JobStatus } from '@/types/enums';
+import Payment from '@/models/Payment.model';
+import BossSubscription from '@/models/BossSubscription.model';
+import { UserRole, UserStatus, JobStatus, SubscriptionStatus, EscrowPaymentStatus } from '@/types/enums';
 
 // ─── GET /api/admin/stats ─────────────────────────────────────────────────────
 
@@ -16,16 +18,40 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const [totalGuards, totalBosses, pendingApprovals, activeUsers, suspendedUsers, totalJobsPosted, activeJobs] =
-      await Promise.all([
-        User.countDocuments({ role: UserRole.MATE }),
-        User.countDocuments({ role: UserRole.BOSS }),
-        User.countDocuments({ status: UserStatus.PENDING }),
-        User.countDocuments({ status: UserStatus.ACTIVE }),
-        User.countDocuments({ status: UserStatus.SUSPENDED }),
-        Job.countDocuments(),
-        Job.countDocuments({ status: { $in: [JobStatus.OPEN, JobStatus.FILLED, JobStatus.IN_PROGRESS] } }),
-      ]);
+    const [
+      totalGuards,
+      totalBosses,
+      pendingApprovals,
+      activeUsers,
+      suspendedUsers,
+      totalJobsPosted,
+      activeJobs,
+    ] = await Promise.all([
+      User.countDocuments({ role: UserRole.MATE }),
+      User.countDocuments({ role: UserRole.BOSS }),
+      User.countDocuments({ status: UserStatus.PENDING }),
+      User.countDocuments({ status: UserStatus.ACTIVE }),
+      User.countDocuments({ status: UserStatus.SUSPENDED }),
+      Job.countDocuments(),
+      Job.countDocuments({ status: { $in: [JobStatus.OPEN, JobStatus.FILLED, JobStatus.IN_PROGRESS] } }),
+    ]);
+
+    // ─── Revenue & Subscription Stats ───────────────────────────────────────
+    const [platformRevenueAgg, activeSubscriptions, subscriptionRevenueAgg] = await Promise.all([
+      Payment.aggregate([
+        { $match: { paymentStatus: EscrowPaymentStatus.RELEASED } },
+        { $group: { _id: null, total: { $sum: '$platformRevenue' } } },
+      ]),
+      BossSubscription.countDocuments({ status: SubscriptionStatus.ACTIVE }),
+      BossSubscription.aggregate([
+        { $match: { lastPaymentAt: { $ne: null } } },
+        { $group: { _id: null, total: { $sum: '$lastPaymentAmount' } } },
+      ]),
+    ]);
+
+    const platformRevenue = platformRevenueAgg[0]?.total || 0;
+    const totalSubscriptionRevenue = subscriptionRevenueAgg[0]?.total || 0;
+    const totalRevenue = platformRevenue + totalSubscriptionRevenue;
 
     // Recent 5 pending users
     const recentPending = await User.find({ status: UserStatus.PENDING })
@@ -47,9 +73,11 @@ export async function GET(request: NextRequest) {
       pendingApprovals,
       activeUsers,
       suspendedUsers,
-      totalRevenue: 0, // placeholder
+      totalRevenue,
       totalJobsPosted,
       activeJobs,
+      activeSubscriptions,
+      totalSubscriptionRevenue,
       recentPending: recentPending.map((u) => ({
         _id: String(u._id),
         uid: u.uid,

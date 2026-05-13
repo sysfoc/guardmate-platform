@@ -78,24 +78,24 @@ export function StatCard({
   };
 
   return (
-    <Card className={`hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${className}`}>
-      <div className="flex items-start justify-between mb-2.5">
-        <div className={`p-1.5 rounded-lg ${colors.bg}`}>
+    <Card className={`p-4 sm:p-5 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${className}`}>
+      <div className="flex items-start justify-between mb-3">
+        <div className={`p-2 rounded-xl ${colors.bg}`}>
           {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, {
-            className: `h-4 w-4 ${colors.icon}`,
+            className: `h-5 w-5 ${colors.icon}`,
             'aria-hidden': true,
           }) : icon}
         </div>
         {renderTrend()}
       </div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)] mb-0.5">
+      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1">
         {label}
       </p>
-      <h2 className="text-xl font-bold text-[var(--color-text-primary)] leading-tight">
+      <h2 className="text-lg sm:text-xl font-bold text-[var(--color-text-primary)] leading-tight">
         {value}
       </h2>
       {description && (
-        <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1 leading-snug">
+        <p className="text-[9px] sm:text-[10px] text-[var(--color-text-tertiary)] mt-1.5 leading-snug">
           {description}
         </p>
       )}
