@@ -101,7 +101,7 @@ export async function processAutoReleases(): Promise<void> {
               `${guard.firstName} ${guard.lastName}`,
               shift.jobTitle,
               releaseResult.payment.guardPayout,
-              releaseResult.payment.currency || 'AUD'
+              releaseResult.payment.currency || '$'
             ).catch(err => console.error('Failed to send auto-approve email', err));
           }
 

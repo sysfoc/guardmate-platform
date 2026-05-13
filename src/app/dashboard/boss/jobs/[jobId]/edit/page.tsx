@@ -15,7 +15,7 @@ import type { IJob, UpdateJobPayload } from '@/types/job.types';
 import { BudgetType, JobStatus } from '@/types/enums';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, MapPin,
-  PoundSterling, Plus, Zap, Clock, Calendar, Users, ShieldCheck,
+  DollarSign, Plus, Zap, Clock, Calendar, Users, ShieldCheck,
   FileText, X, Loader2,
 } from 'lucide-react';
 
@@ -314,7 +314,7 @@ export default function EditJobPage() {
                 {[BudgetType.HOURLY, BudgetType.FIXED].map((t) => (
                   <button key={t} onClick={() => update({ budgetType: t })}
                     className={`flex-1 py-2.5 rounded-lg border-2 text-xs font-bold transition-all ${form.budgetType === t ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)] text-[var(--color-primary)] dark:bg-[var(--color-primary)]/10' : 'border-[var(--color-surface-border)] text-[var(--color-text-muted)]'}`}>
-                    {t === BudgetType.HOURLY ? '£/Hour' : '£ Fixed'}
+                    {t === BudgetType.HOURLY ? '$/Hour' : '$ Fixed'}
                   </button>
                 ))}
               </div>
@@ -338,7 +338,7 @@ export default function EditJobPage() {
               </div>
               <div>
                 <label className={labelCls}>Max Budget (optional)</label>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">£</span>
+                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">$</span>
                 <input type="number" min={0} step="0.01" value={form.budgetMax ?? ''} onChange={(e) => update({ budgetMax: e.target.value ? Number(e.target.value) : undefined })} className={`${inputCls} pl-8`} placeholder="—" /></div>
               </div>
             </div>

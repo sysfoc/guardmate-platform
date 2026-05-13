@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         expiresAt: null,
         daysRemaining: null,
         amount: 0,
-        currency: settings?.platformCurrency || 'AUD',
+        currency: '$',
       };
       return createApiResponse(true, result, "Subscription not required.", 200);
     }
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const subscription = await BossSubscription.findOne({ bossUid: user.uid });
     const now = new Date();
     const amount = settings.bossSubscriptionAmount ?? 0;
-    const currency = settings.bossSubscriptionCurrency || settings.platformCurrency || 'AUD';
+    const currency = '$';
 
     // No subscription
     if (!subscription) {

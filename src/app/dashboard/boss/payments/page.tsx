@@ -67,7 +67,7 @@ function BossPaymentsContent() {
     }
   };
 
-  const currency = platformSettings?.platformCurrency || 'AUD';
+  const currency = '$';
 
   // Summary calculations
   const totalSpent = payments.reduce((sum, p) => sum + (p.totalChargedToBoss || 0), 0);

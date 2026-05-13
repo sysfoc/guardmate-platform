@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import {
   MapPin, Calendar, Clock, Eye, Users, Zap,
-  Briefcase, PoundSterling, ChevronRight,
+  Briefcase, DollarSign, ChevronRight,
   ShieldCheck, HeartPulse, HardHat, Baby,
   CheckCircle2
 } from 'lucide-react';
@@ -27,8 +27,8 @@ interface JobCardProps {
 
 export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefix = '/dashboard/mate/jobs', overlapWarning, distance }: JobCardProps) {
   const budgetDisplay = job.budgetType === BudgetType.HOURLY
-    ? `£${job.budgetAmount}/hr`
-    : `£${job.budgetAmount}${job.budgetMax ? ` – £${job.budgetMax}` : ''}`;
+    ? `$${job.budgetAmount}/hr`
+    : `$${job.budgetAmount}${job.budgetMax ? ` – $${job.budgetMax}` : ''}`;
 
   const timeAgo = getTimeAgo(new Date(job.createdAt));
   const deadlineLeft = getDeadlineLeft(new Date(job.applicationDeadline));
@@ -181,7 +181,7 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
-              <PoundSterling className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />
+              <DollarSign className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />
               <span className="font-bold text-[var(--color-text-primary)]">{budgetDisplay}</span>
             </div>
             {isPartiallyHired && <span className="text-[9px] font-bold text-[var(--color-info)] bg-[var(--color-info)]/10 px-1.5 py-0.5 rounded-sm">{guardsHired}/{job.numberOfGuardsNeeded} Hired</span>}

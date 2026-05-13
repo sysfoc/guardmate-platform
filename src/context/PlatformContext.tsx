@@ -45,7 +45,7 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const value = useMemo(() => ({
     platformSettings,
     platformCountry: platformSettings?.platformCountry || null,
-    platformCurrency: platformSettings?.platformCurrency || 'AUD',
+    platformCurrency: '$',
     minimumHourlyRate: platformSettings?.minimumHourlyRate ?? null,
     minimumRateEnforced: platformSettings?.minimumRateEnforced ?? false,
     // Phase 6: Payment context

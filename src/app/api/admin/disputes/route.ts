@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         bossName: boss ? `${boss.firstName} ${boss.lastName}` : 'Unknown',
         guardName: guard ? `${guard.firstName} ${guard.lastName}` : 'Unknown',
         escrowAmount: payment?.jobBudget || 0,
-        currency: payment?.currency || 'AUD'
+        currency: '$'
       };
     }));
 

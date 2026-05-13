@@ -248,7 +248,7 @@ export default function AdminJobsPage() {
               <div className="col-span-1">
                 <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)] flex items-center gap-1">Budget</p>
                 <p className="font-medium text-[var(--color-text-primary)] mt-0.5">
-                  £{selectedJob.budgetAmount}{selectedJob.budgetType === BudgetType.HOURLY ? '/hr' : ' Fixed'}
+                  ${selectedJob.budgetAmount}{selectedJob.budgetType === BudgetType.HOURLY ? '/hr' : ' Fixed'}
                 </p>
               </div>
               <div className="col-span-1">

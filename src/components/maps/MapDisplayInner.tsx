@@ -239,7 +239,7 @@ export default function MapDisplayInner({
       const icon = createMarkerIcon(m.status, m.isUrgent);
       const marker = L.marker([m.lat, m.lng], { icon });
 
-      const budgetStr = m.budgetType === 'HOURLY' ? `£${m.budget}/hr` : `£${m.budget}`;
+      const budgetStr = m.budgetType === 'HOURLY' ? `$${m.budget}/hr` : `$${m.budget}`;
       let distStr = '';
       if (showUserLocation && userLocation) {
         const dist = calculateDistance(userLocation.lat, userLocation.lng, m.lat, m.lng);

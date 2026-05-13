@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
           reason,
           description,
           payment.jobBudget,
-          payment.currency || 'AUD',
+          payment.currency || '$',
           dispute._id.toString()
         ).catch(console.error);
       }

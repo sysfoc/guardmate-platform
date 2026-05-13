@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
 
     // Get platform settings for currency
     const settings = await PlatformSettings.findOne().lean();
-    const currency = settings?.platformCurrency || 'AUD';
+    const currency = '$';
 
     const fromDate = new Date(periodDates.dateFrom);
     const toDate = new Date(periodDates.dateTo);

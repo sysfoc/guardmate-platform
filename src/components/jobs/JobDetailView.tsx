@@ -9,7 +9,7 @@ import { MapDisplay } from '@/components/maps/MapDisplay';
 import type { IJob, ShiftScheduleDay, ShiftSlot } from '@/types/job.types';
 import { BudgetType } from '@/types/enums';
 import {
-  MapPin, Calendar, Clock, PoundSterling, Users, Eye,
+  MapPin, Calendar, Clock, DollarSign, Users, Eye,
   ShieldCheck, HeartPulse, HardHat, Baby, Zap, Globe,
   Briefcase, CheckCircle2, Timer, Moon,
 } from 'lucide-react';
@@ -23,8 +23,8 @@ interface JobDetailViewProps {
 
 export function JobDetailView({ job, actions, children, currentUserUid }: JobDetailViewProps) {
   const budgetDisplay = job.budgetType === BudgetType.HOURLY
-    ? `£${job.budgetAmount}/hr`
-    : `£${job.budgetAmount}${job.budgetMax ? ` – £${job.budgetMax}` : ''}`;
+    ? `$${job.budgetAmount}/hr`
+    : `$${job.budgetAmount}${job.budgetMax ? ` – $${job.budgetMax}` : ''}`;
 
   return (
     <div className="space-y-6">
@@ -183,7 +183,7 @@ export function JobDetailView({ job, actions, children, currentUserUid }: JobDet
         <div className="space-y-6">
           {/* Budget */}
           <Card className="p-6">
-            <h2 className="font-bold text-sm mb-3 flex items-center gap-2"><PoundSterling className="h-4 w-4 text-[var(--color-primary)]" /> Budget</h2>
+            <h2 className="font-bold text-sm mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4 text-[var(--color-primary)]" /> Budget</h2>
             <p className="text-2xl font-black text-[var(--color-text-primary)]">{budgetDisplay}</p>
             <p className="text-[10px] text-[var(--color-text-tertiary)] font-bold uppercase mt-1">{job.budgetType} Rate</p>
           </Card>

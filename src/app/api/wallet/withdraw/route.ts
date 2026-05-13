@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const minWithdrawal = settings?.minimumWithdrawalAmount || 50;
 
     if (amount < minWithdrawal) {
-      return createApiResponse(false, null, `Minimum withdrawal amount is ${settings?.platformCurrency || 'AUD'} ${minWithdrawal}.`, 400);
+      return createApiResponse(false, null, `Minimum withdrawal amount is $${minWithdrawal}.`, 400);
     }
 
     const wallet = await GuardWallet.findOne({ guardUid: user.uid });

@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { PoundSterling, Calendar, FileText, Send, Building2, Lock, AlertCircle, Clock } from 'lucide-react';
+import { DollarSign, Calendar, FileText, Send, Building2, Lock, AlertCircle, Clock } from 'lucide-react';
 import type { SubmitBidPayload } from '@/types/job.types';
 import type { IJob } from '@/types/job.types';
 
@@ -80,7 +80,7 @@ export function BidSubmissionModal({
         <div className="bg-[var(--color-bg-subtle)] rounded-lg p-3">
           <p className="font-bold text-sm text-[var(--color-text-primary)]">{job.title}</p>
           <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">
-            {job.companyName} • {job.locationCity} • {job.budgetType === 'HOURLY' ? `£${job.budgetAmount}/hr` : `£${job.budgetAmount} fixed`}
+            {job.companyName} • {job.locationCity} • {job.budgetType === 'HOURLY' ? `$${job.budgetAmount}/hr` : `$${job.budgetAmount} fixed`}
           </p>
         </div>
 
@@ -113,10 +113,10 @@ export function BidSubmissionModal({
 
         <div>
           <label className="text-[11px] font-bold text-[var(--color-input-label)] mb-1.5 block">
-            Your Proposed Rate ({job.budgetType === 'HOURLY' ? '£/hour' : '£ fixed'})
+            Your Proposed Rate ({job.budgetType === 'HOURLY' ? '$/hour' : '$ fixed'})
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold text-sm">£</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold text-sm">$</span>
             <input 
               type="number" 
               step="0.01" 
@@ -151,10 +151,10 @@ export function BidSubmissionModal({
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-[var(--color-text-secondary)]">
-                  £{Number(proposedRate || 0).toFixed(2)} × {totalHours} hrs
+                  ${Number(proposedRate || 0).toFixed(2)} × {totalHours} hrs
                 </span>
                 <span className="font-bold text-[var(--color-text-primary)]">
-                  = £{totalProposed.toFixed(2)} total
+                  = ${totalProposed.toFixed(2)} total
                 </span>
               </div>
             </div>

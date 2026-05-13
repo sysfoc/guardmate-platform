@@ -120,7 +120,7 @@ function WalletPageContent() {
     }
   };
 
-  const currency = platformSettings?.platformCurrency || 'AUD';
+  const currency = '$';
 
   if (loading) {
     return (

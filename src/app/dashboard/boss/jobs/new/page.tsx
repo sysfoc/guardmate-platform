@@ -28,7 +28,7 @@ import {
 } from '@/lib/utils/shiftCalculations';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, MapPin,
-  PoundSterling, Plus, Zap, Clock, Calendar, Users, ShieldCheck,
+  DollarSign, Plus, Zap, Clock, Calendar, Users, ShieldCheck,
   FileText, X, AlertTriangle, Moon,
 } from 'lucide-react';
 

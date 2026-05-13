@@ -122,7 +122,7 @@ function ChartSkeleton({ height = 200 }: { height?: number }) {
 // ─── Format Helpers ─────────────────────────────────────────────────────────
 
 function formatCurrency(value: number, currency: string): string {
-  const symbols: Record<string, string> = { AUD: '$', USD: '$', EUR: '€', GBP: '£' };
+  const symbols: Record<string, string> = { AUD: '$', USD: '$', EUR: '$', GBP: '$' };
   const symbol = symbols[currency] || currency;
   return `${symbol}${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
@@ -303,7 +303,7 @@ export default function AdminAnalyticsPage() {
               Analytics & Reporting
             </h1>
             <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-0.5">
-              {data?.period.label || 'Loading...'} • {data?.currency || 'AUD'}
+              {data?.period.label || 'Loading...'} • {data?.currency ? '$' : '$'}
             </p>
           </div>
           

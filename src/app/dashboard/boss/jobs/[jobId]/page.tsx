@@ -173,7 +173,7 @@ export default function BossJobDetailPage() {
             jobId={job.jobId}
             paymentStatus={job.paymentStatus}
             budgetAmount={acceptedBidAmount ?? job.budgetAmount}
-            currency={platformSettings?.platformCurrency || 'AUD'}
+            currency="$"
             onPaymentComplete={() => {
               // Refresh job to get updated payment status
               getJobById(jobId).then(resp => {
@@ -209,7 +209,7 @@ export default function BossJobDetailPage() {
               const commissionRate = platformSettings?.platformCommissionBoss ?? 10;
               const commission = Math.round(budget * (commissionRate / 100) * 100) / 100;
               const total = Math.round((budget + commission) * 100) / 100;
-              const currency = platformSettings?.platformCurrency || 'AUD';
+              const currency = '$';
               return (
                 <div className="bg-white rounded-lg border border-emerald-100 p-4">
                   <div className="space-y-2 text-sm">

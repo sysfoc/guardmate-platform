@@ -172,7 +172,7 @@ export default function BossDashboard() {
           />
           <StatCard 
             label="Total Spent" 
-            value={`£${(boss.totalSpent || 0).toLocaleString()}`} 
+            value={`$${(boss.totalSpent || 0).toLocaleString()}`} 
             icon={<TrendingUp />} 
             variant="emerald"
             className="md:col-span-2 lg:col-span-1 shadow-sm"
@@ -277,7 +277,7 @@ export default function BossDashboard() {
                         </td>
                         <td className="px-5 py-3 text-center text-xs font-medium">{item.totalBids}</td>
                         <td className="px-5 py-3 text-xs font-bold whitespace-nowrap">
-                          £{item.budgetAmount}{item.budgetType === 'HOURLY' ? '/hr' : ''}
+                          ${item.budgetAmount}{item.budgetType === 'HOURLY' ? '/hr' : ''}
                         </td>
                         <td className="px-5 py-3 text-right">
                           <Link href={`/dashboard/boss/jobs/${item.jobId}`} className="p-1.5 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors inline-flex items-center justify-center" aria-label="View job details">

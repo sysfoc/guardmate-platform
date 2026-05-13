@@ -110,7 +110,7 @@ export async function PATCH(
       const platformSettings = await PlatformSettings.findOne().lean();
       const minimumRateEnforced = platformSettings?.minimumRateEnforced ?? false;
       const minimumHourlyRate = platformSettings?.minimumHourlyRate ?? null;
-      const currency = platformSettings?.platformCurrency || 'AUD';
+      const currency = '$';
 
       // Determine total hours: use updated schedule if provided, otherwise recalc from legacy fields or fallback to existing job value
       let totalHours = job.totalScheduledHours || 0;

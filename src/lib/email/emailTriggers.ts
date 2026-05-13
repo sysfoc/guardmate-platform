@@ -618,7 +618,7 @@ export const sendEscrowFunded = async (
       commissionRate,
       offerName,
       savedAmount,
-      currency = "£",
+      currency = "$",
     } = commissionOptions;
     commissionSection += `<p><strong>Commission rate:</strong> ${commissionRate}%`;
     if (offerName) {
@@ -661,7 +661,7 @@ export const sendPaymentReleasedGuard = async (
       commissionRate,
       offerName,
       savedAmount,
-      currency = "£",
+      currency = "$",
     } = commissionOptions;
     commissionSection += `<p><strong>Commission rate:</strong> ${commissionRate}%`;
     if (offerName) {
@@ -705,7 +705,7 @@ export const sendPaymentReleasedBoss = async (
       commissionRate,
       offerName,
       savedAmount,
-      currency = "£",
+      currency = "$",
     } = commissionOptions;
     commissionSection += `<p><strong>Commission rate:</strong> ${commissionRate}%`;
     if (offerName) {

@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const platformSettings = await PlatformSettings.findOne().lean();
     const minimumRateEnforced = platformSettings?.minimumRateEnforced ?? false;
     const minimumHourlyRate = platformSettings?.minimumHourlyRate ?? null;
-    const currency = platformSettings?.platformCurrency || 'AUD';
+    const currency = '$';
 
     // Compute total scheduled hours for fixed-rate minimum validation
     let totalScheduledHours = 0;

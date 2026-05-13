@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
 
     return createApiResponse(true, {
       publishableKey: settings.stripePublishableKey,
-      currency: settings.platformCurrency || "AUD",
+      currency: "$",
+
     }, "Stripe config retrieved.", 200);
 
   } catch (error: any) {

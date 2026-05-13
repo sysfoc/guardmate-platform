@@ -322,8 +322,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     const guard = await User.findOne({ uid: dispute.guardUid }).lean();
 
     if (boss && guard) {
-      await sendDisputeResolved(boss.email, `${boss.firstName} ${boss.lastName}`, dispute.jobTitle, decision, amountReleased, amountRefunded, adminNotes, payment.currency || 'AUD');
-      await sendDisputeResolved(guard.email, `${guard.firstName} ${guard.lastName}`, dispute.jobTitle, decision, amountReleased, amountRefunded, adminNotes, payment.currency || 'AUD');
+      await sendDisputeResolved(boss.email, `${boss.firstName} ${boss.lastName}`, dispute.jobTitle, decision, amountReleased, amountRefunded, adminNotes, payment.currency || '$');
+      await sendDisputeResolved(guard.email, `${guard.firstName} ${guard.lastName}`, dispute.jobTitle, decision, amountReleased, amountRefunded, adminNotes, payment.currency || '$');
     }
 
     // Email admin

@@ -58,7 +58,7 @@ export default function AdminPaymentsPage() {
     return <div className="p-8 text-red-500 bg-red-50 rounded-md m-6">{error}</div>;
   }
 
-  const currency = platformSettings?.platformCurrency || 'AUD';
+  const currency = '$';
   const summary = data?.summary || {};
   const transactions = data?.transactions || [];
 

@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
           boss.email,
           boss.firstName,
           sub.amount || 0,
-          "AUD",
+          "$",
           now.toLocaleDateString("en-AU", {
             day: "numeric",
             month: "short",

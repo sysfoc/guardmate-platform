@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
               'PAYMENT_DISPUTE',
               'STRIPE CHARGEBACK ALSO FILED — 7 DAY RESPONSE DEADLINE',
               payment.jobBudget,
-              payment.currency || 'AUD',
+              payment.currency || '$',
               platformDispute._id.toString()
             ).catch(console.error);
           }
@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
                 boss.email,
                 boss.firstName,
                 sub.amount || 0,
-                'AUD',
+                '$',
                 new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
                 periodEnd.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
               );
@@ -357,7 +357,7 @@ export async function POST(request: NextRequest) {
                 boss.email,
                 boss.firstName,
                 sub.amount || 0,
-                'AUD',
+                '$',
                 sub.failureReason || 'Payment declined',
                 `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/boss/subscription`
               );

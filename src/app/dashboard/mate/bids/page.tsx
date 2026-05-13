@@ -25,7 +25,7 @@ import type { PendingReview } from '@/types/review.types';
 import { BidStatus, JobStatus } from '@/types/enums';
 import {
   Inbox, Loader2, Clock, CheckCircle2, XCircle,
-  MinusCircle, PoundSterling, Calendar, MapPin, ExternalLink, AlertTriangle, MessageSquare
+  MinusCircle, DollarSign, Calendar, MapPin, ExternalLink, AlertTriangle, MessageSquare
 } from 'lucide-react';
 
 const TABS = [
@@ -234,8 +234,8 @@ function MateBidsContent() {
 
                       <div className="flex items-center gap-4 mt-2 text-[10px] font-medium text-[var(--color-text-secondary)]">
                         <span className="flex items-center gap-1">
-                          <PoundSterling className="h-3 w-3 text-[var(--color-text-muted)]" />
-                          <strong>£{bid.proposedRate}</strong>/{bid.budgetType === 'HOURLY' ? 'hr' : 'fixed'}
+                          <DollarSign className="h-3 w-3 text-[var(--color-text-muted)]" />
+                          <strong>${bid.proposedRate}</strong>/{bid.budgetType === 'HOURLY' ? 'hr' : 'fixed'}
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-[var(--color-text-muted)]" />

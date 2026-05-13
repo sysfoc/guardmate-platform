@@ -284,7 +284,7 @@ export default function MateDashboard() {
                           <Badge variant={bidStatusVariant(item.bidStatus)} className="text-[9px] h-4 py-0">{item.bidStatus}</Badge>
                         </td>
                         <td className="px-5 py-3 text-xs font-bold text-emerald-500 whitespace-nowrap">
-                          £{item.totalProposed}
+                          ${item.totalProposed}
                         </td>
                         <td className="px-5 py-3 text-right">
                           <Link href={`/dashboard/mate/jobs/${item.jobId}`} className="p-1.5 hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors inline-flex items-center justify-center" aria-label="View job details">

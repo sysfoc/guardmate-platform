@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { BidStatus } from '@/types/enums';
 import type { IBid } from '@/types/job.types';
 import {
-  Clock, PoundSterling, Shield, Calendar,
+  Clock, DollarSign, Shield, Calendar,
   CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronUp, MessageSquare,
   Building2
 } from 'lucide-react';
@@ -124,8 +124,8 @@ export function BidCard({
           {/* Rate & Date */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-[10px] sm:text-xs font-medium text-[var(--color-text-secondary)]">
             <span className="flex items-center gap-1 whitespace-nowrap">
-              <PoundSterling className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--color-text-muted)]" />
-              <span className="font-bold text-[var(--color-text-primary)]">£{bid.proposedRate}</span>
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--color-text-muted)]" />
+              <span className="font-bold text-[var(--color-text-primary)]">${bid.proposedRate}</span>
               <span className="text-[var(--color-text-muted)]">/{bid.budgetType === 'HOURLY' ? 'hr' : 'fixed'}</span>
             </span>
             <span className="flex items-center gap-1 whitespace-nowrap">

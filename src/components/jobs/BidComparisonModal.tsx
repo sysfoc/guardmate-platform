@@ -58,7 +58,7 @@ export function BidComparisonModal({
                </td>
                {bids.map(bid => (
                  <td key={bid.bidId} className="p-2 sm:p-3 text-[var(--color-text-primary)] font-black text-center text-sm md:text-base group-hover:bg-[var(--color-bg-subtle)]/50 transition-colors">
-                   £{bid.proposedRate} <span className="text-[10px] sm:text-xs font-semibold text-[var(--color-text-muted)]">{bid.budgetType === 'HOURLY' ? '/ hr' : '/ fixed'}</span>
+                   ${bid.proposedRate} <span className="text-[10px] sm:text-xs font-semibold text-[var(--color-text-muted)]">{bid.budgetType === 'HOURLY' ? '/ hr' : '/ fixed'}</span>
                  </td>
                ))}
             </tr>

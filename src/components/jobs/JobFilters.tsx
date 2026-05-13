@@ -140,7 +140,7 @@ export function JobFilters({ filters, onFiltersChange, onReset, className, geoAv
       {/* Budget Range */}
       <div>
         <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1.5 block">
-          Budget Range (£)
+          Budget Range ($)
         </label>
         <div className="flex items-center gap-2">
           <input

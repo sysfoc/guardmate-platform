@@ -77,7 +77,7 @@ export async function checkSubscriptionExpiries(): Promise<void> {
             boss.firstName || 'Boss',
             daysRemaining,
             sub.amount || 0,
-            sub.currency || 'AUD',
+            sub.currency || '$',
             renewLink
           );
           // Mark as sent to prevent duplicate emails
