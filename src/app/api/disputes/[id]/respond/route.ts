@@ -10,12 +10,6 @@ import { DisputeStatus, UserRole, UserStatus } from '@/types/enums';
 import { sendDisputeResponseReceived, sendDisputeResponseNotification } from '@/lib/email/emailTriggers';
 import { validateUploadedFiles } from '@/lib/utils/fileValidation';
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const params = await context.params;

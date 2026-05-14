@@ -160,27 +160,38 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ── Stats Grid: 3 columns for better balance ──────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* ── Stats Grid ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {statCards.map((stat, i) => (
           <Card
             key={i}
-            className="p-4 relative overflow-hidden group hover:shadow-md transition-all duration-300 border-none shadow-sm ring-1 ring-[var(--color-surface-border)] bg-white flex items-center gap-4"
+            className="p-5 relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none ring-1 ring-[var(--color-surface-border)]"
           >
-            <div className={`p-2.5 rounded-xl ${stat.iconBg} transition-transform group-hover:scale-105 duration-300 shrink-0`}>
-              <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
-            </div>
-            
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider truncate">{stat.label}</p>
-                {stat.urgent && (
-                  <div className="h-2 w-2 rounded-full bg-[var(--color-danger)] animate-pulse" title="Action Required" />
-                )}
+            <div className="flex items-center gap-4">
+              <div
+                className={`h-11 w-11 rounded-xl ${stat.iconBg} flex items-center justify-center shrink-0`}
+              >
+                <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
               </div>
-              <h3 className="text-xl font-bold text-[var(--color-text-primary)] tabular-nums mt-0.5">
-                {stat.isCurrency ? `$${stat.value.toLocaleString()}` : stat.value.toLocaleString()}
-              </h3>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider truncate">
+                    {stat.label}
+                  </p>
+                  {stat.urgent && (
+                    <span
+                      className="inline-flex h-2 w-2 rounded-full bg-[var(--color-danger)] animate-pulse shrink-0"
+                      title="Action Required"
+                    />
+                  )}
+                </div>
+                <h3 className="text-2xl font-bold text-[var(--color-text-primary)] tabular-nums mt-1 leading-none">
+                  {stat.isCurrency
+                    ? `$${stat.value.toLocaleString()}`
+                    : stat.value.toLocaleString()}
+                </h3>
+              </div>
             </div>
           </Card>
         ))}

@@ -337,13 +337,16 @@ function BossHome() {
 
 function PublicHome() {
   const [publicReviews, setPublicReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setLoadingReviews(true);
       const res = await getPublicReviews(9);
       if (cancelled) return;
       if (res.success && res.data) setPublicReviews(res.data.reviews || []);
+      setLoadingReviews(false);
     })();
     return () => { cancelled = true; };
   }, []);
@@ -623,6 +626,7 @@ function PublicHome() {
         {/* TESTIMONIALS */}
         <ReviewCarousel
           reviews={publicReviews}
+          loading={loadingReviews}
           title="Trusted by Professionals"
           subtitle="What our users say"
         />
