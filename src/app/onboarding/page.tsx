@@ -37,7 +37,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-[var(--color-bg-subtle)] pb-20">
       
       {/* Onboarding Header Strip */}
-      <div className="bg-white border-b border-[var(--color-surface-border)] px-6 py-6 shadow-sm mb-8">
+      <div className="bg-[var(--color-surface)] border-b border-[var(--color-surface-border)] px-6 py-6 shadow-sm mb-8">
         <div className="max-w-4xl mx-auto flex flex-col items-center text-center space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">
             Welcome to GuardMate, {user.firstName}!

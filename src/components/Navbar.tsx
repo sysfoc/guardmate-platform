@@ -12,7 +12,7 @@ import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui/Dropdown';
-import { User, Settings, LogOut as LogOutIcon, ChevronDown, Star, Wallet, CreditCard, ShieldAlert } from 'lucide-react';
+import { User, LogOut as LogOutIcon, ChevronDown, Star, Wallet, CreditCard, ShieldAlert } from 'lucide-react';
 import { GlobalChatListener } from '@/components/chat/GlobalChatListener';
 import { subscriptionApi } from '@/lib/api/subscription.api';
 import type { ISubscriptionStatus } from '@/types/subscription.types';
@@ -71,6 +71,7 @@ export function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <DarkModeToggle />
           {firebaseUser && user ? (
             // Logged in
             <>
@@ -90,8 +91,6 @@ export function Navbar() {
               )}
               <div className="flex items-center gap-2 pl-2 border-l border-[var(--color-surface-border)]">
                 <GlobalChatListener userId={user.uid} role={user.role} />
-                <DarkModeToggle />
-                
                 <Dropdown
                   trigger={
                     <div className="flex items-center gap-2 p-1 pl-2 hover:bg-[var(--color-bg-secondary)] rounded-full transition-colors group cursor-pointer">
@@ -173,11 +172,6 @@ export function Navbar() {
                     </>
                   )}
 
-                  <DropdownItem onClick={() => router.push('/dashboard/settings')}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Account Settings
-                  </DropdownItem>
-                  
                   <DropdownDivider />
                   
                   <DropdownItem 
