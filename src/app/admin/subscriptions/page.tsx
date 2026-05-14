@@ -101,7 +101,7 @@ export default function AdminSubscriptionsPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm">
+          <div className="flex items-center gap-2 bg-[var(--color-surface)] px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm">
             <Filter className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
             <select
               value={filterStatus}

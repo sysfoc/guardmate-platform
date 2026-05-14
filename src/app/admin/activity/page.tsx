@@ -63,7 +63,7 @@ function AdminActivityPageInner() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-[var(--color-text-primary)] flex items-center gap-2">
-          <History className="h-6 w-6 text-slate-500" />
+          <History className="h-6 w-6 text-[var(--color-text-muted)]" />
           System Activity Log
         </h1>
         <p className="text-sm text-[var(--color-text-secondary)] mt-1">
@@ -76,7 +76,7 @@ function AdminActivityPageInner() {
         <div className="flex-1 min-w-0">
           <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">Action Type</label>
           <select
-            className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent cursor-pointer"
+            className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] text-sm text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent cursor-pointer"
             value={actionType}
             onChange={(e) => updateUrl({ actionType: e.target.value })}
           >
@@ -90,7 +90,7 @@ function AdminActivityPageInner() {
           <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">From</label>
           <input
             type="date"
-            className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+            className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] text-sm text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
             value={dateFrom}
             onChange={(e) => updateUrl({ dateFrom: e.target.value })}
           />
@@ -99,7 +99,7 @@ function AdminActivityPageInner() {
           <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">To</label>
           <input
             type="date"
-            className="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+            className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] text-sm text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
             value={dateTo}
             onChange={(e) => updateUrl({ dateTo: e.target.value })}
           />
@@ -158,7 +158,7 @@ function AdminActivityPageInner() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-[var(--color-primary-light)] text-[var(--color-primary)] flex items-center justify-center text-xs font-bold uppercase ring-2 ring-white">
+                        <div className="w-7 h-7 rounded-full bg-[var(--color-primary-light)] text-[var(--color-primary)] flex items-center justify-center text-xs font-bold uppercase ring-2 ring-[var(--color-surface)]">
                           {log.adminName?.charAt(0) || 'A'}
                         </div>
                         <span className="text-sm font-semibold text-[var(--color-text-primary)]">{log.adminName}</span>

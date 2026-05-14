@@ -281,7 +281,7 @@ export default function AdminSettingsPage() {
   };
 
   if (loading || !settings || !platformSettings) {
-    return <div className="p-8 text-center text-slate-500">Loading settings...</div>;
+    return <div className="p-8 text-center text-[var(--color-text-muted)]">Loading settings...</div>;
   }
 
   const handleToggle = (type: NotificationEventType, value: boolean) => {
@@ -299,19 +299,19 @@ export default function AdminSettingsPage() {
 
   const InputField = ({ label, value, onChange, type = 'text', placeholder = '' }: any) => (
     <div className="flex flex-col space-y-1">
-      <label className="text-sm font-medium text-slate-700">{label}</label>
+      <label className="text-sm font-medium text-[var(--color-text-secondary)]">{label}</label>
       <div className="relative">
         <input
           type={type === 'password' && showPassword ? 'text' : type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-md border border-[var(--color-input-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
         />
         {type === 'password' && (
           <button
             type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -371,19 +371,19 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto pb-12">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
-          <Settings className="h-6 w-6 text-slate-600" />
+        <h1 className="text-2xl font-extrabold text-[var(--color-text-primary)] flex items-center gap-2">
+          <Settings className="h-6 w-6 text-[var(--color-text-muted)]" />
           Email & Notifications Settings
         </h1>
-        <p className="text-sm text-slate-500 mt-1">Configure SMTP details and toggle specific email events globally.</p>
+        <p className="text-sm text-[var(--color-text-secondary)] mt-1">Configure SMTP details and toggle specific email events globally.</p>
       </div>
 
       {!settings.isConfigured && (
-        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+        <div className="bg-[var(--color-warning)]/10 border-l-4 border-[var(--color-warning)] p-4 rounded-md flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--color-warning)] mt-0.5" />
           <div>
-            <h3 className="text-sm font-semibold text-amber-800">Email Notifications Disabled</h3>
-            <p className="text-sm text-amber-700 mt-1">
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Email Notifications Disabled</h3>
+            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
               You must configure and save your Gmail SMTP credentials below before the platform will send any emails.
             </p>
           </div>
@@ -391,17 +391,17 @@ export default function AdminSettingsPage() {
       )}
 
       {errorMsg && (
-        <div className="bg-red-50 text-red-700 p-3 rounded-md border border-red-200 text-sm">{errorMsg}</div>
+        <div className="bg-[var(--color-danger)]/10 text-[var(--color-danger)] p-3 rounded-md border border-[var(--color-danger)]/20 text-sm">{errorMsg}</div>
       )}
       {successMsg && (
-        <div className="bg-emerald-50 text-emerald-700 p-3 rounded-md border border-emerald-200 text-sm">{successMsg}</div>
+        <div className="bg-[var(--color-success)]/10 text-[var(--color-success)] p-3 rounded-md border border-[var(--color-success)]/20 text-sm">{successMsg}</div>
       )}
 
-      <div className="flex overflow-x-auto border-b border-slate-200 scrollbar-hide">
+      <div className="flex overflow-x-auto border-b border-[var(--color-surface-border)] scrollbar-hide">
         <button
           onClick={() => setActiveTab('config')}
           className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'config' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            activeTab === 'config' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
           }`}
         >
           Email Configuration
@@ -409,7 +409,7 @@ export default function AdminSettingsPage() {
         <button
           onClick={() => setActiveTab('toggles')}
           className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'toggles' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            activeTab === 'toggles' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
           }`}
         >
           Notification Toggles
@@ -417,7 +417,7 @@ export default function AdminSettingsPage() {
         <button
           onClick={() => setActiveTab('platform')}
           className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'platform' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            activeTab === 'platform' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
           }`}
         >
           Platform Config
@@ -425,7 +425,7 @@ export default function AdminSettingsPage() {
         <button
           onClick={() => setActiveTab('finance')}
           className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'finance' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            activeTab === 'finance' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
           }`}
         >
           Payments & Finance
@@ -434,7 +434,7 @@ export default function AdminSettingsPage() {
           <button
             onClick={() => setActiveTab('admin_management')}
             className={`py-3 px-6 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-              activeTab === 'admin_management' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+              activeTab === 'admin_management' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
             }`}
           >
             Admin Management
@@ -461,7 +461,7 @@ export default function AdminSettingsPage() {
               />
             </div>
             
-            <div className="border-t border-slate-100 pt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="border-t border-[var(--color-surface-border)] pt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               <InputField
                 label="From Name"
                 value={settings.fromName}
@@ -490,7 +490,7 @@ export default function AdminSettingsPage() {
                 onClick={handleTestEmail} 
                 disabled={testing || !settings.gmailUser} 
                 variant="outline"
-                className="text-slate-600 border-slate-300 hover:bg-slate-50 w-full sm:w-auto"
+                className="w-full sm:w-auto"
                 leftIcon={<Send className="h-4 w-4" />}
               >
                 {testing ? 'Sending...' : 'Send Test Email'}
@@ -509,16 +509,16 @@ export default function AdminSettingsPage() {
           </div>
           {Object.entries(categories).map(([category, events]) => (
             <Card key={category} className="p-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-                <Mail className="h-5 w-5 text-blue-500" />
+              <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 pb-2 border-b border-[var(--color-surface-border)] flex items-center gap-2">
+                <Mail className="h-5 w-5 text-[var(--color-primary)]" />
                 {category}
               </h3>
               <div className="space-y-4">
                 {events.map((evt) => (
                   <div key={evt.id} className="flex items-center justify-between py-2">
                     <div>
-                      <p className="text-sm font-medium text-slate-700">{evt.label}</p>
-                      <p className="text-xs text-slate-500">{evt.desc}</p>
+                      <p className="text-sm font-medium text-[var(--color-text-primary)]">{evt.label}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{evt.desc}</p>
                     </div>
                     <Toggle
                       checked={!!settings.notifications[evt.id]}
@@ -543,11 +543,11 @@ export default function AdminSettingsPage() {
               </p>
             </div>
 
-            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+            <div className="bg-[var(--color-warning)]/10 border-l-4 border-[var(--color-warning)] p-4 rounded-md flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-[var(--color-warning)] mt-0.5 flex-shrink-0" />
               <div>
-                <h3 className="text-sm font-semibold text-amber-800">Restriction Warning</h3>
-                <p className="text-sm text-amber-700 mt-1 pb-1">
+                <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Restriction Warning</h3>
+                <p className="text-sm text-[var(--color-text-secondary)] mt-1 pb-1">
                   Once set, only phone numbers from this country will be accepted during registration and profile updates. 
                   Existing users with foreign numbers will be unaffected.
                 </p>
@@ -578,11 +578,11 @@ export default function AdminSettingsPage() {
                 Configure ABN verification settings. Guards with verified ABN can propose custom rates when bidding.
               </p>
 
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md flex items-start gap-3 mb-4">
-                <AlertTriangle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+              <div className="bg-[var(--color-info)]/10 border-l-4 border-[var(--color-info)] p-4 rounded-md flex items-start gap-3 mb-4">
+                <AlertTriangle className="h-5 w-5 text-[var(--color-info)] mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="text-sm font-semibold text-blue-800">ABR API Access</h3>
-                  <p className="text-sm text-blue-700 mt-1 pb-1">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">ABR API Access</h3>
+                  <p className="text-sm text-[var(--color-text-secondary)] mt-1 pb-1">
                     Obtain your GUID from <a href="https://abr.business.gov.au/" target="_blank" rel="noopener noreferrer" className="underline">abr.business.gov.au</a>.
                     The GUID is kept server-side and never exposed to the frontend.
                   </p>
@@ -667,9 +667,9 @@ export default function AdminSettingsPage() {
               </div>
 
               {/* Info Box */}
-              <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md mb-4">
-                <h3 className="text-sm font-semibold text-amber-800 mb-1">Australia&apos;s Security Services Industry Award</h3>
-                <p className="text-sm text-amber-700">
+              <div className="bg-[var(--color-warning)]/10 border-l-4 border-[var(--color-warning)] p-4 rounded-md mb-4">
+                <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Australia&apos;s Security Services Industry Award</h3>
+                <p className="text-sm text-[var(--color-text-secondary)]">
                   Australia&apos;s Security Services Industry Award (MA000016) sets the minimum rate for security guards at $25.15/hr
                   for full-time/part-time and $31.44/hr for casual workers (effective 1 July 2025). Update these values every 1 July
                   when the Fair Work Commission announces the new annual rate.{' '}
@@ -726,7 +726,7 @@ export default function AdminSettingsPage() {
 
             {/* Commissions */}
             <div className="space-y-4">
-              <h4 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2 mt-4 text-blue-600">
+              <h4 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2 mt-4">
                 Platform Commissions (%)
               </h4>
               <p className="text-sm text-[var(--color-text-secondary)]">Dual-commission model. Boss pays on top of rate. Guard pays out of their rate.</p>
@@ -756,26 +756,26 @@ export default function AdminSettingsPage() {
               </div>
 
               {/* Live Commission Preview */}
-              <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
-                <h5 className="text-xs font-black text-indigo-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <div className="mt-4 p-4 rounded-xl bg-[var(--color-bg-subtle)] border border-[var(--color-surface-border)]">
+                <h5 className="text-xs font-black text-[var(--color-text-primary)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] animate-pulse" />
                   Live Preview — {platformCurrency}100 Job
                 </h5>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="text-center p-3 bg-white rounded-lg border border-indigo-100">
-                    <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-wider">Boss Pays</p>
-                    <p className="text-lg font-black text-indigo-900">{platformCurrency}{(100 + (100 * platformCommissionBoss / 100)).toFixed(2)}</p>
-                    <p className="text-[9px] text-slate-400">Job + {platformCommissionBoss}% fee</p>
+                  <div className="text-center p-3 bg-[var(--color-surface)] rounded-lg border border-[var(--color-surface-border)]">
+                    <p className="text-[9px] font-bold text-[var(--color-primary)] uppercase tracking-wider">Boss Pays</p>
+                    <p className="text-lg font-black text-[var(--color-text-primary)]">{platformCurrency}{(100 + (100 * platformCommissionBoss / 100)).toFixed(2)}</p>
+                    <p className="text-[9px] text-[var(--color-text-muted)]">Job + {platformCommissionBoss}% fee</p>
                   </div>
-                  <div className="text-center p-3 bg-white rounded-lg border border-emerald-100">
-                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Guard Receives</p>
-                    <p className="text-lg font-black text-emerald-900">{platformCurrency}{(100 - (100 * platformCommissionGuard / 100)).toFixed(2)}</p>
-                    <p className="text-[9px] text-slate-400">Job - {platformCommissionGuard}% fee</p>
+                  <div className="text-center p-3 bg-[var(--color-surface)] rounded-lg border border-[var(--color-success)]/20">
+                    <p className="text-[9px] font-bold text-[var(--color-success)] uppercase tracking-wider">Guard Receives</p>
+                    <p className="text-lg font-black text-[var(--color-text-primary)]">{platformCurrency}{(100 - (100 * platformCommissionGuard / 100)).toFixed(2)}</p>
+                    <p className="text-[9px] text-[var(--color-text-muted)]">Job - {platformCommissionGuard}% fee</p>
                   </div>
-                  <div className="text-center p-3 bg-white rounded-lg border border-amber-100">
-                    <p className="text-[9px] font-bold text-amber-500 uppercase tracking-wider">Platform Earns</p>
-                    <p className="text-lg font-black text-amber-900">{platformCurrency}{((100 * platformCommissionBoss / 100) + (100 * platformCommissionGuard / 100)).toFixed(2)}</p>
-                    <p className="text-[9px] text-slate-400">{platformCommissionBoss}% + {platformCommissionGuard}% commission</p>
+                  <div className="text-center p-3 bg-[var(--color-surface)] rounded-lg border border-[var(--color-warning)]/20">
+                    <p className="text-[9px] font-bold text-[var(--color-warning)] uppercase tracking-wider">Platform Earns</p>
+                    <p className="text-lg font-black text-[var(--color-text-primary)]">{platformCurrency}{((100 * platformCommissionBoss / 100) + (100 * platformCommissionGuard / 100)).toFixed(2)}</p>
+                    <p className="text-[9px] text-[var(--color-text-muted)]">{platformCommissionBoss}% + {platformCommissionGuard}% commission</p>
                   </div>
                 </div>
               </div>
@@ -800,10 +800,10 @@ export default function AdminSettingsPage() {
 
             {/* Stripe */}
             <div className="space-y-4 pt-6 border-t border-[var(--color-border-primary)]">
-              <div className="flex items-center justify-between bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+              <div className="flex items-center justify-between bg-[var(--color-success)]/10 p-4 rounded-xl border border-[var(--color-success)]/20">
                 <div>
-                  <h4 className="text-lg font-bold text-emerald-800">Stripe Integration</h4>
-                  <p className="text-sm text-emerald-700">Required for Boss direct card payments.</p>
+                  <h4 className="text-lg font-bold text-[var(--color-text-primary)]">Stripe Integration</h4>
+                  <p className="text-sm text-[var(--color-text-secondary)]">Required for Boss direct card payments.</p>
                 </div>
                 <Toggle checked={stripeEnabled} onCheckedChange={setStripeEnabled} />
               </div>
@@ -836,10 +836,10 @@ export default function AdminSettingsPage() {
 
             {/* PayPal */}
             <div className="space-y-4 pt-6 border-t border-[var(--color-border-primary)]">
-              <div className="flex items-center justify-between bg-blue-50 p-4 rounded-xl border border-blue-200">
+              <div className="flex items-center justify-between bg-[var(--color-info)]/10 p-4 rounded-xl border border-[var(--color-info)]/20">
                 <div>
-                  <h4 className="text-lg font-bold text-blue-800">PayPal Integration</h4>
-                  <p className="text-sm text-blue-700">Required for PayPal checkout and email payouts.</p>
+                  <h4 className="text-lg font-bold text-[var(--color-text-primary)]">PayPal Integration</h4>
+                  <p className="text-sm text-[var(--color-text-secondary)]">Required for PayPal checkout and email payouts.</p>
                 </div>
                 <Toggle checked={paypalEnabled} onCheckedChange={setPaypalEnabled} />
               </div>
@@ -883,17 +883,17 @@ export default function AdminSettingsPage() {
             </div>
 
             {/* Warning regarding keys */}
-            <div className="flex gap-2 items-center text-xs text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
+            <div className="flex gap-2 items-center text-xs text-[var(--color-warning)] bg-[var(--color-warning)]/10 p-3 rounded border border-[var(--color-warning)]/20">
               <AlertTriangle className="h-4 w-4" />
               <span>Keys are saved as simple strings temporarily. (Encryption-at-rest integration deferred).</span>
             </div>
 
             {/* Phase 8: Boss Subscription Settings */}
             <div className="space-y-4 pt-6 border-t border-[var(--color-border-primary)]">
-              <div className="flex items-center justify-between bg-purple-50 p-4 rounded-xl border border-purple-200">
+              <div className="flex items-center justify-between bg-[var(--color-secondary)]/10 p-4 rounded-xl border border-[var(--color-secondary)]/20">
                 <div>
-                  <h4 className="text-lg font-bold text-purple-800">Boss Monthly Subscription</h4>
-                  <p className="text-sm text-purple-700">Require Bosses to maintain a monthly subscription to post jobs.</p>
+                  <h4 className="text-lg font-bold text-[var(--color-text-primary)]">Boss Monthly Subscription</h4>
+                  <p className="text-sm text-[var(--color-text-secondary)]">Require Bosses to maintain a monthly subscription to post jobs.</p>
                 </div>
                 <Toggle checked={bossSubscriptionEnabled} onCheckedChange={setBossSubscriptionEnabled} />
               </div>
@@ -938,8 +938,8 @@ export default function AdminSettingsPage() {
       {activeTab === 'admin_management' && (currentUser as AdminProfile | null)?.adminLevel === AdminLevel.SUPER && (
         <div className="space-y-6">
           <Card className="p-6">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-              <Shield className="h-5 w-5 text-indigo-500" />
+            <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 pb-2 border-b border-[var(--color-surface-border)] flex items-center gap-2">
+              <Shield className="h-5 w-5 text-[var(--color-primary)]" />
               Invite New Admin
             </h3>
             <form onSubmit={handleSendInvite} className="flex gap-4 items-end">
@@ -959,25 +959,25 @@ export default function AdminSettingsPage() {
           </Card>
 
           {loadingAdmins ? (
-            <div className="p-8 text-center text-slate-500">Loading admin data...</div>
+            <div className="p-8 text-center text-[var(--color-text-muted)]">Loading admin data...</div>
           ) : adminManagement ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">
+                <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 pb-2 border-b border-[var(--color-surface-border)]">
                   Current Admins
                 </h3>
                 <div className="space-y-4">
                   {adminManagement.admins.map(admin => (
-                    <div key={admin.uid} className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                    <div key={admin.uid} className="flex items-center justify-between p-3 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-bg-secondary)]">
                       <div>
-                        <p className="font-semibold text-slate-800">{admin.firstName} {admin.lastName}</p>
-                        <p className="text-sm text-slate-500">{admin.email}</p>
+                        <p className="font-semibold text-[var(--color-text-primary)]">{admin.firstName} {admin.lastName}</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">{admin.email}</p>
                       </div>
                       <div className="text-right">
-                        <span className="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-800 text-xs font-bold rounded-full uppercase tracking-wider mb-1">
+                        <span className="inline-block px-2.5 py-1 bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs font-bold rounded-full uppercase tracking-wider mb-1">
                           {admin.adminLevel}
                         </span>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-[var(--color-text-muted)]">
                           {new Date(admin.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -987,21 +987,21 @@ export default function AdminSettingsPage() {
               </Card>
 
               <Card className="p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">
+                <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-4 pb-2 border-b border-[var(--color-surface-border)]">
                   Pending Invitations
                 </h3>
                 <div className="space-y-4">
                   {adminManagement.pendingInvites.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-4">No pending invitations.</p>
+                    <p className="text-sm text-[var(--color-text-muted)] text-center py-4">No pending invitations.</p>
                   ) : (
                     adminManagement.pendingInvites.map(invite => (
-                      <div key={invite.id} className="flex flex-col gap-1 p-3 rounded-lg border border-amber-200 bg-amber-50">
+                      <div key={invite.id} className="flex flex-col gap-1 p-3 rounded-lg border border-[var(--color-warning)]/20 bg-[var(--color-warning)]/10">
                         <div className="flex justify-between items-start">
-                          <p className="font-medium text-amber-900">{invite.email}</p>
-                          <span className="text-[10px] uppercase font-bold tracking-wider text-amber-600">Pending</span>
+                          <p className="font-medium text-[var(--color-text-primary)]">{invite.email}</p>
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-warning)]">Pending</span>
                         </div>
-                        <p className="text-xs text-amber-700">Invited by: {invite.invitedByName}</p>
-                        <p className="text-xs text-amber-600">Expires: {new Date(invite.expiresAt).toLocaleString()}</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">Invited by: {invite.invitedByName}</p>
+                        <p className="text-xs text-[var(--color-text-muted)]">Expires: {new Date(invite.expiresAt).toLocaleString()}</p>
                       </div>
                     ))
                   )}

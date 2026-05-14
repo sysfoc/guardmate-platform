@@ -250,7 +250,7 @@ function AllUsersPageInner() {
           onClick={handleExportCSV}
           disabled={exporting || isLoading || users.length === 0}
           variant="outline"
-          className="shrink-0 bg-white h-9 text-sm"
+          className="shrink-0 h-9 text-sm"
         >
           <Download className="h-3.5 w-3.5 mr-1.5" />
           {exporting ? 'Exporting…' : 'Export CSV'}
@@ -267,7 +267,7 @@ function AllUsersPageInner() {
             <input
               type="text"
               placeholder="Search name, email, phone…"
-              className="w-full pl-8 pr-3 py-2 rounded-lg bg-white border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
+              className="w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
@@ -280,7 +280,7 @@ function AllUsersPageInner() {
           <div className="flex flex-col gap-0.5 min-w-[110px]">
             <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider px-0.5">Role</label>
             <select
-              className="px-3 py-2 rounded-lg bg-white border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer"
+              className="px-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer"
               value={role}
               onChange={(e) => updateUrl({ role: e.target.value })}
             >
@@ -292,7 +292,7 @@ function AllUsersPageInner() {
           <div className="flex flex-col gap-0.5 min-w-[120px]">
             <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider px-0.5">Status</label>
             <select
-              className="px-3 py-2 rounded-lg bg-white border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer"
+              className="px-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer"
               value={status}
               onChange={(e) => updateUrl({ status: e.target.value })}
             >
@@ -311,14 +311,14 @@ function AllUsersPageInner() {
             <div className="flex items-center gap-1.5">
               <input
                 type="date"
-                className="flex-1 sm:flex-none sm:w-[138px] px-3 py-2 rounded-lg bg-white border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] min-w-0"
+                className="flex-1 sm:flex-none sm:w-[138px] px-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] min-w-0"
                 value={dateFrom}
                 onChange={(e) => updateUrl({ dateFrom: e.target.value })}
               />
               <span className="text-[var(--color-text-muted)] text-sm shrink-0">—</span>
               <input
                 type="date"
-                className="flex-1 sm:flex-none sm:w-[138px] px-3 py-2 rounded-lg bg-white border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] min-w-0"
+                className="flex-1 sm:flex-none sm:w-[138px] px-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-input-border)] text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)] min-w-0"
                 value={dateTo}
                 onChange={(e) => updateUrl({ dateTo: e.target.value })}
               />

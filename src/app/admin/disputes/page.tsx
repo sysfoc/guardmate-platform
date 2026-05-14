@@ -162,28 +162,28 @@ export default function AdminDisputesPage() {
 
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
-          <Card className="p-4 bg-white border-none shadow-sm ring-1 ring-[var(--color-surface-border)] flex flex-col justify-center">
+          <Card className="p-4 border-none shadow-sm ring-1 ring-[var(--color-surface-border)] flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-2">
                <Activity className="h-4 w-4 text-[var(--color-info)]" />
                <h3 className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Total Disputes</h3>
             </div>
             <p className="text-2xl font-black text-[var(--color-text-primary)] tabular-nums">{stats.total}</p>
           </Card>
-          <Card className="p-4 bg-white border-none shadow-sm ring-1 ring-[var(--color-surface-border)] flex flex-col justify-center">
+          <Card className="p-4 border-none shadow-sm ring-1 ring-[var(--color-surface-border)] flex flex-col justify-center">
              <div className="flex items-center gap-2 mb-2">
                <ShieldAlert className="h-4 w-4 text-[var(--color-warning)]" />
                <h3 className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Active (Open/Review)</h3>
              </div>
             <p className="text-2xl font-black text-[var(--color-text-primary)] tabular-nums">{stats.open + stats.underReview}</p>
           </Card>
-          <Card className="p-4 bg-white border-none shadow-sm ring-1 ring-[var(--color-surface-border)] flex flex-col justify-center">
+          <Card className="p-4 border-none shadow-sm ring-1 ring-[var(--color-surface-border)] flex flex-col justify-center">
              <div className="flex items-center gap-2 mb-2">
                <CheckCircle className="h-4 w-4 text-[var(--color-success)]" />
                <h3 className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Resolved</h3>
              </div>
             <p className="text-2xl font-black text-[var(--color-success)] tabular-nums">{stats.resolved}</p>
           </Card>
-          <Card className="p-4 bg-white border-none shadow-sm ring-1 ring-[var(--color-surface-border)] flex flex-col justify-center">
+          <Card className="p-4 border-none shadow-sm ring-1 ring-[var(--color-surface-border)] flex flex-col justify-center">
              <div className="flex items-center gap-2 mb-2">
                <Clock className="h-4 w-4 text-[var(--color-secondary)]" />
                <h3 className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Avg Resolution</h3>
@@ -195,7 +195,7 @@ export default function AdminDisputesPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm flex-1 min-w-0">
+        <div className="flex items-center gap-2 bg-[var(--color-surface)] px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm flex-1 min-w-0">
           <Search className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
           <input
             type="text"
@@ -214,7 +214,7 @@ export default function AdminDisputesPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm">
+          <div className="flex items-center gap-2 bg-[var(--color-surface)] px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm">
             <Filter className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
             <select
               value={statusFilter}
@@ -251,7 +251,7 @@ export default function AdminDisputesPage() {
 
           <div className="space-y-4">
             {disputes.length === 0 ? (
-              <Card className="p-12 text-center bg-white border-none shadow-sm ring-1 ring-[var(--color-surface-border)]">
+              <Card className="p-12 text-center border-none shadow-sm ring-1 ring-[var(--color-surface-border)]">
                 <ShieldAlert className="h-12 w-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
                 <p className="font-bold text-[var(--color-text-primary)]">No disputes found</p>
                 {(statusFilter !== 'ALL' || searchQuery) && (
@@ -259,7 +259,7 @@ export default function AdminDisputesPage() {
                 )}
               </Card>
             ) : disputes.map((dispute) => (
-          <Card key={dispute._id} className="p-5 bg-white border-none shadow-sm ring-1 ring-[var(--color-surface-border)] relative overflow-hidden group">
+          <Card key={dispute._id} className="p-5 border-none shadow-sm ring-1 ring-[var(--color-surface-border)] relative overflow-hidden group">
             {dispute.status === 'RESOLVED' ? (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-success)]" />
             ) : (
@@ -315,7 +315,7 @@ export default function AdminDisputesPage() {
                   <div>
                     <label className="block text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1.5">Decision Outcome</label>
                     <select 
-                      className="w-full bg-white border border-[var(--color-surface-border)] rounded-xl p-2.5 text-sm text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
+                      className="w-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl p-2.5 text-sm text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
                       value={decision}
                       onChange={e => setDecision(e.target.value as AdminDecision)}
                     >
@@ -333,7 +333,7 @@ export default function AdminDisputesPage() {
                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
                         <input 
                           type="number"
-                          className="w-full bg-white border border-[var(--color-surface-border)] rounded-xl py-2.5 pl-9 pr-3 text-sm text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all font-bold"
+                          className="w-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl py-2.5 pl-9 pr-3 text-sm text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all font-bold"
                           value={amount}
                           onChange={e => setAmount(Number(e.target.value))}
                           max={dispute.escrowAmount}
@@ -346,7 +346,7 @@ export default function AdminDisputesPage() {
                   <div>
                     <label className="block text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1.5">Admin Notes (Emailed to both parties)</label>
                     <textarea 
-                      className="w-full bg-white border border-[var(--color-surface-border)] rounded-xl p-3 text-sm text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all h-24 resize-none"
+                      className="w-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl p-3 text-sm text-[var(--color-text-primary)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all h-24 resize-none"
                       value={adminNotes}
                       onChange={e => setAdminNotes(e.target.value)}
                       placeholder="Explain the reason for this decision. This will be permanently recorded."

@@ -95,23 +95,23 @@ export default function AdminTemplatesPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading templates...</div>;
+    return <div className="p-8 text-center text-[var(--color-text-muted)]">Loading templates...</div>;
   }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto pb-12 relative">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
-          <Mail className="h-6 w-6 text-blue-600" />
+        <h1 className="text-2xl font-extrabold text-[var(--color-text-primary)] flex items-center gap-2">
+          <Mail className="h-6 w-6 text-[var(--color-primary)]" />
           Email Templates
         </h1>
-        <p className="text-sm text-slate-500 mt-1">Customize the HTML layouts and copy for every notification sent by GuardMate.</p>
+        <p className="text-sm text-[var(--color-text-secondary)] mt-1">Customize the HTML layouts and copy for every notification sent by GuardMate.</p>
       </div>
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-slate-500">
-            <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
+          <table className="w-full text-sm text-left text-[var(--color-text-muted)]">
+            <thead className="text-xs text-[var(--color-text-primary)] uppercase bg-[var(--color-bg-subtle)] border-b border-[var(--color-surface-border)]">
               <tr>
                 <th className="px-6 py-4">Event Type</th>
                 <th className="px-6 py-4">Subject Preview</th>
@@ -122,24 +122,24 @@ export default function AdminTemplatesPage() {
             </thead>
             <tbody>
               {templates.map((tmpl) => (
-                <tr key={tmpl.notificationType} className="bg-white border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">
+                <tr key={tmpl.notificationType} className="bg-[var(--color-surface)] border-b border-[var(--color-surface-border)] hover:bg-[var(--color-bg-subtle)] transition-colors">
+                  <td className="px-6 py-4 font-medium text-[var(--color-text-primary)] whitespace-nowrap">
                     {tmpl.notificationType}
                   </td>
                   <td className="px-6 py-4 truncate max-w-xs">{tmpl.subject}</td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${tmpl.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${tmpl.isActive ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]' : 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]'}`}>
                       {tmpl.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     {tmpl.updatedAt ? new Date(tmpl.updatedAt as string).toLocaleDateString() : 'N/A'}
-                    <div className="text-xs text-slate-400">by {tmpl.lastEditedBy || 'System'}</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">by {tmpl.lastEditedBy || 'System'}</div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => openEdit(tmpl)}
-                      className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition-colors"
+                      className="text-[var(--color-primary)] hover:text-[var(--color-primary)] p-2 rounded-full hover:bg-[var(--color-primary)]/10 transition-colors"
                       title="Edit Template"
                     >
                       <Edit className="h-4 w-4" />
@@ -156,65 +156,65 @@ export default function AdminTemplatesPage() {
       {selected && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
           <Card className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+            <div className="p-4 border-b border-[var(--color-surface-border)] flex justify-between items-center bg-[var(--color-bg-subtle)]">
               <div>
-                <h3 className="text-lg font-bold text-slate-800">Edit Template: {selected.notificationType}</h3>
-                <p className="text-xs text-slate-500">Edit HTML structure or copy.</p>
+                <h3 className="text-lg font-bold text-[var(--color-text-primary)]">Edit Template: {selected.notificationType}</h3>
+                <p className="text-xs text-[var(--color-text-muted)]">Edit HTML structure or copy.</p>
               </div>
-              <button onClick={closeEdit} className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-200 transition-colors">
+              <button onClick={closeEdit} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-2 rounded-full hover:bg-[var(--color-bg-subtle)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto flex-1 bg-white space-y-6">
-              <div className="flex justify-between items-center bg-blue-50 p-4 rounded-lg border border-blue-100">
+            <div className="p-6 overflow-y-auto flex-1 bg-[var(--color-surface)] space-y-6">
+              <div className="flex justify-between items-center bg-[var(--color-info)]/10 p-4 rounded-lg border border-[var(--color-info)]/20">
                 <div className="space-y-1">
-                  <span className="text-sm font-semibold text-blue-900">Available Variables</span>
+                  <span className="text-sm font-semibold text-[var(--color-text-primary)]">Available Variables</span>
                   <div className="flex flex-wrap gap-2">
                     {selected.variables.map(v => (
-                      <span key={v} className="bg-white border border-blue-200 text-blue-800 text-xs px-2 py-1 rounded-md font-mono">
+                      <span key={v} className="bg-[var(--color-surface)] border border-[var(--color-info)]/20 text-[var(--color-info)] text-xs px-2 py-1 rounded-md font-mono">
                         {`{{${v}}}`}
                       </span>
                     ))}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                   <label className="text-sm font-medium text-slate-700">Template Active</label>
+                   <label className="text-sm font-medium text-[var(--color-text-primary)]">Template Active</label>
                    <input 
                      type="checkbox" 
                      checked={editActive} 
                      onChange={(e) => setEditActive(e.target.checked)} 
-                     className="w-4 h-4 text-blue-600"
+                     className="w-4 h-4 text-[var(--color-primary)]"
                    />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700">Email Subject</label>
+                <label className="text-sm font-medium text-[var(--color-text-primary)]">Email Subject</label>
                 <input
                   type="text"
                   value={editSubject}
                   onChange={(e) => setEditSubject(e.target.value)}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-md border border-[var(--color-input-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
                 />
               </div>
 
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium text-slate-700">HTML Body</label>
+                  <label className="text-sm font-medium text-[var(--color-text-primary)]">HTML Body</label>
                   <button 
                     onClick={() => setPreviewMode(!previewMode)}
-                    className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                    className="text-xs flex items-center gap-1 text-[var(--color-primary)] hover:text-[var(--color-primary)]"
                   >
                     <Eye className="h-3 w-3" /> {previewMode ? 'Edit Code' : 'Preview Output'}
                   </button>
                 </div>
                 
                 {previewMode ? (
-                  <div className="border border-slate-300 rounded-md bg-slate-100 p-2 h-[400px]">
+                  <div className="border border-[var(--color-input-border)] rounded-md bg-[var(--color-bg-subtle)] p-2 h-[400px]">
                     <iframe
                       srcDoc={generatePreview()}
-                      className="w-full h-full bg-white rounded shadow-inner"
+                      className="w-full h-full bg-[var(--color-surface)] rounded shadow-inner"
                       title="Email Preview"
                       width="100%"
                       height="400"
@@ -225,14 +225,14 @@ export default function AdminTemplatesPage() {
                   <textarea
                     value={editHtml}
                     onChange={(e) => setEditHtml(e.target.value)}
-                    className="w-full h-[400px] font-mono text-sm rounded-md border border-slate-300 p-4 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50"
+                    className="w-full h-[400px] font-mono text-sm rounded-md border border-[var(--color-input-border)] bg-[var(--color-bg-subtle)] p-4 text-[var(--color-text-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
                   />
                 )}
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-              <Button onClick={closeEdit} variant="outline" className="text-slate-600 border-slate-300 hover:bg-slate-100">
+            <div className="p-4 border-t border-[var(--color-surface-border)] bg-[var(--color-bg-subtle)] flex justify-end gap-3">
+              <Button onClick={closeEdit} variant="outline" className="text-[var(--color-text-secondary)] border-[var(--color-border-primary)] hover:bg-[var(--color-bg-subtle)]">
                 Cancel
               </Button>
               <Button onClick={handleSave} disabled={saving} leftIcon={<Save className="h-4 w-4" />}>

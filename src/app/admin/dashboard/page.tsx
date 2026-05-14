@@ -198,7 +198,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ─── Analytics Summary ─────────────────────────────────── */}
-      <Card className="p-4 sm:p-5 bg-white">
+      <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm sm:text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">
             <BarChart2 className="h-4 w-4 text-[var(--color-primary)]" />
@@ -266,7 +266,7 @@ export default function AdminDashboardPage() {
       {/* ─── Two-column: Recent Approvals + Activity ────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Recent Pending Approvals */}
-        <Card className="bg-white h-[350px] sm:h-[400px] md:h-[450px] overflow-hidden grid" padding="none">
+        <Card className="h-[350px] sm:h-[400px] md:h-[450px] overflow-hidden grid" padding="none">
           <div className="flex flex-col h-full p-5">
             <div className="flex items-center justify-between border-b border-[var(--color-surface-border)] pb-4 shrink-0 mb-5">
               <h2 className="text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">
@@ -324,7 +324,7 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Recent Activity Log */}
-        <Card className="bg-white h-[350px] sm:h-[400px] md:h-[450px] overflow-hidden grid" padding="none">
+        <Card className="h-[350px] sm:h-[400px] md:h-[450px] overflow-hidden grid" padding="none">
           <div className="flex flex-col h-full p-5">
             <div className="flex items-center justify-between border-b border-[var(--color-surface-border)] pb-4 shrink-0 mb-5">
               <h2 className="text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">

@@ -31,7 +31,7 @@ function OtpInput({ value, onChange, disabled }: { value: string; onChange: (v: 
         <input key={i} ref={el => { refs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1}
           value={d} disabled={disabled} onChange={e => handleChange(i, e.target.value)}
           onKeyDown={e => handleKey(i, e)} onPaste={i === 0 ? handlePaste : undefined}
-          className="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-slate-300 bg-white text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all disabled:opacity-50"
+          className="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-[var(--color-input-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all disabled:opacity-50"
           autoComplete="one-time-code" />
       ))}
     </div>
@@ -107,8 +107,8 @@ function AdminLoginForm() {
           <Shield className="h-6 w-6 text-white" />
         </div>
         <div>
-          <span className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Guard<span className="text-indigo-600">Mate</span></span>
-          <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 uppercase tracking-wider">Admin</span>
+          <span className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Guard<span className="text-[var(--color-secondary)]">Mate</span></span>
+          <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] uppercase tracking-wider">Admin</span>
         </div>
       </div>
 
@@ -117,24 +117,24 @@ function AdminLoginForm() {
           {step === 1 ? (
             <>
               <div className="mb-8 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center mx-auto mb-4"><Lock className="h-6 w-6 text-indigo-600" /></div>
+                <div className="w-12 h-12 rounded-2xl bg-[var(--color-primary)]/10 flex items-center justify-center mx-auto mb-4"><Lock className="h-6 w-6 text-[var(--color-primary)]" /></div>
                 <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Admin Sign In</h1>
                 <p className="text-sm text-[var(--color-text-secondary)] mt-1">Enter your admin credentials to continue</p>
               </div>
               {fromInvite && !error && (
-                <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <p className="text-sm text-emerald-700">Account created successfully! Please sign in with your new password.</p>
+                <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/20">
+                  <CheckCircle2 className="h-4 w-4 text-[var(--color-success)] mt-0.5 shrink-0" />
+                  <p className="text-sm text-[var(--color-success)]">Account created successfully! Please sign in with your new password.</p>
                 </div>
               )}
-              {error && <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200"><AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" /><p className="text-sm text-red-700">{error}</p></div>}
+              {error && <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20"><AlertCircle className="h-4 w-4 text-[var(--color-danger)] mt-0.5 shrink-0" /><p className="text-sm text-[var(--color-danger)]">{error}</p></div>}
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-[var(--color-text-primary)]">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
                     <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@guardmate.com" required autoComplete="email"
-                      className="w-full h-11 rounded-xl border border-[var(--color-input-border)] bg-[var(--color-input-bg)] pl-11 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                      className="w-full h-11 rounded-xl border border-[var(--color-input-border)] bg-[var(--color-input-bg)] pl-11 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -142,11 +142,11 @@ function AdminLoginForm() {
                   <div className="relative">
                     <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="current-password"
-                      className="w-full h-11 rounded-xl border border-[var(--color-input-border)] bg-[var(--color-input-bg)] pl-11 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                      className="w-full h-11 rounded-xl border border-[var(--color-input-border)] bg-[var(--color-input-bg)] pl-11 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all" />
                   </div>
                 </div>
                 <button type="submit" disabled={isLoading}
-                  className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25">
+                  className="w-full h-11 rounded-xl bg-[var(--color-primary)] hover:opacity-90 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--color-primary)]/25">
                   {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <><span>Continue</span><ArrowRight className="h-4 w-4" /></>}
                 </button>
               </form>
@@ -154,20 +154,20 @@ function AdminLoginForm() {
           ) : (
             <>
               <div className="mb-8 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4"><Mail className="h-6 w-6 text-emerald-600" /></div>
+                <div className="w-12 h-12 rounded-2xl bg-[var(--color-success)]/10 flex items-center justify-center mx-auto mb-4"><Mail className="h-6 w-6 text-[var(--color-success)]" /></div>
                 <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Check Your Email</h1>
                 <p className="text-sm text-[var(--color-text-secondary)] mt-1">We sent a 6-digit code to</p>
                 <p className="text-sm font-semibold text-[var(--color-text-primary)] mt-0.5">{email}</p>
               </div>
-              {error && <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200"><AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" /><p className="text-sm text-red-700">{error}</p></div>}
+              {error && <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20"><AlertCircle className="h-4 w-4 text-[var(--color-danger)] mt-0.5 shrink-0" /><p className="text-sm text-[var(--color-danger)]">{error}</p></div>}
               <div className="space-y-6">
                 <OtpInput value={otpCode} onChange={setOtpCode} disabled={isLoading} />
                 <button onClick={handleVerifyOtp} disabled={isLoading || otpCode.length !== 6}
-                  className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25">
+                  className="w-full h-11 rounded-xl bg-[var(--color-primary)] hover:opacity-90 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--color-primary)]/25">
                   {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <><span>Verify &amp; Sign In</span><ArrowRight className="h-4 w-4" /></>}
                 </button>
                 <div className="text-center space-y-3">
-                  <button onClick={handleResend} disabled={cooldown > 0} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed transition-colors">
+                  <button onClick={handleResend} disabled={cooldown > 0} className="text-sm text-[var(--color-primary)] hover:opacity-80 font-medium disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed transition-colors">
                     {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
                   </button>
                   <div><button onClick={() => { setStep(1); setOtpCode(''); setError(''); }} className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors">← Back to sign in</button></div>
@@ -184,7 +184,7 @@ function AdminLoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center"><RefreshCw className="h-6 w-6 animate-spin text-indigo-600" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center"><RefreshCw className="h-6 w-6 animate-spin text-[var(--color-primary)]" /></div>}>
       <AdminLoginForm />
     </Suspense>
   );
