@@ -32,8 +32,9 @@ import {
   FileText, X, AlertTriangle, Moon,
 } from 'lucide-react';
 
+import { LICENSE_OPTIONS } from '@/constants/licenseTypes';
+
 const STEPS = ['Job Basics', 'Location & Schedule', 'Requirements & Budget'];
-const LICENSE_OPTIONS = ['Door Supervisor', 'Close Protection', 'Security Guard', 'CCTV Operator'];
 
 // ─── Schedule State Types ─────────────────────────────────────────────────────
 
@@ -616,7 +617,7 @@ export default function NewJobPage() {
               <div>
                 <label className={labelCls}>Budget Amount ({platformCurrency}) *</label>
                 <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">{platformCurrency}</span>
-                <input type="number" min={0} step="0.01" value={form.budgetAmount || ''} onChange={(e) => update({ budgetAmount: Number(e.target.value) })} className={`${inputCls} pl-12`} /></div>
+                <input type="number" min={0} step="0.01" value={form.budgetAmount || ''} onChange={(e) => { update({ budgetAmount: Number(e.target.value) }); setErrors((prev) => { const next = { ...prev }; delete next.budgetAmount; return next; }); }} className={`${inputCls} pl-12`} /></div>
                 {/* Minimum rate hint */}
                 {minimumRateEnforced && (
                   <p className="text-[10px] text-[var(--color-text-muted)] mt-1">

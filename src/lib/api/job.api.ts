@@ -231,3 +231,24 @@ export async function getBossActivity(): Promise<ApiResponse<BossActivityItem[]>
 export async function getMyActiveJobs(): Promise<ApiResponse<IJob[]>> {
   return apiGet<IJob[]>('/api/jobs?status=IN_PROGRESS&myBids=ACCEPTED');
 }
+
+// ─── AI Matching ─────────────────────────────────────────────────────────────
+
+export interface MatchBreakdown {
+  skills: number;
+  license: number;
+  experience: number;
+}
+
+export interface AIMatchedJob extends IJob {
+  matchScore: number;
+  matchBreakdown: MatchBreakdown;
+}
+
+/**
+ * Get AI-ranked job matches for the current guard.
+ * Calls the Python AI service via the internal proxy route.
+ */
+export async function getAIMatchedJobs(): Promise<ApiResponse<{ data: AIMatchedJob[]; total: number }>> {
+  return apiPost<{ data: AIMatchedJob[]; total: number }>('/api/jobs/ai-match', {});
+}

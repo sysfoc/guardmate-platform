@@ -6,7 +6,7 @@ import {
   MapPin, Calendar, Clock, Eye, Users, Zap,
   Briefcase, DollarSign, ChevronRight,
   ShieldCheck, HeartPulse, HardHat, Baby,
-  CheckCircle2
+  CheckCircle2, Sparkles
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -16,6 +16,12 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import type { IJob } from '@/types/job.types';
 import { BudgetType, HiringStatus } from '@/types/enums';
 
+interface MatchBreakdown {
+  skills: number;
+  license: number;
+  experience: number;
+}
+
 interface JobCardProps {
   job: IJob;
   showActions?: boolean;
@@ -23,9 +29,17 @@ interface JobCardProps {
   linkPrefix?: string;
   overlapWarning?: string;
   distance?: number;
+  matchScore?: number;
+  matchBreakdown?: MatchBreakdown;
 }
 
-export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefix = '/dashboard/mate/jobs', overlapWarning, distance }: JobCardProps) {
+function getMatchColor(score: number): { bg: string; text: string; border: string } {
+  if (score >= 80) return { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/20' };
+  if (score >= 60) return { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/20' };
+  return { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400', border: 'border-red-500/20' };
+}
+
+export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefix = '/dashboard/mate/jobs', overlapWarning, distance, matchScore, matchBreakdown }: JobCardProps) {
   const budgetDisplay = job.budgetType === BudgetType.HOURLY
     ? `$${job.budgetAmount}/hr`
     : `$${job.budgetAmount}${job.budgetMax ? ` – $${job.budgetMax}` : ''}`;
@@ -88,6 +102,16 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
                   {guardsHired}/{job.numberOfGuardsNeeded} Hired
                 </span>
               )}
+              {matchScore !== undefined && (() => {
+                const mc = getMatchColor(matchScore);
+                return (
+                  <Tooltip content={matchBreakdown ? `Skills: ${matchBreakdown.skills}% • License: ${matchBreakdown.license}% • Experience: ${matchBreakdown.experience}%` : `${matchScore}% match`}>
+                    <span className={`flex items-center gap-0.5 font-bold ${mc.text} ${mc.bg} px-1.5 py-0.5 rounded-sm`}>
+                      <Sparkles className="h-2.5 w-2.5" /> {matchScore}%
+                    </span>
+                  </Tooltip>
+                );
+              })()}
             </div>
           </div>
           <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-tertiary)]">
@@ -128,6 +152,16 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            {matchScore !== undefined && (() => {
+              const mc = getMatchColor(matchScore);
+              return (
+                <Tooltip content={matchBreakdown ? `Skills: ${matchBreakdown.skills}% • License: ${matchBreakdown.license}% • Experience: ${matchBreakdown.experience}%` : `${matchScore}% match`}>
+                  <span className={`flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${mc.bg} ${mc.text} ${mc.border}`}>
+                    <Sparkles className="h-2.5 w-2.5" /> {matchScore}%
+                  </span>
+                </Tooltip>
+              );
+            })()}
             {job.isUrgent && (
               <Badge variant="danger" className="text-[8px] h-4 gap-0.5 px-1.5">
                 <Zap className="h-2.5 w-2.5" /> URGENT

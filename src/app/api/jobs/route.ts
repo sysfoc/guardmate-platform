@@ -436,9 +436,15 @@ export async function GET(request: NextRequest) {
     const fetchLimit = hasDistanceFilter ? limit * 5 : limit;
     const fetchSkip = hasDistanceFilter ? 0 : skip;
 
-    const [allJobs, totalBeforeDistance] = await Promise.all([
+    const [allJobs, totalBeforeDistance, statusCountsAgg] = await Promise.all([
       Job.find(query).sort(sortObj).skip(fetchSkip).limit(hasDistanceFilter ? 500 : fetchLimit).lean(),
       Job.countDocuments(query),
+      user.role === UserRole.BOSS
+        ? Job.aggregate([
+            { $match: { postedBy: user.uid } },
+            { $group: { _id: '$status', count: { $sum: 1 } } },
+          ])
+        : Promise.resolve([]),
     ]);
 
     let filteredJobs = allJobs;
@@ -462,6 +468,11 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / limit);
 
+    const statusCounts: Record<string, number> = {};
+    for (const { _id, count } of statusCountsAgg as { _id: string; count: number }[]) {
+      statusCounts[_id] = count;
+    }
+
     return createApiResponse(true, {
       data: filteredJobs,
       total,
@@ -470,6 +481,7 @@ export async function GET(request: NextRequest) {
       totalPages,
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
+      statusCounts,
     }, 'Jobs fetched successfully.', 200);
   } catch (error: unknown) {
     console.error('GET /api/jobs error:', error);

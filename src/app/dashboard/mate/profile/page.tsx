@@ -18,6 +18,7 @@ import { updateUserProfile, uploadProfilePhoto, uploadDocument, verifyABN } from
 import type { MateProfile, MateProfileUpdatePayload } from '@/types/user.types';
 import { VerificationStatus, LicenseStatus, CertificateStatus } from '@/types/enums';
 import { ABNStatus, AustralianState, AustralianStateNames } from '@/types/abr.types';
+import { LICENSE_OPTIONS } from '@/constants/licenseTypes';
 import {
   resolvePhoneCountryLock,
   isGrandfatheredCountry,
@@ -592,7 +593,17 @@ export default function MateProfileEdit() {
                   <DocUploadRow label="Security License" url={localLicenseDoc || mate.licenseDocument} isUploading={isUploadingLicense} onUpload={() => licenseFileRef.current?.click()} status={mate.licenseStatus} />
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Input label="License #" value={formData.licenseNumber} onChange={(e) => handleChange('licenseNumber', e.target.value)} />
-                    <Input label="License Type" value={formData.licenseType} onChange={(e) => handleChange('licenseType', e.target.value)} placeholder="e.g. SIA Door Supervisor" />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-input-label)]">License Type</label>
+                      <select
+                        value={formData.licenseType}
+                        onChange={(e) => handleChange('licenseType', e.target.value)}
+                        className="flex h-10 w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3.5 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-1"
+                      >
+                        <option value="">Select License Type</option>
+                        {LICENSE_OPTIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+                      </select>
+                    </div>
                     <Input label="License Expiry" type="date" value={formData.licenseExpiry} onChange={(e) => handleChange('licenseExpiry', e.target.value)} />
                   </div>
                 </div>

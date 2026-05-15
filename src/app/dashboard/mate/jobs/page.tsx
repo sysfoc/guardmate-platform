@@ -4,7 +4,8 @@ import React, { Suspense, useEffect, useState, useCallback, useMemo } from 'reac
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
-import { getJobs, getMyBids } from '@/lib/api/job.api';
+import { getJobs, getMyBids, getAIMatchedJobs } from '@/lib/api/job.api';
+import type { AIMatchedJob } from '@/lib/api/job.api';
 import { checkDateOverlap } from '@/lib/jobs/overlapCheck';
 import { JobCard } from '@/components/jobs/JobCard';
 import { JobFilters } from '@/components/jobs/JobFilters';
@@ -17,7 +18,7 @@ import type { IJob, JobFilters as JobFiltersType, BidWithJob, MapMarker } from '
 import type { MateProfile } from '@/types/user.types';
 import { UserStatus, LicenseStatus, UserRole } from '@/types/enums';
 import { calculateDistance } from '@/lib/utils/haversine';
-import { Briefcase, Loader2, Search, X, Map as MapIcon, List, AlertCircle, Building2, Lock } from 'lucide-react';
+import { Briefcase, Loader2, Search, X, Map as MapIcon, List, AlertCircle, Building2, Lock, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function MateJobsContent() {
@@ -32,11 +33,46 @@ function MateJobsContent() {
   const [loading, setLoading] = useState(true);
   const [acceptedBids, setAcceptedBids] = useState<BidWithJob[]>([]);
 
+  // AI Match state
+  const [aiMatchEnabled, setAiMatchEnabled] = useState(false);
+  const [aiJobs, setAiJobs] = useState<AIMatchedJob[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   // Geolocation and map state
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [geoRequested, setGeoRequested] = useState(false);
 
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+
+  // AI Match fetcher
+  const fetchAIMatches = useCallback(async () => {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const resp = await getAIMatchedJobs();
+      if (resp.success && resp.data) {
+        setAiJobs(resp.data.data);
+      } else {
+        setAiError(resp.message || 'Failed to get AI matches.');
+        toast.error(resp.message || 'AI matching failed.');
+      }
+    } catch (err) {
+      console.error('AI Match fetch error:', err);
+      setAiError('AI matching service unavailable.');
+      toast.error('AI matching service unavailable.');
+    } finally {
+      setAiLoading(false);
+    }
+  }, []);
+
+  const handleAIToggle = useCallback(() => {
+    const next = !aiMatchEnabled;
+    setAiMatchEnabled(next);
+    if (next && aiJobs.length === 0) {
+      fetchAIMatches();
+    }
+  }, [aiMatchEnabled, aiJobs.length, fetchAIMatches]);
 
   // Read filters from URL
   const filtersFromUrl = (): JobFiltersType => ({
@@ -292,25 +328,39 @@ function MateJobsContent() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 bg-[var(--color-surface)] p-1 rounded-xl border border-[var(--color-surface-border)] shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
+            {/* AI Match Toggle */}
             <button
-              onClick={() => toggleViewMode('list')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${viewMode === 'list'
-                  ? 'bg-[var(--color-primary)] text-white shadow-md'
-                  : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
+              onClick={handleAIToggle}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${aiMatchEnabled
+                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-purple-500 shadow-lg shadow-purple-500/20'
+                  : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-surface-border)] hover:border-purple-400 hover:text-purple-500'
                 }`}
             >
-              <List className="h-4 w-4" /> List
+              <Sparkles className="h-4 w-4" /> AI Match
             </button>
-            <button
-              onClick={() => toggleViewMode('map')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${viewMode === 'map'
-                  ? 'bg-[var(--color-primary)] text-white shadow-md'
-                  : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
-                }`}
-            >
-              <MapIcon className="h-4 w-4" /> Map
-            </button>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-2 bg-[var(--color-surface)] p-1 rounded-xl border border-[var(--color-surface-border)]">
+              <button
+                onClick={() => toggleViewMode('list')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${viewMode === 'list'
+                    ? 'bg-[var(--color-primary)] text-white shadow-md'
+                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
+                  }`}
+              >
+                <List className="h-4 w-4" /> List
+              </button>
+              <button
+                onClick={() => toggleViewMode('map')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${viewMode === 'map'
+                    ? 'bg-[var(--color-primary)] text-white shadow-md'
+                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
+                  }`}
+              >
+                <MapIcon className="h-4 w-4" /> Map
+              </button>
+            </div>
           </div>
         </div>
 
@@ -363,7 +413,19 @@ function MateJobsContent() {
 
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
-                {loading ? (
+                {aiMatchEnabled ? (
+                  aiLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+                      <span className="bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent">Finding your best matches...</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-purple-500" />
+                      <span>{aiJobs.length} AI match{aiJobs.length !== 1 ? 'es' : ''}</span>
+                    </span>
+                  )
+                ) : loading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-5 w-5 animate-spin text-[var(--color-primary)]" />
                     Finding jobs...
@@ -372,9 +434,54 @@ function MateJobsContent() {
                   `${total} job${total !== 1 ? 's' : ''} found`
                 )}
               </h2>
+              {aiMatchEnabled && !aiLoading && aiJobs.length > 0 && (
+                <button
+                  onClick={fetchAIMatches}
+                  className="text-[10px] font-bold text-purple-500 hover:text-purple-600 transition-colors"
+                >
+                  Refresh
+                </button>
+              )}
             </div>
 
-            {loading ? (
+            {/* AI Match Results */}
+            {aiMatchEnabled ? (
+              aiLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                  <p className="text-sm font-medium text-[var(--color-text-secondary)]">Analyzing your profile against open jobs...</p>
+                </div>
+              ) : aiError ? (
+                <Card className="p-12 text-center">
+                  <AlertCircle className="h-12 w-12 mx-auto text-[var(--color-danger)] mb-4" />
+                  <h3 className="font-bold text-sm text-[var(--color-text-primary)] mb-1">AI Matching Error</h3>
+                  <p className="text-xs text-[var(--color-text-tertiary)] mb-4">{aiError}</p>
+                  <Button variant="ghost" size="sm" onClick={fetchAIMatches} leftIcon={<Sparkles className="h-3 w-3" />} className="border border-purple-500/30 text-purple-500">
+                    Try Again
+                  </Button>
+                </Card>
+              ) : aiJobs.length === 0 ? (
+                <Card className="p-12 text-center">
+                  <Sparkles className="h-12 w-12 mx-auto text-purple-300 mb-4" />
+                  <h3 className="font-bold text-sm text-[var(--color-text-primary)] mb-1">No strong matches found</h3>
+                  <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+                    Try updating your skills and license in your profile for better results.
+                  </p>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {aiJobs.map((job) => (
+                    <JobCard
+                      key={job.jobId}
+                      job={job}
+                      linkPrefix="/dashboard/mate/jobs"
+                      matchScore={job.matchScore}
+                      matchBreakdown={job.matchBreakdown}
+                    />
+                  ))}
+                </div>
+              )
+            ) : loading ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
               </div>

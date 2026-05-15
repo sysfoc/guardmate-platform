@@ -20,6 +20,7 @@ import { Plus, Briefcase, Loader2, CreditCard } from 'lucide-react';
 const TABS = [
   { key: '', label: 'All' },
   { key: JobStatus.OPEN, label: 'Open' },
+  { key: JobStatus.DRAFT, label: 'Draft' },
   { key: JobStatus.FILLED, label: 'Filled' },
   { key: JobStatus.IN_PROGRESS, label: 'In Progress' },
   { key: JobStatus.COMPLETED, label: 'Completed' },
