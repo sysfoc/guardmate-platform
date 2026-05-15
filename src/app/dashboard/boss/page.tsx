@@ -188,8 +188,14 @@ export default function BossDashboard() {
                     <Badge variant={boss.isCompanyVerified ? 'success' : 'warning'} className="text-[10px] font-bold py-0 h-5">
                       {boss.isCompanyVerified ? 'BUSINESS VERIFIED' : 'BUSINESS PENDING'}
                     </Badge>
-                    <Badge variant={boss.companyLicenseStatus === LicenseStatus.VALID ? 'success' : 'warning'} className="text-[10px] font-bold py-0 h-5">
-                      LICENSE: {boss.companyLicenseStatus === LicenseStatus.VALID ? 'VALID' : 'REQUIRED'}
+                    <Badge
+                      variant={
+                        boss.companyLicenseStatus === LicenseStatus.VALID ? 'success' :
+                          boss.companyLicenseStatus === LicenseStatus.REJECTED ? 'danger' : 'warning'
+                      }
+                      className="text-[10px] font-bold py-0 h-5"
+                    >
+                      LICENSE: {boss.companyLicenseStatus === LicenseStatus.VALID ? 'VALID' : boss.companyLicenseStatus === LicenseStatus.REJECTED ? 'REJECTED' : 'REQUIRED'}
                     </Badge>
                   </div>
                   <p className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-1.5">

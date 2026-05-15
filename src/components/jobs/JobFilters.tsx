@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -40,6 +40,27 @@ const SKILLS_OPTIONS = [
 export function JobFilters({ filters, onFiltersChange, onReset, className, geoAvailable = false, distanceInfo, onRetryGeo }: JobFiltersProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>(filters.requiredSkills || []);
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (showMobileFilters) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showMobileFilters]);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowMobileFilters(false);
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, []);
 
   const handleSkillToggle = (skill: string) => {
     const updated = selectedSkills.includes(skill)
@@ -233,16 +254,14 @@ export function JobFilters({ filters, onFiltersChange, onReset, className, geoAv
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className={`hidden lg:block ${className || ''}`}>
-        <div className="sticky top-20">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl p-5">
+      <div className={`hidden lg:block sticky top-20 self-start ${className || ''}`}>
+        <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl p-5 h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-sm text-[var(--color-text-primary)]">Filters</h3>
               <SlidersHorizontal className="h-4 w-4 text-[var(--color-text-muted)]" />
             </div>
             {filterContent}
           </div>
-        </div>
       </div>
 
       {/* Mobile Filter Toggle */}
@@ -250,18 +269,61 @@ export function JobFilters({ filters, onFiltersChange, onReset, className, geoAv
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setShowMobileFilters(!showMobileFilters)}
+          onClick={() => setShowMobileFilters(true)}
           leftIcon={<SlidersHorizontal className="h-4 w-4" />}
           className="border border-[var(--color-surface-border)]"
         >
           Filters {hasActiveFilters && <span className="ml-1 w-4 h-4 rounded-full bg-[var(--color-primary)] text-white text-[9px] flex items-center justify-center">!</span>}
         </Button>
+      </div>
 
-        {showMobileFilters && (
-          <div className="mt-3 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl p-5">
+      {/* Mobile Sidebar Overlay */}
+      {showMobileFilters && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ease-in-out"
+          onClick={() => setShowMobileFilters(false)}
+        />
+      )}
+
+      {/* Mobile Slide-in Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-[var(--color-surface)] border-r border-[var(--color-surface-border)] z-50 lg:hidden shadow-2xl transition-transform duration-300 ease-in-out ${
+          showMobileFilters ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-surface-border)] shrink-0 bg-[var(--color-surface)]">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 text-[var(--color-text-muted)]" />
+              <h3 className="font-bold text-sm text-[var(--color-text-primary)]">Filters</h3>
+            </div>
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle)] transition-colors"
+              aria-label="Close filters"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-5 scrollbar-thin bg-[var(--color-surface)]">
             {filterContent}
           </div>
-        )}
+
+          {/* Bottom Actions */}
+          <div className="shrink-0 px-5 py-4 border-t border-[var(--color-surface-border)] bg-[var(--color-surface)]">
+            <Button
+              variant="primary"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowMobileFilters(false)}
+            >
+              Show Results
+            </Button>
+          </div>
+        </div>
       </div>
     </>
   );

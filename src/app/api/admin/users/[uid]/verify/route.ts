@@ -139,18 +139,38 @@ export async function PATCH(
       userAgent: deviceInfo.userAgent,
     });
 
-    // Send Emails if it's a structural license verification change
-    if (field === 'licenseStatus' || field === 'companyLicenseStatus' || field === 'idVerificationStatus') {
-      const emailRef = targetUser.email;
-      const fName = targetUser.firstName;
-      
-      const licNumRaw = field === 'companyLicenseStatus' ? targetUser.companyLicenseNumber : targetUser.licenseNumber;
-      const licNum = licNumRaw ? `*${licNumRaw.slice(-4)}` : 'Document';
+    // Send Emails for any document verification change
+    const emailRef = targetUser.email;
+    const fName = targetUser.firstName;
 
-      if (value === LicenseStatus.VALID || value === VerificationStatus.VERIFIED) {
-        await sendLicenseApproved(emailRef, fName, licNum);
-      } else if (value === VerificationStatus.REJECTED) {
-        await sendLicenseRejected(emailRef, fName, licNum, notes || 'Failed to meet criteria');
+    // Map field names to friendly document names and identifiers
+    const fieldDocMap: Record<string, { name: string; numberField?: string }> = {
+      licenseStatus: { name: 'Security License', numberField: 'licenseNumber' },
+      companyLicenseStatus: { name: 'Company License', numberField: 'companyLicenseNumber' },
+      idVerificationStatus: { name: 'ID Document' },
+      firstAidCertificateStatus: { name: 'First Aid Certificate' },
+      constructionWhiteCardStatus: { name: 'Construction White Card' },
+      workingWithChildrenCheckStatus: { name: 'Working With Children Check' },
+      victorianBusinessLicenceStatus: { name: 'Victorian Business Licence' },
+    };
+
+    const docInfo = fieldDocMap[field];
+    if (docInfo) {
+      const docNumberRaw = docInfo.numberField ? (targetUser as any)[docInfo.numberField] : null;
+      const docIdentifier = docNumberRaw ? `*${docNumberRaw.slice(-4)}` : docInfo.name;
+
+      if (
+        value === LicenseStatus.VALID ||
+        value === VerificationStatus.VERIFIED ||
+        value === CertificateStatus.VALID
+      ) {
+        await sendLicenseApproved(emailRef, fName, docIdentifier);
+      } else if (
+        value === LicenseStatus.REJECTED ||
+        value === VerificationStatus.REJECTED ||
+        value === CertificateStatus.REJECTED
+      ) {
+        await sendLicenseRejected(emailRef, fName, docIdentifier, notes || 'Failed to meet criteria');
       }
     }
 

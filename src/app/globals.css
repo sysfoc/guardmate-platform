@@ -621,6 +621,20 @@ body {
   scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 }
 
+/* ── Leaflet Popup Theme ─────────────────────────────────── */
+.leaflet-popup-content-wrapper {
+  background: var(--color-bg-elevated) !important;
+  color: var(--color-text-primary) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.leaflet-popup-tip {
+  background: var(--color-bg-elevated) !important;
+}
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+}
+
 /* ── Thin scrollbar utility (for sidebar nav etc.) ────────── */
 .scrollbar-thin {
   scrollbar-width: none; /* Firefox */

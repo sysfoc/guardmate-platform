@@ -225,7 +225,7 @@ export default function EditJobPage() {
 
         {/* Step 1 — Job Basics */}
         {step === 0 && (
-          <Card className="p-6 space-y-5">
+          <Card className="p-6 sm:p-8 space-y-8">
             <div>
               <label className={labelCls}>Job Title *</label>
               <input value={form.title || ''} onChange={(e) => update({ title: e.target.value })} placeholder="e.g. Night Shift Security Guard" className={inputCls} />
@@ -259,7 +259,7 @@ export default function EditJobPage() {
 
         {/* Step 2 — Location & Schedule */}
         {step === 1 && (
-          <Card className="p-6 space-y-5">
+          <Card className="p-6 sm:p-8 space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2"><label className={labelCls}>Full Address *</label><input value={form.location || ''} onChange={(e) => update({ location: e.target.value })} placeholder="123 High Street" className={inputCls} />{errors.location && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.location}</p>}</div>
               <div><label className={labelCls}>City *</label><input value={form.locationCity || ''} onChange={(e) => update({ locationCity: e.target.value })} placeholder="London" className={inputCls} />{errors.locationCity && <p className="text-[10px] text-[var(--color-danger)] mt-1">{errors.locationCity}</p>}</div>
@@ -291,7 +291,7 @@ export default function EditJobPage() {
               <div><label className={labelCls}>End Time</label><input type="time" value={form.endTime || ''} onChange={(e) => update({ endTime: e.target.value })} className={inputCls} /></div>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 py-3">
               <Checkbox label={<span><Clock className="h-3.5 w-3.5 inline mr-1" />Flexible Time</span>} checked={form.isFlexibleTime || false} onChange={(e) => update({ isFlexibleTime: e.target.checked })} />
               {calcHours() > 0 && (
                 <Badge className="text-[10px] h-6"><Clock className="h-3 w-3 mr-1" />{calcHours()} total hours</Badge>
@@ -308,7 +308,7 @@ export default function EditJobPage() {
 
         {/* Step 3 — Requirements & Budget */}
         {step === 2 && (
-          <Card className="p-6 space-y-5">
+          <Card className="p-6 sm:p-8 space-y-8">
             <div>
               <label className={labelCls}>Budget Type</label>
               <div className="flex gap-3">
@@ -320,7 +320,7 @@ export default function EditJobPage() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Budget Amount ({platformCurrency}) *</label>
                 <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">{platformCurrency}</span>
@@ -346,7 +346,7 @@ export default function EditJobPage() {
 
             <div>
               <label className={labelCls}>Required Skills</label>
-              <div className="flex gap-2 mb-2">
+              <div className="flex gap-2 mb-3">
                 <input value={skillInput} onChange={(e) => setSkillInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill(); } }} placeholder="Type a skill and press Enter" className={`${inputCls} flex-1`} />
                 <Button size="sm" variant="ghost" onClick={addSkill} className="border border-[var(--color-surface-border)]"><Plus className="h-3 w-3" /></Button>
               </div>
@@ -361,13 +361,13 @@ export default function EditJobPage() {
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-3">
               <Checkbox label="First Aid" checked={form.requiresFirstAid || false} onChange={(e) => update({ requiresFirstAid: e.target.checked })} />
               <Checkbox label="White Card" checked={form.requiresWhiteCard || false} onChange={(e) => update({ requiresWhiteCard: e.target.checked })} />
               <Checkbox label="Children Check" checked={form.requiresChildrenCheck || false} onChange={(e) => update({ requiresChildrenCheck: e.target.checked })} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className={labelCls}>Min Experience (years)</label><input type="number" min={0} value={form.minExperience || 0} onChange={(e) => update({ minExperience: Number(e.target.value) })} className={inputCls} /></div>
               <div>
                 <label className={labelCls}>Preferred Languages</label>
@@ -375,7 +375,7 @@ export default function EditJobPage() {
                   <input value={langInput} onChange={(e) => setLangInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLang(); } }} placeholder="e.g. English" className={`${inputCls} flex-1`} />
                   <Button size="sm" variant="ghost" onClick={addLang} className="border border-[var(--color-surface-border)]"><Plus className="h-3 w-3" /></Button>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-1.5">{(form.preferredLanguages || []).map((l) => (<span key={l} className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)] flex items-center gap-1">{l}<button onClick={() => removeLang(l)}><X className="h-2.5 w-2.5" /></button></span>))}</div>
+                <div className="flex flex-wrap gap-1 mt-3">{(form.preferredLanguages || []).map((l) => (<span key={l} className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)] flex items-center gap-1">{l}<button onClick={() => removeLang(l)}><X className="h-2.5 w-2.5" /></button></span>))}</div>
               </div>
             </div>
           </Card>

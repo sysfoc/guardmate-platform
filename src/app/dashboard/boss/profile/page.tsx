@@ -563,7 +563,7 @@ function DocUploadRow({
               <Badge
                 variant={
                   status === LicenseStatus.VALID || status === VerificationStatus.VERIFIED ? 'success' :
-                    status === LicenseStatus.EXPIRED || status === VerificationStatus.REJECTED ? 'danger' : 'warning'
+                    status === LicenseStatus.EXPIRED || status === LicenseStatus.REJECTED || status === VerificationStatus.REJECTED ? 'danger' : 'warning'
                 }
                 className="text-[9px] h-4 py-0 font-bold"
               >

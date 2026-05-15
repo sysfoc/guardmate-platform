@@ -286,7 +286,7 @@ export default function NewJobPage() {
 
   const inputCls = 'w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:outline-none focus:ring-1 focus:ring-[var(--color-input-border-focus)] transition-colors';
   const labelCls = 'text-[11px] font-bold text-[var(--color-input-label)] mb-1.5 block';
-  const timeCls = 'px-2 py-1.5 text-xs rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] focus:border-[var(--color-input-border-focus)] focus:outline-none focus:ring-1 focus:ring-[var(--color-input-border-focus)] transition-colors w-[100px]';
+  const timeCls = 'px-2.5 py-2 text-xs rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] focus:border-[var(--color-input-border-focus)] focus:outline-none focus:ring-1 focus:ring-[var(--color-input-border-focus)] transition-colors w-[120px] sm:w-[140px]';
 
   const resetForm = () => {
     setStep(0);
@@ -399,7 +399,7 @@ export default function NewJobPage() {
 
         {/* Step 1 — Job Basics */}
         {step === 0 && (
-          <Card className="p-6 space-y-5">
+          <Card className="p-6 sm:p-8 space-y-8">
             <div>
               <label className={labelCls}>Job Title *</label>
               <input value={form.title || ''} onChange={(e) => update({ title: e.target.value })} placeholder="e.g. Night Shift Security Guard" className={inputCls} />
@@ -433,7 +433,7 @@ export default function NewJobPage() {
 
         {/* Step 2 — Location & Schedule */}
         {step === 1 && (
-          <Card className="p-6 space-y-5">
+          <Card className="p-6 sm:p-8 space-y-8">
             {/* Location Search */}
             <LocationSearch
               label="Job Location *"
@@ -587,7 +587,7 @@ export default function NewJobPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 py-3">
               <Checkbox label={<span><Clock className="h-3.5 w-3.5 inline mr-1" />Flexible Time</span>} checked={form.isFlexibleTime || false} onChange={(e) => update({ isFlexibleTime: e.target.checked })} />
             </div>
 
@@ -601,7 +601,7 @@ export default function NewJobPage() {
 
         {/* Step 3 — Requirements & Budget */}
         {step === 2 && (
-          <Card className="p-6 space-y-5">
+          <Card className="p-6 sm:p-8 space-y-8">
             <div>
               <label className={labelCls}>Budget Type</label>
               <div className="flex gap-3">
@@ -613,7 +613,7 @@ export default function NewJobPage() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Budget Amount ({platformCurrency}) *</label>
                 <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">{platformCurrency}</span>
@@ -639,7 +639,7 @@ export default function NewJobPage() {
 
             <div>
               <label className={labelCls}>Required Skills</label>
-              <div className="flex gap-2 mb-2">
+              <div className="flex gap-2 mb-3">
                 <input value={skillInput} onChange={(e) => setSkillInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill(); } }} placeholder="Type a skill and press Enter" className={`${inputCls} flex-1`} />
                 <Button size="sm" variant="ghost" onClick={addSkill} className="border border-[var(--color-surface-border)]"><Plus className="h-3 w-3" /></Button>
               </div>
@@ -654,13 +654,13 @@ export default function NewJobPage() {
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-3">
               <Checkbox label="First Aid" checked={form.requiresFirstAid || false} onChange={(e) => update({ requiresFirstAid: e.target.checked })} />
               <Checkbox label="White Card" checked={form.requiresWhiteCard || false} onChange={(e) => update({ requiresWhiteCard: e.target.checked })} />
               <Checkbox label="Children Check" checked={form.requiresChildrenCheck || false} onChange={(e) => update({ requiresChildrenCheck: e.target.checked })} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className={labelCls}>Min Experience (years)</label><input type="number" min={0} value={form.minExperience || 0} onChange={(e) => update({ minExperience: Number(e.target.value) })} className={inputCls} /></div>
               <div>
                 <label className={labelCls}>Preferred Languages</label>
@@ -668,7 +668,7 @@ export default function NewJobPage() {
                   <input value={langInput} onChange={(e) => setLangInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLang(); } }} placeholder="e.g. English" className={`${inputCls} flex-1`} />
                   <Button size="sm" variant="ghost" onClick={addLang} className="border border-[var(--color-surface-border)]"><Plus className="h-3 w-3" /></Button>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-1.5">{(form.preferredLanguages || []).map((l) => (<span key={l} className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)] flex items-center gap-1">{l}<button onClick={() => removeLang(l)}><X className="h-2.5 w-2.5" /></button></span>))}</div>
+                <div className="flex flex-wrap gap-1 mt-3">{(form.preferredLanguages || []).map((l) => (<span key={l} className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)] flex items-center gap-1">{l}<button onClick={() => removeLang(l)}><X className="h-2.5 w-2.5" /></button></span>))}</div>
               </div>
             </div>
           </Card>

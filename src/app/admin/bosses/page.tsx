@@ -40,6 +40,7 @@ function CompanyLicenseStatusBadge({ status }: { status: string | undefined }) {
     PENDING_REVIEW: { variant: 'warning', label: 'Pending' },
     EXPIRING_SOON: { variant: 'warning', label: 'Expiring' },
     EXPIRED: { variant: 'danger', label: 'Expired' },
+    REJECTED: { variant: 'danger', label: 'Rejected' },
   };
   const d = map[status] || { variant: 'neutral' as const, label: status };
   return <Badge variant={d.variant} size="sm">{d.label}</Badge>;

@@ -414,7 +414,14 @@ function SubscriptionContent() {
 
         {/* Not Subscribed — Subscribe Section */}
         {!isSubscribed && (
-          <Card className="p-6">
+          <Card className="p-6 relative overflow-hidden">
+            {subscribing && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--color-bg-primary)]/80 backdrop-blur-sm rounded-xl">
+                <div className="h-8 w-8 border-3 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-sm font-bold text-[var(--color-text-primary)]">Processing Payment...</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">Please wait while we set up your subscription</p>
+              </div>
+            )}
             <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">Subscribe to Post Jobs</h3>
             <p className="text-sm text-[var(--color-text-secondary)] mb-6">
               A monthly subscription is required to post and manage jobs on GuardMate. Choose your preferred payment method below.
@@ -587,7 +594,14 @@ function SubscriptionContent() {
 
         {/* Cancelled / Lapsed — Resubscribe */}
         {(subStatus?.status === 'CANCELLED' || subStatus?.status === 'LAPSED') && (
-          <Card className="p-6 text-center">
+          <Card className="p-6 text-center relative overflow-hidden">
+            {subscribing && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--color-bg-primary)]/80 backdrop-blur-sm rounded-xl">
+                <div className="h-8 w-8 border-3 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-sm font-bold text-[var(--color-text-primary)]">Processing Payment...</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">Please wait while we set up your subscription</p>
+              </div>
+            )}
             <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
             <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">
               {subStatus.status === 'CANCELLED' ? 'Subscription Cancelled' : 'Subscription Inactive'}

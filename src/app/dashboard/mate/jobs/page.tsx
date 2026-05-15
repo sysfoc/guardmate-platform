@@ -284,99 +284,44 @@ function MateJobsContent() {
     <div className="min-h-screen bg-[var(--color-bg-primary)] p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Header & Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-[var(--color-text-primary)]">Job Marketplace</h1>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-              Find open security shifts available right now
-            </p>
-            {!isGuardReady && (
-              <div className="mt-2 px-3 py-2 rounded-lg bg-[var(--color-warning-light)] border border-[var(--color-warning)]/20 text-xs text-[var(--color-warning)] font-medium">
-                ⚠️ Your account must be ACTIVE with a VALID license to apply for jobs.
-              </div>
-            )}
-
-            {/* ABN Verification Banner */}
-            {abrVerificationEnabled && !abnVerified && (
-              <div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                <div className="flex items-start gap-2">
-                  <Lock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                      Verify your ABN to propose your own rates. Without ABN, you can only apply at the posted rate.
-                    </p>
-                    <button
-                      onClick={() => router.push('/dashboard/mate/profile')}
-                      className="mt-1.5 text-[10px] font-bold text-[var(--color-primary)] hover:underline"
-                    >
-                      Verify ABN in Profile →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {abrVerificationEnabled && abnVerified && (
-              <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-emerald-500" />
-                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                    ABN Verified — You can propose custom rates when bidding
-                  </span>
-                </div>
-              </div>
-            )}
+        {/* Banners */}
+        {!isGuardReady && (
+          <div className="px-3 py-2 rounded-lg bg-[var(--color-warning-light)] border border-[var(--color-warning)]/20 text-xs text-[var(--color-warning)] font-medium">
+            ⚠️ Your account must be ACTIVE with a VALID license to apply for jobs.
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            {/* AI Match Toggle */}
-            <button
-              onClick={handleAIToggle}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${aiMatchEnabled
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-purple-500 shadow-lg shadow-purple-500/20'
-                  : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-surface-border)] hover:border-purple-400 hover:text-purple-500'
-                }`}
-            >
-              <Sparkles className="h-4 w-4" /> AI Match
-            </button>
+        )}
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-2 bg-[var(--color-surface)] p-1 rounded-xl border border-[var(--color-surface-border)]">
-              <button
-                onClick={() => toggleViewMode('list')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${viewMode === 'list'
-                    ? 'bg-[var(--color-primary)] text-white shadow-md'
-                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
-                  }`}
-              >
-                <List className="h-4 w-4" /> List
-              </button>
-              <button
-                onClick={() => toggleViewMode('map')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${viewMode === 'map'
-                    ? 'bg-[var(--color-primary)] text-white shadow-md'
-                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
-                  }`}
-              >
-                <MapIcon className="h-4 w-4" /> Map
-              </button>
+        {abrVerificationEnabled && !abnVerified && (
+          <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+            <div className="flex items-start gap-2">
+              <Lock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                  Verify your ABN to propose your own rates. Without ABN, you can only apply at the posted rate.
+                </p>
+                <button
+                  onClick={() => router.push('/dashboard/mate/profile')}
+                  className="mt-1.5 text-[10px] font-bold text-[var(--color-primary)] hover:underline"
+                >
+                  Verify ABN in Profile →
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Global Search */}
-        <div className="relative max-w-2xl">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--color-text-muted)]" />
-          <input
-            type="text"
-            placeholder="Search by title, location, skill or keyword..."
-            value={filters.search || ''}
-            onChange={(e) => handleFiltersChange({ search: e.target.value })}
-            className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-[var(--color-surface-border)] bg-[var(--color-surface)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--color-primary)]/10 transition-all font-medium text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] shadow-sm"
-          />
-        </div>
+        {abrVerificationEnabled && abnVerified && (
+          <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-emerald-500" />
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                ABN Verified — You can propose custom rates when bidding
+              </span>
+            </div>
+          </div>
+        )}
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row lg:items-start gap-8">
           {/* Filters Sidebar */}
           <JobFilters
             filters={filters}
@@ -387,7 +332,55 @@ function MateJobsContent() {
             distanceInfo={profileDistanceInfo || undefined}
           />
 
-          <div className="flex-1 space-y-6">
+          <div className="flex-1 space-y-6 min-w-0">
+            {/* Controls Row: Search + AI Match + View Toggle */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full min-w-0">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
+                <input
+                  type="text"
+                  placeholder="Search jobs..."
+                  value={filters.search || ''}
+                  onChange={(e) => handleFiltersChange({ search: e.target.value })}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/10 transition-all font-medium text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] text-sm shadow-sm"
+                />
+              </div>
+              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                {/* AI Match Toggle */}
+                <button
+                  onClick={handleAIToggle}
+                  className={`flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-3 py-2.5 rounded-xl text-sm font-bold transition-all border ${aiMatchEnabled
+                      ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-purple-500 shadow-lg shadow-purple-500/20'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-surface-border)] hover:border-purple-400 hover:text-purple-500'
+                    }`}
+                >
+                  <Sparkles className="h-4 w-4 hidden sm:block" /> AI Match
+                </button>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-1 bg-[var(--color-surface)] p-1 rounded-xl border border-[var(--color-surface-border)]">
+                  <button
+                    onClick={() => toggleViewMode('list')}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${viewMode === 'list'
+                        ? 'bg-[var(--color-primary)] text-white shadow-md'
+                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
+                      }`}
+                  >
+                    <List className="h-4 w-4" /> List
+                  </button>
+                  <button
+                    onClick={() => toggleViewMode('map')}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${viewMode === 'map'
+                        ? 'bg-[var(--color-primary)] text-white shadow-md'
+                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
+                      }`}
+                  >
+                    <MapIcon className="h-4 w-4" /> Map
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {!userLocation && viewMode === 'map' && (
               <div className="bg-[var(--color-warning-light)] border border-[var(--color-warning)]/30 rounded-xl p-4 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-[var(--color-warning)] shrink-0 mt-0.5" />

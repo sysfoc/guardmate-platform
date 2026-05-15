@@ -117,7 +117,6 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
   const [rejectDialog, setRejectDialog] = useState<{ action: 'reject' | 'suspend' } | null>(null);
   const [reason, setReason] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
-  const [verifyNotes, setVerifyNotes] = useState('');
 
   const fetchUser = useCallback(async () => {
     if (!uid) return;
@@ -333,39 +332,14 @@ export function UserProfileModal({ uid, isOpen, onClose, onStatusChanged }: User
               </div>
 
               {/* Admin Verification Controls */}
-              <div className="border-t border-[var(--color-card-border)] pt-4">
-                <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">Admin Verification Actions</p>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">Company License Status</label>
-                    <select
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] outline-none"
-                      defaultValue={b.companyLicenseStatus}
-                      onChange={async (e) => {
-                        setVerifyLoading(true);
-                        try {
-                          const resp = await updateVerificationStatus(user.uid, 'companyLicenseStatus', e.target.value, verifyNotes || undefined);
-                          if (resp.success) { toast.success('Company license status updated!'); fetchUser(); onStatusChanged?.(); }
-                        } catch { toast.error('Failed to update.'); }
-                        finally { setVerifyLoading(false); }
-                      }}
-                      disabled={verifyLoading}
-                    >
-                      {Object.values(LicenseStatus).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">Verification Notes</label>
-                    <textarea
-                      rows={2}
-                      value={verifyNotes}
-                      onChange={(e) => setVerifyNotes(e.target.value)}
-                      placeholder="Optional notes about verification decision..."
-                      className="w-full px-3 py-1.5 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] outline-none resize-none placeholder:text-[var(--color-input-placeholder)]"
-                    />
-                  </div>
-                </div>
-              </div>
+               <BossLicenseVerificationControls
+                 uid={user.uid}
+                 currentStatus={b.companyLicenseStatus}
+                 verifyLoading={verifyLoading}
+                 setVerifyLoading={setVerifyLoading}
+                 fetchUser={fetchUser}
+                 onStatusChanged={onStatusChanged}
+               />
             </div>
           );
         }
@@ -844,7 +818,9 @@ function CertVerificationCard({
 
   const statusOptions = type === 'ID'
     ? Object.values(VerificationStatus)
-    : Object.values(CertificateStatus);
+    : type === 'LICENSE'
+      ? Object.values(LicenseStatus)
+      : Object.values(CertificateStatus);
 
   return (
     <div className="flex flex-col rounded-xl border border-[var(--color-card-border)] bg-[var(--color-bg-primary)] overflow-hidden shadow-sm">
@@ -929,6 +905,92 @@ function CertVerificationCard({
           disabled={!hasChanges || !documentUrl}
         >
           Save Details
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Boss License Verification Controls ──────────────────────────────────────
+
+function BossLicenseVerificationControls({
+  uid,
+  currentStatus,
+  verifyLoading,
+  setVerifyLoading,
+  fetchUser,
+  onStatusChanged,
+}: {
+  uid: string;
+  currentStatus: string;
+  verifyLoading: boolean;
+  setVerifyLoading: (l: boolean) => void;
+  fetchUser: () => void;
+  onStatusChanged?: () => void;
+}) {
+  const [localStatus, setLocalStatus] = useState(currentStatus || 'PENDING_REVIEW');
+  const [localNotes, setLocalNotes] = useState('');
+
+  useEffect(() => {
+    if (currentStatus) setLocalStatus(currentStatus);
+  }, [currentStatus]);
+
+  const hasChanges = localStatus !== currentStatus || localNotes.trim() !== '';
+
+  const handleSave = async () => {
+    setVerifyLoading(true);
+    try {
+      const resp = await updateVerificationStatus(uid, 'companyLicenseStatus', localStatus, localNotes || undefined);
+      if (resp.success) {
+        toast.success('Company license status updated!');
+        setLocalNotes('');
+        fetchUser();
+        onStatusChanged?.();
+      }
+    } catch {
+      toast.error('Failed to update company license status.');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-[var(--color-card-border)] pt-4">
+      <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">Admin Verification Actions</p>
+      <div className="space-y-3">
+        <div>
+          <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">Company License Status</label>
+          <select
+            className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] outline-none disabled:opacity-50"
+            value={localStatus}
+            onChange={(e) => setLocalStatus(e.target.value)}
+            disabled={verifyLoading}
+          >
+            {Object.values(LicenseStatus).map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1.5">Admin Notes (Optional)</label>
+          <input
+            type="text"
+            placeholder="Add rejection reason or notes..."
+            className="w-full px-3 py-1.5 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-text)] text-sm focus:ring-2 focus:ring-[var(--color-focus-ring)] outline-none placeholder:text-[var(--color-input-placeholder)] disabled:opacity-50"
+            value={localNotes}
+            onChange={(e) => setLocalNotes(e.target.value)}
+            disabled={verifyLoading}
+          />
+        </div>
+
+        <Button
+          type="button"
+          role="primary"
+          className="w-full relative"
+          loading={verifyLoading}
+          onClick={handleSave}
+          disabled={!hasChanges}
+        >
+          Save Status
         </Button>
       </div>
     </div>

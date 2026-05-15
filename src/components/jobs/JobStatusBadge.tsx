@@ -51,7 +51,7 @@ export function JobStatusBadge({ status, className, size = 'sm' }: JobStatusBadg
     <span
       className={cn(
         'inline-flex items-center font-bold uppercase tracking-wider border rounded-full whitespace-nowrap',
-        size === 'sm' ? 'text-[9px] px-2 py-0.5 h-5' : 'text-[10px] px-2.5 py-1 h-6',
+        size === 'sm' ? 'text-[8px] px-2 py-0.5 h-4' : 'text-[10px] px-2.5 py-1 h-6',
         config.className,
         className
       )}

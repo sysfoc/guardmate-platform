@@ -33,6 +33,7 @@ export enum LicenseStatus {
   EXPIRING_SOON  = 'EXPIRING_SOON',
   EXPIRED        = 'EXPIRED',
   PENDING_REVIEW = 'PENDING_REVIEW',
+  REJECTED       = 'REJECTED',
 }
 
 export enum CertificateStatus {

@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Shield, LogOut, LayoutDashboard, Briefcase, Send, Tag } from 'lucide-react';
+import {
+  Shield, LogOut as LogOutIcon, LayoutDashboard, Briefcase, Send, Tag,
+  User, ChevronDown, Star, Wallet, CreditCard, ShieldAlert,
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
@@ -12,7 +15,6 @@ import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui/Dropdown';
-import { User, LogOut as LogOutIcon, ChevronDown, Star, Wallet, CreditCard, ShieldAlert } from 'lucide-react';
 import { GlobalChatListener } from '@/components/chat/GlobalChatListener';
 import { subscriptionApi } from '@/lib/api/subscription.api';
 import type { ISubscriptionStatus } from '@/types/subscription.types';

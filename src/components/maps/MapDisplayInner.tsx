@@ -243,7 +243,7 @@ export default function MapDisplayInner({
       let distStr = '';
       if (showUserLocation && userLocation) {
         const dist = calculateDistance(userLocation.lat, userLocation.lng, m.lat, m.lng);
-        distStr = `<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">${dist} miles away</div>`;
+        distStr = `<div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;">${dist} miles away</div>`;
       }
 
       marker.bindPopup(`

@@ -1049,7 +1049,7 @@ function DocUploadRow({ label, url, isUploading, onUpload, status }: { label: st
           <p className="text-[11px] font-bold leading-none truncate">{label}</p>
           <div className="mt-1">
             {url ? (
-              <Badge variant={status === 'VERIFIED' || status === 'VALID' ? 'success' : 'warning'} className="text-[9px] h-4 py-0 font-bold uppercase">
+              <Badge variant={status === 'VERIFIED' || status === 'VALID' ? 'success' : status === 'REJECTED' || status === 'EXPIRED' ? 'danger' : 'warning'} className="text-[9px] h-4 py-0 font-bold uppercase">
                 {status || 'PENDING'}
               </Badge>
             ) : (
