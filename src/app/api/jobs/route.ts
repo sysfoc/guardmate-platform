@@ -246,6 +246,17 @@ export async function POST(request: NextRequest) {
       { $inc: { totalJobsPosted: 1, activeJobsCount: job.status === JobStatus.OPEN ? 1 : 0 } }
     );
 
+    // Precompute skills embedding in the background (non-blocking)
+    const _pythonUrl = process.env.PYTHON_AI_URL;
+    const _pythonSecret = process.env.PYTHON_SECRET_KEY;
+    if (_pythonUrl && _pythonSecret && job.requiredSkills?.length) {
+      fetch(`${_pythonUrl}/embed-job`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
+        body: JSON.stringify({ jobId: job.jobId, skills: job.requiredSkills }),
+      }).catch(() => {});
+    }
+
     return createApiResponse(true, job.toObject(), 'Job created successfully.', 201);
   } catch (error: unknown) {
     console.error('POST /api/jobs error:', error);

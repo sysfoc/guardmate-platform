@@ -222,6 +222,19 @@ export async function PATCH(
       { new: true }
     ).lean();
 
+    // Recompute skills embedding if requiredSkills changed (non-blocking)
+    if (body.requiredSkills && updatedJob) {
+      const _pythonUrl = process.env.PYTHON_AI_URL;
+      const _pythonSecret = process.env.PYTHON_SECRET_KEY;
+      if (_pythonUrl && _pythonSecret) {
+        fetch(`${_pythonUrl}/embed-job`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
+          body: JSON.stringify({ jobId, skills: body.requiredSkills }),
+        }).catch(() => {});
+      }
+    }
+
     return createApiResponse(true, updatedJob, 'Job updated successfully.', 200);
   } catch (error: unknown) {
     console.error('PATCH /api/jobs/[jobId] error:', error);
