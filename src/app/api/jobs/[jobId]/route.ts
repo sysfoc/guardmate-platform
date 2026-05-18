@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, after } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
@@ -222,16 +222,19 @@ export async function PATCH(
       { new: true }
     ).lean();
 
-    // Recompute skills embedding if requiredSkills changed (non-blocking)
+    // Recompute skills embedding if requiredSkills changed (non-blocking, Vercel-safe)
     if (body.requiredSkills && updatedJob) {
       const _pythonUrl = process.env.PYTHON_AI_URL;
       const _pythonSecret = process.env.PYTHON_SECRET_KEY;
       if (_pythonUrl && _pythonSecret) {
-        fetch(`${_pythonUrl}/embed-job`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
-          body: JSON.stringify({ jobId, skills: body.requiredSkills }),
-        }).catch(() => {});
+        const _skills = body.requiredSkills;
+        after(async () => {
+          await fetch(`${_pythonUrl}/embed-job`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
+            body: JSON.stringify({ jobId, skills: _skills }),
+          }).catch(() => {});
+        });
       }
     }
 

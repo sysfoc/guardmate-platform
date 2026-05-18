@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, after } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import connectDB from '@/lib/mongodb';
 import Job from '@/models/Job.model';
@@ -246,15 +246,19 @@ export async function POST(request: NextRequest) {
       { $inc: { totalJobsPosted: 1, activeJobsCount: job.status === JobStatus.OPEN ? 1 : 0 } }
     );
 
-    // Precompute skills embedding in the background (non-blocking)
+    // Precompute skills embedding after response is sent (non-blocking, Vercel-safe)
     const _pythonUrl = process.env.PYTHON_AI_URL;
     const _pythonSecret = process.env.PYTHON_SECRET_KEY;
     if (_pythonUrl && _pythonSecret && job.requiredSkills?.length) {
-      fetch(`${_pythonUrl}/embed-job`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
-        body: JSON.stringify({ jobId: job.jobId, skills: job.requiredSkills }),
-      }).catch(() => {});
+      const _jobId = job.jobId;
+      const _skills = job.requiredSkills;
+      after(async () => {
+        await fetch(`${_pythonUrl}/embed-job`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
+          body: JSON.stringify({ jobId: _jobId, skills: _skills }),
+        }).catch(() => {});
+      });
     }
 
     return createApiResponse(true, job.toObject(), 'Job created successfully.', 201);
