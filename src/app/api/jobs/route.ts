@@ -249,16 +249,32 @@ export async function POST(request: NextRequest) {
     // Precompute skills embedding after response is sent (non-blocking, Vercel-safe)
     const _pythonUrl = process.env.PYTHON_AI_URL;
     const _pythonSecret = process.env.PYTHON_SECRET_KEY;
+    console.log('[embed-job] POST /api/jobs — env check:', {
+      PYTHON_AI_URL: _pythonUrl ? `${_pythonUrl} (set)` : 'MISSING',
+      PYTHON_SECRET_KEY: _pythonSecret ? 'set' : 'MISSING',
+      requiredSkillsCount: job.requiredSkills?.length ?? 0,
+      jobId: job.jobId,
+    });
     if (_pythonUrl && _pythonSecret && job.requiredSkills?.length) {
       const _jobId = job.jobId;
       const _skills = job.requiredSkills;
+      console.log('[embed-job] Scheduling after() for jobId:', _jobId);
       after(async () => {
-        await fetch(`${_pythonUrl}/embed-job`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
-          body: JSON.stringify({ jobId: _jobId, skills: _skills }),
-        }).catch(() => {});
+        console.log('[embed-job] after() fired for jobId:', _jobId);
+        try {
+          const res = await fetch(`${_pythonUrl}/embed-job`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
+            body: JSON.stringify({ jobId: _jobId, skills: _skills }),
+          });
+          const text = await res.text();
+          console.log('[embed-job] Response status:', res.status, '| body:', text);
+        } catch (err) {
+          console.error('[embed-job] Fetch failed:', err);
+        }
       });
+    } else {
+      console.warn('[embed-job] Skipped — missing env vars or no skills.');
     }
 
     return createApiResponse(true, job.toObject(), 'Job created successfully.', 201);

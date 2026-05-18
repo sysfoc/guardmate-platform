@@ -226,15 +226,31 @@ export async function PATCH(
     if (body.requiredSkills && updatedJob) {
       const _pythonUrl = process.env.PYTHON_AI_URL;
       const _pythonSecret = process.env.PYTHON_SECRET_KEY;
+      console.log('[embed-job] PATCH /api/jobs/[jobId] — env check:', {
+        PYTHON_AI_URL: _pythonUrl ? `${_pythonUrl} (set)` : 'MISSING',
+        PYTHON_SECRET_KEY: _pythonSecret ? 'set' : 'MISSING',
+        requiredSkillsCount: body.requiredSkills?.length ?? 0,
+        jobId,
+      });
       if (_pythonUrl && _pythonSecret) {
         const _skills = body.requiredSkills;
+        console.log('[embed-job] Scheduling after() for jobId:', jobId);
         after(async () => {
-          await fetch(`${_pythonUrl}/embed-job`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
-            body: JSON.stringify({ jobId, skills: _skills }),
-          }).catch(() => {});
+          console.log('[embed-job] after() fired for jobId:', jobId);
+          try {
+            const res = await fetch(`${_pythonUrl}/embed-job`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
+              body: JSON.stringify({ jobId, skills: _skills }),
+            });
+            const text = await res.text();
+            console.log('[embed-job] Response status:', res.status, '| body:', text);
+          } catch (err) {
+            console.error('[embed-job] Fetch failed:', err);
+          }
         });
+      } else {
+        console.warn('[embed-job] Skipped — missing env vars.');
       }
     }
 
