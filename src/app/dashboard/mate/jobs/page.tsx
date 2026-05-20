@@ -470,6 +470,7 @@ function MateJobsContent() {
                       linkPrefix="/dashboard/mate/jobs"
                       matchScore={job.matchScore}
                       matchBreakdown={job.matchBreakdown}
+                      matchSkillDetails={job.matchSkillDetails}
                     />
                   ))}
                 </div>

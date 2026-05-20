@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const aiData = await aiResponse.json();
-    const matches: { jobId: string; score: number; breakdown: { skills: number; license: number; experience: number } }[] = aiData.matches || [];
+    const matches: { jobId: string; score: number; breakdown: { skills: number; license: number; experience: number }; skillDetails: { matched: { jobSkill: string; matchedWith: string; similarity: number }[]; unmatched: { jobSkill: string; closest: string | null; similarity: number }[] } }[] = aiData.matches || [];
 
     // 5. If no matches, return early
     if (matches.length === 0) {
@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
         ...jobMap[m.jobId],
         matchScore: m.score,
         matchBreakdown: m.breakdown,
+        matchSkillDetails: m.skillDetails,
       }));
 
     return createApiResponse(

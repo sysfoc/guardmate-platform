@@ -1,4 +1,4 @@
-import { NextRequest, after } from 'next/server';
+import { NextRequest } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
@@ -221,38 +221,6 @@ export async function PATCH(
       { $set: body },
       { new: true }
     ).lean();
-
-    // Recompute skills embedding if requiredSkills changed (non-blocking, Vercel-safe)
-    if (body.requiredSkills && updatedJob) {
-      const _pythonUrl = process.env.PYTHON_AI_URL;
-      const _pythonSecret = process.env.PYTHON_SECRET_KEY;
-      console.log('[embed-job] PATCH /api/jobs/[jobId] — env check:', {
-        PYTHON_AI_URL: _pythonUrl ? `${_pythonUrl} (set)` : 'MISSING',
-        PYTHON_SECRET_KEY: _pythonSecret ? 'set' : 'MISSING',
-        requiredSkillsCount: body.requiredSkills?.length ?? 0,
-        jobId,
-      });
-      if (_pythonUrl && _pythonSecret) {
-        const _skills = body.requiredSkills;
-        console.log('[embed-job] Scheduling after() for jobId:', jobId);
-        after(async () => {
-          console.log('[embed-job] after() fired for jobId:', jobId);
-          try {
-            const res = await fetch(`${_pythonUrl}/embed-job`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'X-API-Key': _pythonSecret },
-              body: JSON.stringify({ jobId, skills: _skills }),
-            });
-            const text = await res.text();
-            console.log('[embed-job] Response status:', res.status, '| body:', text);
-          } catch (err) {
-            console.error('[embed-job] Fetch failed:', err);
-          }
-        });
-      } else {
-        console.warn('[embed-job] Skipped — missing env vars.');
-      }
-    }
 
     return createApiResponse(true, updatedJob, 'Job updated successfully.', 200);
   } catch (error: unknown) {

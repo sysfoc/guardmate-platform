@@ -240,9 +240,27 @@ export interface MatchBreakdown {
   experience: number;
 }
 
+export interface MatchedSkillDetail {
+  jobSkill: string;
+  matchedWith: string;
+  similarity: number;
+}
+
+export interface UnmatchedSkillDetail {
+  jobSkill: string;
+  closest: string | null;
+  similarity: number;
+}
+
+export interface MatchSkillDetails {
+  matched: MatchedSkillDetail[];
+  unmatched: UnmatchedSkillDetail[];
+}
+
 export interface AIMatchedJob extends IJob {
   matchScore: number;
   matchBreakdown: MatchBreakdown;
+  matchSkillDetails: MatchSkillDetails;
 }
 
 /**

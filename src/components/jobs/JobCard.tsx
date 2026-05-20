@@ -6,7 +6,7 @@ import {
   MapPin, Calendar, Clock, Eye, Users, Zap,
   Briefcase, DollarSign, ChevronRight,
   ShieldCheck, HeartPulse, HardHat, Baby,
-  CheckCircle2, Sparkles
+  CheckCircle2, Sparkles, XCircle
 } from 'lucide-react';
 
 /* ─── Match Score Badge (grid view) ──────────────────────────────────────── */
@@ -56,6 +56,11 @@ interface MatchBreakdown {
   experience: number;
 }
 
+interface MatchSkillDetails {
+  matched: { jobSkill: string; matchedWith: string; similarity: number }[];
+  unmatched: { jobSkill: string; closest: string | null; similarity: number }[];
+}
+
 interface JobCardProps {
   job: IJob;
   showActions?: boolean;
@@ -65,6 +70,7 @@ interface JobCardProps {
   distance?: number;
   matchScore?: number;
   matchBreakdown?: MatchBreakdown;
+  matchSkillDetails?: MatchSkillDetails;
 }
 
 function getMatchColor(score: number): { bg: string; text: string; border: string } {
@@ -73,7 +79,7 @@ function getMatchColor(score: number): { bg: string; text: string; border: strin
   return { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400', border: 'border-red-500/20' };
 }
 
-export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefix = '/dashboard/mate/jobs', overlapWarning, distance, matchScore, matchBreakdown }: JobCardProps) {
+export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefix = '/dashboard/mate/jobs', overlapWarning, distance, matchScore, matchBreakdown, matchSkillDetails }: JobCardProps) {
   const budgetDisplay = job.budgetType === BudgetType.HOURLY
     ? `$${job.budgetAmount}/hr`
     : `$${job.budgetAmount}${job.budgetMax ? ` – $${job.budgetMax}` : ''}`;
@@ -227,18 +233,51 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
         {/* Skills */}
         {job.requiredSkills.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
-            {job.requiredSkills.slice(0, 3).map((skill) => (
-              <span
-                key={skill}
-                className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-primary-light)] text-[var(--color-primary)] dark:bg-[var(--color-primary)]/10"
-              >
-                {skill}
-              </span>
-            ))}
-            {job.requiredSkills.length > 3 && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 text-[var(--color-text-muted)]">
-                +{job.requiredSkills.length - 3}
-              </span>
+            {matchSkillDetails ? (
+              // AI Match mode: show all skills color-coded
+              <>
+                {job.requiredSkills.map((skill) => {
+                  const matched = matchSkillDetails.matched.find(
+                    (m) => m.jobSkill === skill
+                  );
+                  const unmatched = matchSkillDetails.unmatched.find(
+                    (u) => u.jobSkill === skill
+                  );
+                  if (matched) {
+                    return (
+                      <Tooltip key={skill} content={`Matched with: ${matched.matchedWith} (${matched.similarity}%)`}>
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <CheckCircle2 className="h-2.5 w-2.5" />{skill}
+                        </span>
+                      </Tooltip>
+                    );
+                  }
+                  return (
+                    <Tooltip key={skill} content={unmatched?.closest ? `Closest: ${unmatched.closest} (${unmatched.similarity}%)` : 'No match found'}>
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                        <XCircle className="h-2.5 w-2.5" />{skill}
+                      </span>
+                    </Tooltip>
+                  );
+                })}
+              </>
+            ) : (
+              // Normal mode: show first 3 skills
+              <>
+                {job.requiredSkills.slice(0, 3).map((skill) => (
+                  <span
+                    key={skill}
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--color-primary-light)] text-[var(--color-primary)] dark:bg-[var(--color-primary)]/10"
+                  >
+                    {skill}
+                  </span>
+                ))}
+                {job.requiredSkills.length > 3 && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 text-[var(--color-text-muted)]">
+                    +{job.requiredSkills.length - 3}
+                  </span>
+                )}
+              </>
             )}
           </div>
         )}
