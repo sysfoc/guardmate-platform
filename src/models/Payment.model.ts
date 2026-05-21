@@ -23,6 +23,7 @@ const PaymentSchema = new Schema<PaymentDocument>(
     guardCommissionRate:   { type: Number, required: true },
     bossCommissionAmount:  { type: Number, required: true },
     guardCommissionAmount: { type: Number, required: true },
+    urgentFeeAmount:       { type: Number, default: 0 },
     totalChargedToBoss:    { type: Number, required: true },
     guardPayout:           { type: Number, required: true },
     platformRevenue:       { type: Number, required: true },

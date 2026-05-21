@@ -21,6 +21,7 @@ export interface IPayment {
   guardCommissionRate: number;
   bossCommissionAmount: number;
   guardCommissionAmount: number;
+  urgentFeeAmount: number;
   totalChargedToBoss: number;
   guardPayout: number;
   platformRevenue: number;

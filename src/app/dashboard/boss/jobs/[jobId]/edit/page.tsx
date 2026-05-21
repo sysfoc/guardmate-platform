@@ -27,7 +27,7 @@ export default function EditJobPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const router = useRouter();
   const { user, isLoading: userLoading } = useUser();
-  const { platformCurrency, minimumHourlyRate, minimumRateEnforced } = usePlatformContext();
+  const { platformCurrency, minimumHourlyRate, minimumRateEnforced, platformSettings } = usePlatformContext();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -248,7 +248,6 @@ export default function EditJobPage() {
             </div>
 
             <div className="flex items-center gap-6">
-              <Checkbox label={<span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-[var(--color-danger)]" /> Mark as Urgent</span>} checked={form.isUrgent || false} onChange={(e) => update({ isUrgent: e.target.checked })} />
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-[var(--color-text-secondary)]"><Users className="h-3.5 w-3.5 inline mr-1" />Guards needed:</label>
                 <input type="number" min={1} max={50} value={form.numberOfGuardsNeeded || 1} onChange={(e) => update({ numberOfGuardsNeeded: Math.max(1, Number(e.target.value)) })} className={`${inputCls} w-20 text-center`} />
@@ -339,9 +338,32 @@ export default function EditJobPage() {
               </div>
               <div>
                 <label className={labelCls}>Max Budget (optional)</label>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">$</span>
-                <input type="number" min={0} step="0.01" value={form.budgetMax ?? ''} onChange={(e) => update({ budgetMax: e.target.value ? Number(e.target.value) : undefined })} className={`${inputCls} pl-8`} placeholder="—" /></div>
+                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">{platformCurrency}</span>
+                <input type="number" min={0} step="0.01" value={form.budgetMax ?? ''} onChange={(e) => update({ budgetMax: e.target.value ? Number(e.target.value) : undefined })} className={`${inputCls} pl-12`} placeholder="—" /></div>
               </div>
+            </div>
+
+            {/* Urgent Job Option with Dynamic Fee Breakdown */}
+            <div className="p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-bg-subtle)] space-y-3">
+              <Checkbox
+                label={<span className="flex items-center gap-1 font-black text-[var(--color-danger)]"><Zap className="h-4 w-4" /> Mark as Urgent Job</span>}
+                checked={form.isUrgent || false}
+                onChange={(e) => update({ isUrgent: e.target.checked })}
+              />
+              <p className="text-[10px] text-[var(--color-text-secondary)] ml-7 leading-relaxed max-w-2xl">
+                Urgent jobs are highlighted and trigger push notifications to nearby guards.
+              </p>
+              {form.isUrgent && (
+                <div className="ml-7 mt-2 p-3 rounded-lg border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/5">
+                  <p className="text-[10px] font-bold text-[var(--color-danger)] mb-1">Urgent Processing Fee:</p>
+                  <p className="text-xs text-[var(--color-text-primary)]">
+                    {platformSettings?.urgentJobFeeType === 'PERCENTAGE'
+                      ? `${platformSettings.urgentJobFeeValue}% of total budget`
+                      : `${platformCurrency}${platformSettings?.urgentJobFeeValue ?? 0} fixed fee`}
+                    {' '}(will be added to your final escrow payment)
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>

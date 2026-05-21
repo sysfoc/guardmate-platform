@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Payment from "@/models/Payment.model";
 import Job from "@/models/Job.model";
+import GuardWallet from "@/models/GuardWallet.model";
+import { notifyNearbyGuards } from "@/lib/jobs/urgentJobNotifier";
 import UserOffer from "@/models/UserOffer.model";
 import Offer from "@/models/Offer.model";
 import { EscrowPaymentStatus, JobPaymentStatus, DiscountType } from "@/types/enums";
@@ -103,6 +105,9 @@ export async function POST(request: NextRequest) {
             );
 
             console.log(`Payment HELD for job ${payment.jobId}`);
+
+            // Trigger proximity alerts if this is an urgent job
+            await notifyNearbyGuards(payment.jobId);
 
             if (job && job.status === 'FILLED') {
               // Notify guards that the shift is confirmed!

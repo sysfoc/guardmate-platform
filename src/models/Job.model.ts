@@ -97,8 +97,9 @@ const JobSchema = new Schema<JobDocument>({
   viewedBy:  { type: [String], default: [] },
 
   // Flags
-  isUrgent:   { type: Boolean, default: false },
-  isFeatured: { type: Boolean, default: false },
+  isUrgent:        { type: Boolean, default: false },
+  urgentFeeAmount: { type: Number, default: 0 },
+  isFeatured:      { type: Boolean, default: false },
 
   // Payment Status (Phase 6)
   paymentStatus: {

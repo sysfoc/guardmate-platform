@@ -17,6 +17,10 @@ interface PlatformContextType {
   paypalEnabled: boolean;
   stripePublishableKey: string | null;
   paypalClientId: string | null;
+  // Phase 9: Urgent Job Fee context
+  urgentJobFeeType: 'PERCENTAGE' | 'FIXED';
+  urgentJobFeeValue: number;
+  urgentJobNotificationRadiusMiles: number;
   loading: boolean;
   refreshSettings: () => Promise<void>;
 }
@@ -55,6 +59,10 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     paypalEnabled: platformSettings?.paypalEnabled ?? false,
     stripePublishableKey: platformSettings?.stripePublishableKey ?? null,
     paypalClientId: platformSettings?.paypalClientId ?? null,
+    // Phase 9: Urgent Job Fee context
+    urgentJobFeeType: platformSettings?.urgentJobFeeType ?? 'PERCENTAGE',
+    urgentJobFeeValue: platformSettings?.urgentJobFeeValue ?? 15,
+    urgentJobNotificationRadiusMiles: platformSettings?.urgentJobNotificationRadiusMiles ?? 200,
     loading,
     refreshSettings: loadSettings,
   }), [platformSettings, loading]);

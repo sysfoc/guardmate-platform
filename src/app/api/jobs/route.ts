@@ -5,7 +5,7 @@ import Job from '@/models/Job.model';
 import User from '@/models/User.model';
 import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { JobStatus, UserRole, UserStatus, BudgetType, HiringStatus, SubscriptionStatus } from '@/types/enums';
+import { JobStatus, UserRole, UserStatus, BudgetType, HiringStatus, SubscriptionStatus, JobPaymentStatus } from '@/types/enums';
 import { processJobLifecycle } from '@/lib/jobs/jobLifecycle';
 import { calculateDistance } from '@/lib/utils/haversine';
 import {
@@ -145,6 +145,18 @@ export async function POST(request: NextRequest) {
     }
     // ─── END SUBSCRIPTION ENFORCEMENT ────────────────────────────────────────
 
+    // ─── CALCULATE URGENT FEE ───────────────────────────────────────────────
+    let urgentFeeAmount = 0;
+    if (body.isUrgent) {
+      const feeType = platformSettings?.urgentJobFeeType ?? 'PERCENTAGE';
+      const feeValue = platformSettings?.urgentJobFeeValue ?? 0;
+      if (feeType === 'PERCENTAGE') {
+        urgentFeeAmount = Math.round((body.budgetAmount * (feeValue / 100)) * 100) / 100;
+      } else {
+        urgentFeeAmount = feeValue;
+      }
+    }
+
     // Process shiftSchedule — enrich each slot with computed fields
     let shiftSchedule: ShiftScheduleDay[] = [];
     let totalHours = 0;
@@ -238,6 +250,8 @@ export async function POST(request: NextRequest) {
       applicationDeadline: new Date(body.applicationDeadline),
       hiringStatus: HiringStatus.OPEN,
       isUrgent: body.isUrgent || false,
+      urgentFeeAmount,
+      paymentStatus: JobPaymentStatus.UNPAID,
     });
 
     // Update boss stats
@@ -375,6 +389,7 @@ export async function GET(request: NextRequest) {
       } else {
         // By default, Mate only sees OPEN jobs for applying
         query.status = JobStatus.OPEN;
+        query.paymentStatus = { $ne: JobPaymentStatus.UNPAID };
       }
     } else if (user.role === UserRole.BOSS) {
       query.postedBy = user.uid;

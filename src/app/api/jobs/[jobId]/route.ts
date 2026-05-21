@@ -4,7 +4,7 @@ import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { JobStatus, UserRole, BudgetType } from '@/types/enums';
+import { JobStatus, UserRole, BudgetType, JobPaymentStatus } from '@/types/enums';
 import { processJobLifecycle } from '@/lib/jobs/jobLifecycle';
 import {
   isOvernightShift,
@@ -40,6 +40,11 @@ export async function GET(
     // Only increment viewCount if this user hasn't viewed before
     const existing = await Job.findOne({ jobId }).lean();
     if (!existing) {
+      return createApiResponse(false, null, 'Job not found.', 404);
+    }
+
+    // Hide unpaid jobs from guards until escrow is completed
+    if (user.role === UserRole.MATE && existing.paymentStatus === JobPaymentStatus.UNPAID) {
       return createApiResponse(false, null, 'Job not found.', 404);
     }
 
@@ -209,6 +214,23 @@ export async function PATCH(
         const duration = calculateShiftDuration(sTime, eTime);
         body.totalHours = Math.round(days * duration * 10) / 10;
       }
+    }
+
+    // ─── CALCULATE URGENT FEE ───────────────────────────────────────────────
+    const isNowUrgent = body.isUrgent !== undefined ? body.isUrgent : job.isUrgent;
+    if (isNowUrgent) {
+      const platformSettings = await PlatformSettings.findOne().lean();
+      const feeType = platformSettings?.urgentJobFeeType ?? 'PERCENTAGE';
+      const feeValue = platformSettings?.urgentJobFeeValue ?? 0;
+      const budgetAmountForFee = body.budgetAmount !== undefined ? body.budgetAmount : job.budgetAmount;
+      
+      if (feeType === 'PERCENTAGE') {
+        body.urgentFeeAmount = Math.round((budgetAmountForFee * (feeValue / 100)) * 100) / 100;
+      } else {
+        body.urgentFeeAmount = feeValue;
+      }
+    } else if (body.isUrgent === false) {
+      body.urgentFeeAmount = 0;
     }
 
     // Prevent status change via this route (only DRAFT ↔ OPEN allowed)

@@ -422,7 +422,6 @@ export default function NewJobPage() {
             </div>
 
             <div className="flex items-center gap-6">
-              <Checkbox label={<span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-[var(--color-danger)]" /> Mark as Urgent</span>} checked={form.isUrgent || false} onChange={(e) => update({ isUrgent: e.target.checked })} />
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-[var(--color-text-secondary)]"><Users className="h-3.5 w-3.5 inline mr-1" />Guards needed:</label>
                 <input type="number" min={1} max={50} value={form.numberOfGuardsNeeded || 1} onChange={(e) => update({ numberOfGuardsNeeded: Math.max(1, Number(e.target.value)) })} className={`${inputCls} w-20 text-center`} />
@@ -637,6 +636,29 @@ export default function NewJobPage() {
               </div>
             </div>
 
+            {/* Urgent Job Option with Dynamic Fee Breakdown */}
+            <div className="p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-bg-subtle)] space-y-3">
+              <Checkbox
+                label={<span className="flex items-center gap-1 font-black text-[var(--color-danger)]"><Zap className="h-4 w-4" /> Mark as Urgent Job</span>}
+                checked={form.isUrgent || false}
+                onChange={(e) => update({ isUrgent: e.target.checked })}
+              />
+              <p className="text-[10px] text-[var(--color-text-secondary)] ml-7 leading-relaxed max-w-2xl">
+                Urgent jobs are highlighted and trigger push notifications to nearby guards.
+              </p>
+              {form.isUrgent && (
+                <div className="ml-7 mt-2 p-3 rounded-lg border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/5">
+                  <p className="text-[10px] font-bold text-[var(--color-danger)] mb-1">Urgent Processing Fee:</p>
+                  <p className="text-xs text-[var(--color-text-primary)]">
+                    {platformSettings?.urgentJobFeeType === 'PERCENTAGE'
+                      ? `${platformSettings.urgentJobFeeValue}% of total budget`
+                      : `${platformCurrency}${platformSettings?.urgentJobFeeValue ?? 0} fixed fee`}
+                    {' '}(will be added to your final escrow payment)
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div>
               <label className={labelCls}>Required Skills</label>
               <div className="flex gap-2 mb-3">
@@ -702,7 +724,11 @@ export default function NewJobPage() {
           <div className="w-16 h-16 rounded-full bg-[var(--color-success-light)] flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="h-8 w-8 text-[var(--color-success)]" />
           </div>
-          <p className="text-sm text-[var(--color-text-secondary)] mb-6">Your job has been posted and is now visible to guards.</p>
+          <p className="text-sm text-[var(--color-text-secondary)] mb-6">
+            {form.isUrgent
+              ? 'Your job has been posted as URGENT. After escrow is funded, nearby guards will be notified immediately.'
+              : 'Your job has been posted. Fund escrow after hiring to make it visible to guards.'}
+          </p>
           <div className="flex gap-3">
             <Button variant="ghost" size="sm" className="flex-1 border border-[var(--color-surface-border)]" onClick={() => { setShowSuccess(false); router.push(`/dashboard/boss/jobs/${createdJobId}`); }}>View Job</Button>
             <Button size="sm" className="flex-1" onClick={() => { setShowSuccess(false); resetForm(); }}>Post Another Job</Button>

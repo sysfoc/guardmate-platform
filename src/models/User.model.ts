@@ -41,6 +41,11 @@ const LoginHistorySchema = new Schema({
   success: { type: Boolean, required: true },
 }, { _id: false });
 
+const CoordinatesSchema = new Schema({
+  lat: { type: Number, required: true },
+  lng: { type: Number, required: true },
+}, { _id: false });
+
 const CertificationSchema = new Schema({
   name: { type: String, required: true },
   issuingBody: { type: String, required: true },
@@ -79,6 +84,7 @@ const UserSchema = new Schema<UserDocument>({
   address: { type: String, default: null },
   postalCode: { type: String, default: null },
   timezone: { type: String, default: null },
+  coordinates: { type: CoordinatesSchema, default: null },
 
   // ── Security Tracking ────────────────────────────────────────────────────
   lastLoginAt: { type: Date, default: null },

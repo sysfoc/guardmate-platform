@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
       bossUid: user.uid,
       guardUid: guard.guardUid,
       platformSettings: settings as unknown as import('@/types/settings.types').IPlatformSettings,
+      urgentFeeAmount: job.urgentFeeAmount || 0,
     });
 
     // 5. Create/Update Payment Record
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
       paymentDoc.guardCommissionRate = breakdown.guardCommissionRate;
       paymentDoc.bossCommissionAmount = breakdown.bossCommissionAmount;
       paymentDoc.guardCommissionAmount = breakdown.guardCommissionAmount;
+      paymentDoc.urgentFeeAmount = job.urgentFeeAmount || 0;
       paymentDoc.totalChargedToBoss = breakdown.totalChargedToBoss;
       paymentDoc.guardPayout = breakdown.guardPayout;
       paymentDoc.platformRevenue = breakdown.platformRevenue;
@@ -104,6 +106,7 @@ export async function POST(request: NextRequest) {
         guardCommissionRate: breakdown.guardCommissionRate,
         bossCommissionAmount: breakdown.bossCommissionAmount,
         guardCommissionAmount: breakdown.guardCommissionAmount,
+        urgentFeeAmount: job.urgentFeeAmount || 0,
         totalChargedToBoss: breakdown.totalChargedToBoss,
         guardPayout: breakdown.guardPayout,
         platformRevenue: breakdown.platformRevenue,
@@ -180,6 +183,7 @@ export async function POST(request: NextRequest) {
         breakdown: {
           bossCommissionAmount: breakdown.bossCommissionAmount,
           guardCommissionAmount: breakdown.guardCommissionAmount,
+          urgentFeeAmount: breakdown.urgentFeeAmount,
           totalChargedToBoss: breakdown.totalChargedToBoss,
           guardPayout: breakdown.guardPayout,
           platformRevenue: breakdown.platformRevenue,

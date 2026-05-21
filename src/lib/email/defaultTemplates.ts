@@ -409,4 +409,12 @@ export const defaultTemplates: Partial<Record<NotificationEventType, Omit<IEmail
     variables: ['guardName', 'amount', 'accountName', 'bsb', 'accountNumber', 'withdrawalId', 'adminDashboardUrl'],
     isActive: true,
   },
+  [NotificationEventType.URGENT_JOB_NEARBY]: {
+    notificationType: NotificationEventType.URGENT_JOB_NEARBY,
+    subject: 'URGENT: New Job Nearby - {{jobName}}',
+    htmlBody: BASE_HTML('Urgent Job Alert', '<p>Hi {{guardName}},</p><p>An <strong>URGENT</strong> job (<strong>{{jobName}}</strong>) has just been posted <strong>{{distance}} miles</strong> from you at <strong>{{location}}</strong>!</p><p>Urgent jobs require immediate attention and often offer premium rates.</p><a href="{{dashboardUrl}}" class="btn">View Job & Apply Now</a>'),
+    textBody: 'Hi {{guardName}}, an URGENT job ({{jobName}}) is available {{distance}} miles from you at {{location}}. Apply now at your dashboard.',
+    variables: ['guardName', 'jobName', 'distance', 'location', 'dashboardUrl'],
+    isActive: true,
+  },
 };

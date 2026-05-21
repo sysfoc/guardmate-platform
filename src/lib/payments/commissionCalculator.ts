@@ -14,6 +14,7 @@ export interface CommissionInput {
   bossUid: string;
   guardUid: string;
   platformSettings: IPlatformSettings;
+  urgentFeeAmount?: number;
 }
 
 export interface CommissionResult {
@@ -21,6 +22,7 @@ export interface CommissionResult {
   guardCommissionRate: number;
   bossCommissionAmount: number;
   guardCommissionAmount: number;
+  urgentFeeAmount: number;
   totalChargedToBoss: number;
   guardPayout: number;
   platformRevenue: number;
@@ -62,7 +64,7 @@ function round2(value: number): number {
 export async function calculateCommission(
   input: CommissionInput
 ): Promise<CommissionResult> {
-  const { jobBudget, platformSettings } = input;
+  const { jobBudget, platformSettings, urgentFeeAmount = 0 } = input;
 
   const baseBossRate = platformSettings.platformCommissionBoss ?? 0;
   const baseGuardRate = platformSettings.platformCommissionGuard ?? 0;
@@ -70,15 +72,16 @@ export async function calculateCommission(
   // Calculate amounts — no offer discounts on job commission
   const bossCommissionAmount = round2(jobBudget * (baseBossRate / 100));
   const guardCommissionAmount = round2(jobBudget * (baseGuardRate / 100));
-  const totalChargedToBoss = round2(jobBudget + bossCommissionAmount);
+  const totalChargedToBoss = round2(jobBudget + bossCommissionAmount + urgentFeeAmount);
   const guardPayout = round2(jobBudget - guardCommissionAmount);
-  const platformRevenue = round2(bossCommissionAmount + guardCommissionAmount);
+  const platformRevenue = round2(bossCommissionAmount + guardCommissionAmount + urgentFeeAmount);
 
   return {
     bossCommissionRate: baseBossRate,
     guardCommissionRate: baseGuardRate,
     bossCommissionAmount,
     guardCommissionAmount,
+    urgentFeeAmount,
     totalChargedToBoss,
     guardPayout,
     platformRevenue,

@@ -16,6 +16,8 @@ interface EscrowBannerProps {
   currency: string;
   onPaymentComplete: () => void;
   bossCommissionRate?: number;
+  isUrgent?: boolean;
+  urgentFeeAmount?: number;
 }
 
 interface PaymentBreakdown {
@@ -24,6 +26,7 @@ interface PaymentBreakdown {
   totalChargedToBoss: number;
   guardPayout: number;
   platformRevenue: number;
+  urgentFeeAmount?: number;
 }
 
 export function EscrowBanner({ 
@@ -32,7 +35,9 @@ export function EscrowBanner({
   budgetAmount, 
   currency, 
   onPaymentComplete,
-  bossCommissionRate = 10 
+  bossCommissionRate = 10,
+  isUrgent = false,
+  urgentFeeAmount = 0
 }: EscrowBannerProps) {
   const [loading, setLoading] = useState(false);
   const [showStripeModal, setShowStripeModal] = useState(false);
@@ -42,7 +47,8 @@ export function EscrowBanner({
   // Calculate expected amounts (will be updated from API response)
   const displayBudget = paymentBreakdown?.jobBudget ?? budgetAmount;
   const displayCommission = paymentBreakdown?.bossCommissionAmount ?? Math.round(budgetAmount * (bossCommissionRate / 100) * 100) / 100;
-  const displayTotal = paymentBreakdown?.totalChargedToBoss ?? Math.round((budgetAmount + (budgetAmount * bossCommissionRate / 100)) * 100) / 100;
+  const displayUrgentFee = paymentBreakdown?.urgentFeeAmount ?? (isUrgent ? urgentFeeAmount : 0);
+  const displayTotal = paymentBreakdown?.totalChargedToBoss ?? Math.round((budgetAmount + displayCommission + displayUrgentFee) * 100) / 100;
 
   const handleStripePayment = async () => {
     try {
@@ -144,6 +150,12 @@ export function EscrowBanner({
                   </span>
                   <span className="font-medium">{currency} {displayCommission.toFixed(2)}</span>
                 </div>
+                {displayUrgentFee > 0 && (
+                  <div className="flex justify-between text-sm text-[var(--color-danger)] font-medium">
+                    <span>Urgent Job Fee</span>
+                    <span>{currency} {displayUrgentFee.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="border-t border-slate-100 pt-2 mt-2">
                   <div className="flex justify-between">
                     <span className="text-slate-500 uppercase font-bold text-xs tracking-wider">Total Due</span>

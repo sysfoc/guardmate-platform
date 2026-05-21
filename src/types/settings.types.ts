@@ -43,6 +43,11 @@ export interface IPlatformSettings {
   bossSubscriptionAmount: number | null;
   bossSubscriptionCurrency: string;
 
+  // ─── Phase 9: Urgent Job Fee Settings ──────────────────────────────────
+  urgentJobFeeType: 'PERCENTAGE' | 'FIXED';
+  urgentJobFeeValue: number;
+  urgentJobNotificationRadiusMiles: number;
+
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

@@ -6,6 +6,7 @@ import Payment from "@/models/Payment.model";
 import User from "@/models/User.model";
 import { UserRole, EscrowPaymentStatus, JobPaymentStatus } from "@/types/enums";
 import { capturePayPalOrder } from "@/lib/payments/paypalClient";
+import { notifyNearbyGuards } from "@/lib/jobs/urgentJobNotifier";
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,6 +58,9 @@ export async function POST(request: NextRequest) {
 
       // Notify Boss that funds are held
       console.log(`Payment HELD for job ${payment.jobId}`);
+
+      // Trigger proximity alerts if this is an urgent job
+      await notifyNearbyGuards(payment.jobId);
 
       return createApiResponse(true, { payment }, "Payment successfully held in escrow.", 200);
     } else {

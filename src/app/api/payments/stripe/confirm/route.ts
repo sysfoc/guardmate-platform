@@ -6,6 +6,7 @@ import Job from "@/models/Job.model";
 import User from "@/models/User.model";
 import { getStripeInstance } from "@/lib/payments/stripeClient";
 import { EscrowPaymentStatus, JobPaymentStatus, UserRole } from "@/types/enums";
+import { notifyNearbyGuards } from "@/lib/jobs/urgentJobNotifier";
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,6 +63,9 @@ export async function POST(request: NextRequest) {
         { uid: payment.bossUid },
         { $inc: { totalSpent: payment.totalChargedToBoss } }
       );
+
+      // Trigger proximity alerts if this is an urgent job
+      await notifyNearbyGuards(payment.jobId);
 
       return createApiResponse(true, { 
         status: "HELD",

@@ -183,6 +183,8 @@ export default function BossJobDetailPage() {
               });
             }}
             bossCommissionRate={platformSettings?.platformCommissionBoss ?? 10}
+            isUrgent={job.isUrgent}
+            urgentFeeAmount={job.urgentFeeAmount}
           />
         )}
 
@@ -208,7 +210,8 @@ export default function BossJobDetailPage() {
               const budget = acceptedBidAmount ?? job.budgetAmount;
               const commissionRate = platformSettings?.platformCommissionBoss ?? 10;
               const commission = Math.round(budget * (commissionRate / 100) * 100) / 100;
-              const total = Math.round((budget + commission) * 100) / 100;
+              const urgentFee = job.urgentFeeAmount || 0;
+              const total = Math.round((budget + commission + urgentFee) * 100) / 100;
               const currency = '$';
               return (
                 <div className="bg-white rounded-lg border border-emerald-100 p-4">
@@ -221,6 +224,12 @@ export default function BossJobDetailPage() {
                       <span className="text-slate-600">Platform Fee ({commissionRate}%)</span>
                       <span className="font-medium text-slate-800">{currency} {commission.toFixed(2)}</span>
                     </div>
+                    {urgentFee > 0 && (
+                      <div className="flex justify-between text-[var(--color-danger)] font-medium">
+                        <span>Urgent Job Fee</span>
+                        <span>{currency} {urgentFee.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="border-t border-slate-100 pt-2 mt-2 flex justify-between">
                       <span className="text-slate-800 font-bold">Total Paid</span>
                       <span className="text-emerald-700 font-extrabold">{currency} {total.toFixed(2)}</span>

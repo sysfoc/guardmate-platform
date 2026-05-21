@@ -101,6 +101,7 @@ export interface BaseUser {
   address: string | null;
   postalCode: string | null;
   timezone: string | null;
+  coordinates: { lat: number; lng: number } | null;
 
   // ── Security & Session Tracking ─────────────────────────────────────────────
   lastLoginAt: string | null;
@@ -293,6 +294,7 @@ export interface BaseProfileUpdatePayload {
   address?: string | null;
   postalCode?: string | null;
   timezone?: string | null;
+  coordinates?: { lat: number; lng: number } | null;
   notificationPreferences?: Partial<NotificationPreferences> | null;
   isOnboardingComplete?: boolean;
   isProfileComplete?: boolean;

@@ -52,6 +52,11 @@ export default function AdminSettingsPage() {
   const [bossSubscriptionEnabled, setBossSubscriptionEnabled] = useState<boolean>(false);
   const [bossSubscriptionAmount, setBossSubscriptionAmount] = useState<number | null>(null);
 
+  // Phase 9: Urgent Job Fee State
+  const [urgentJobFeeType, setUrgentJobFeeType] = useState<'PERCENTAGE' | 'FIXED'>('PERCENTAGE');
+  const [urgentJobFeeValue, setUrgentJobFeeValue] = useState<number>(0);
+  const [urgentJobNotificationRadiusMiles, setUrgentJobNotificationRadiusMiles] = useState<number>(200);
+
   // Phase 9: Admin Management State
   const [adminManagement, setAdminManagement] = useState<AdminManagementData | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -110,6 +115,11 @@ export default function AdminSettingsPage() {
       setBossSubscriptionEnabled(platformData.bossSubscriptionEnabled ?? false);
       setBossSubscriptionAmount(platformData.bossSubscriptionAmount ?? null);
       // bossSubscriptionCurrency is hardcoded to AUD
+
+      // Phase 9: Load Urgent Job Fee Settings
+      setUrgentJobFeeType(platformData.urgentJobFeeType ?? 'PERCENTAGE');
+      setUrgentJobFeeValue(platformData.urgentJobFeeValue ?? 0);
+      setUrgentJobNotificationRadiusMiles(platformData.urgentJobNotificationRadiusMiles ?? 200);
     } catch (err: any) {
       setErrorMsg('Failed to load settings');
     } finally {
@@ -207,6 +217,11 @@ export default function AdminSettingsPage() {
         bossSubscriptionEnabled,
         bossSubscriptionAmount,
         bossSubscriptionCurrency: 'AUD',
+
+        // Phase 9: Urgent Job Fee Settings
+        urgentJobFeeType,
+        urgentJobFeeValue,
+        urgentJobNotificationRadiusMiles,
       };
 
       const updated = await settingsApi.updatePlatformSettings(payload);
@@ -234,6 +249,11 @@ export default function AdminSettingsPage() {
       setBossSubscriptionEnabled(updated.bossSubscriptionEnabled ?? false);
       setBossSubscriptionAmount(updated.bossSubscriptionAmount ?? null);
       // bossSubscriptionCurrency is hardcoded to AUD
+
+      // Phase 9: Sync Urgent Job Fee Settings
+      setUrgentJobFeeType(updated.urgentJobFeeType ?? 'PERCENTAGE');
+      setUrgentJobFeeValue(updated.urgentJobFeeValue ?? 0);
+      setUrgentJobNotificationRadiusMiles(updated.urgentJobNotificationRadiusMiles ?? 200);
 
       await refreshSettings(); // Sync global context
       
@@ -924,6 +944,87 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Phase 9: Urgent / Emergency Hiring Fees */}
+            <div className="space-y-4 pt-6 border-t border-[var(--color-border-primary)]">
+              <h4 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+                Urgent / Emergency Hiring Fees
+              </h4>
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                Configure the surcharge applied when a Boss marks a job as urgent. Nearby guards will be emailed automatically when escrow is funded.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[var(--color-bg-secondary)] p-4 rounded-xl border border-[var(--color-border-primary)]">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-[var(--color-input-label)]">Fee Type</label>
+                  <select
+                    value={urgentJobFeeType}
+                    onChange={(e) => setUrgentJobFeeType(e.target.value as 'PERCENTAGE' | 'FIXED')}
+                    className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  >
+                    <option value="PERCENTAGE">Percentage of Job Budget</option>
+                    <option value="FIXED">Fixed Amount</option>
+                  </select>
+                  <p className="text-xs text-[var(--color-text-muted)]">How the urgent fee is calculated.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-[var(--color-input-label)]">
+                    {urgentJobFeeType === 'PERCENTAGE' ? 'Fee Percentage (%)' : `Fee Amount (${platformCurrency})`}
+                  </label>
+                  <input
+                    type="number"
+                    min="0" step={urgentJobFeeType === 'PERCENTAGE' ? '1' : '0.01'}
+                    value={urgentJobFeeValue}
+                    onChange={(e) => setUrgentJobFeeValue(Number(e.target.value))}
+                    className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    {urgentJobFeeType === 'PERCENTAGE'
+                      ? `e.g. 15% on a $100 job = $15 urgent fee added to escrow.`
+                      : `e.g. $${urgentJobFeeValue} flat fee added to every urgent job escrow.`}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-[var(--color-input-label)]">Notification Radius (miles)</label>
+                  <input
+                    type="number"
+                    min="10" step="10"
+                    value={urgentJobNotificationRadiusMiles}
+                    onChange={(e) => setUrgentJobNotificationRadiusMiles(Number(e.target.value))}
+                    className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                  <p className="text-xs text-[var(--color-text-muted)]">Guards within this radius of the job location will be emailed.</p>
+                </div>
+              </div>
+
+              {/* Live Urgent Fee Preview */}
+              <div className="mt-2 p-4 rounded-xl bg-[var(--color-bg-subtle)] border border-[var(--color-surface-border)]">
+                <h5 className="text-xs font-black text-[var(--color-text-primary)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[var(--color-danger)] animate-pulse" />
+                  Live Preview — {platformCurrency}100 Urgent Job
+                </h5>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="text-center p-3 bg-[var(--color-surface)] rounded-lg border border-[var(--color-surface-border)]">
+                    <p className="text-[9px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Job Budget</p>
+                    <p className="text-lg font-black text-[var(--color-text-primary)]">{platformCurrency}100.00</p>
+                  </div>
+                  <div className="text-center p-3 bg-[var(--color-surface)] rounded-lg border border-[var(--color-danger)]/20">
+                    <p className="text-[9px] font-bold text-[var(--color-danger)] uppercase tracking-wider">Urgent Fee</p>
+                    <p className="text-lg font-black text-[var(--color-text-primary)]">
+                      {platformCurrency}{urgentJobFeeType === 'PERCENTAGE' ? (100 * urgentJobFeeValue / 100).toFixed(2) : urgentJobFeeValue.toFixed(2)}
+                    </p>
+                    <p className="text-[9px] text-[var(--color-text-muted)]">{urgentJobFeeType === 'PERCENTAGE' ? `${urgentJobFeeValue}% of budget` : 'Fixed fee'}</p>
+                  </div>
+                  <div className="text-center p-3 bg-[var(--color-surface)] rounded-lg border border-[var(--color-warning)]/20">
+                    <p className="text-[9px] font-bold text-[var(--color-warning)] uppercase tracking-wider">Boss Pays Extra</p>
+                    <p className="text-lg font-black text-[var(--color-text-primary)]">
+                      {platformCurrency}{(100 + (100 * platformCommissionBoss / 100) + (urgentJobFeeType === 'PERCENTAGE' ? (100 * urgentJobFeeValue / 100) : urgentJobFeeValue)).toFixed(2)}
+                    </p>
+                    <p className="text-[9px] text-[var(--color-text-muted)]">Budget + {platformCommissionBoss}% commission + urgent fee</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end pt-4 border-t border-[var(--color-border-primary)]">

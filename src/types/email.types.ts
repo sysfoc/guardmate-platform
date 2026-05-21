@@ -57,6 +57,9 @@ export enum NotificationEventType {
   SUBSCRIPTION_PAYMENT_FAILED = 'subscriptionPaymentFailed',
   NEW_OFFER_AVAILABLE = 'newOfferAvailable',
 
+  // ─── Phase 9: Urgent Job Notifications ─────────────────────────────
+  URGENT_JOB_NEARBY = 'urgentJobNearby',
+
   // ─── Phase 10: Manual Withdrawal ────────────────────────────────────
   MANUAL_WITHDRAWAL_REQUESTED = 'manualWithdrawalRequested',
 }

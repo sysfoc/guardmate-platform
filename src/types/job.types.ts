@@ -130,6 +130,7 @@ export interface IJob {
 
   // Flags
   isUrgent: boolean;
+  urgentFeeAmount: number;
   isFeatured: boolean;
 
   // Cancellation / Completion

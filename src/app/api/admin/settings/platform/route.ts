@@ -57,6 +57,10 @@ export async function PATCH(request: NextRequest) {
       bossSubscriptionEnabled: body.bossSubscriptionEnabled,
       bossSubscriptionAmount: body.bossSubscriptionAmount,
       bossSubscriptionCurrency: body.bossSubscriptionCurrency,
+      // Phase 9: Urgent Job Fee Settings
+      urgentJobFeeType: body.urgentJobFeeType,
+      urgentJobFeeValue: body.urgentJobFeeValue,
+      urgentJobNotificationRadiusMiles: body.urgentJobNotificationRadiusMiles,
     };
 
     // Handle minimum rate enforcement fields
@@ -173,6 +177,12 @@ export async function PATCH(request: NextRequest) {
     }
     if (priceChangeSummary) {
       detailsParts.push(priceChangeSummary);
+    }
+    if (body.urgentJobFeeType !== undefined || body.urgentJobFeeValue !== undefined) {
+      detailsParts.push(`Urgent Fee: ${body.urgentJobFeeType ?? ''} ${body.urgentJobFeeValue ?? ''}`);
+    }
+    if (body.urgentJobNotificationRadiusMiles !== undefined) {
+      detailsParts.push(`Urgent Notification Radius: ${body.urgentJobNotificationRadiusMiles} miles`);
     }
 
     await AdminActivity.create({
