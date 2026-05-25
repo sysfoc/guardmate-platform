@@ -1,5 +1,5 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
-import { JobStatus, JobType, BudgetType, HiringStatus, JobPaymentStatus } from '@/types/enums';
+import { JobStatus, JobType, BudgetType, HiringStatus, JobPaymentStatus, SubscriptionTier } from '@/types/enums';
 import type { IJob } from '@/types/job.types';
 
 // ─── Document Type ────────────────────────────────────────────────────────────
@@ -113,6 +113,13 @@ const JobSchema = new Schema<JobDocument>({
   cancelReason: { type: String, default: null },
   cancelledAt:  { type: Date, default: null },
   completedAt:  { type: Date, default: null },
+
+  // Subscription Audit
+  planTier: {
+    type: String,
+    enum: [...Object.values(SubscriptionTier), null],
+    default: null,
+  },
 
 }, {
   timestamps: true,

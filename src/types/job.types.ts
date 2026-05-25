@@ -2,7 +2,7 @@
 // GuardMate — Job & Bid Type Definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { JobStatus, BidStatus, JobType, BudgetType, HiringStatus, JobPaymentStatus } from './enums';
+import { JobStatus, BidStatus, JobType, BudgetType, HiringStatus, JobPaymentStatus, SubscriptionTier } from './enums';
 import type { Certification } from './user.types';
 
 // ─── Coordinates ──────────────────────────────────────────────────────────────
@@ -137,6 +137,9 @@ export interface IJob {
   cancelReason: string | null;
   cancelledAt: string | Date | null;
   completedAt: string | Date | null;
+
+  // Subscription Audit
+  planTier: SubscriptionTier | null;
 
   // Timestamps
   createdAt: string | Date;

@@ -215,6 +215,14 @@ export async function POST(request: NextRequest) {
             ? new Date(invoice.lines.data[0].period.end * 1000)
             : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+          // ── Apply scheduled downgrade at cycle boundary ─────────────────
+          if (sub.pendingDowngradeTier) {
+            console.log(`[webhook:invoice.payment_succeeded] ⬇️ Applying pending downgrade: ${sub.planTier} → ${sub.pendingDowngradeTier} for boss ${sub.bossUid}`);
+            sub.planTier = sub.pendingDowngradeTier;
+            sub.pendingDowngradeTier = null;
+            sub.pendingDowngradeAt = null;
+          }
+
           sub.status = SubscriptionStatus.ACTIVE;
           sub.currentPeriodStart = new Date();
           sub.currentPeriodEnd = periodEnd;
@@ -242,10 +250,16 @@ export async function POST(request: NextRequest) {
             console.log('[webhook:invoice.payment_succeeded] 🎟️ No applied offer on this subscription');
           }
 
-          // ─── Calculate next period amount (dynamic pricing + next offer) ──────
+          // ─── Calculate next period amount (plan tier price + offer) ──────────
           try {
             const settings = await PlatformSettings.findOne().lean();
-            const baseAmount = settings?.bossSubscriptionAmount ?? 0;
+            const SubscriptionPlan = (await import('@/models/SubscriptionPlan.model')).default;
+            // Use plan tier price when available, else fall back to flat platform setting
+            let baseAmount = settings?.bossSubscriptionAmount ?? 0;
+            if (sub.planTier) {
+              const plan = await SubscriptionPlan.findOne({ tier: sub.planTier }).lean();
+              if (plan) baseAmount = plan.monthlyPrice;
+            }
             let nextAmount = baseAmount;
             let nextOfferId: string | null = null;
 

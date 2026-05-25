@@ -1,5 +1,5 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
-import { SubscriptionStatus } from '@/types/enums';
+import { SubscriptionStatus, SubscriptionTier } from '@/types/enums';
 import type { IBossSubscription } from '@/types/subscription.types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,6 +52,24 @@ const BossSubscriptionSchema = new Schema<BossSubscriptionDocument>(
     // ─── Offer Tracking ────────────────────────────────────────────────────────
     /** The offer (if any) that will be applied to the upcoming subscription payment */
     appliedOfferId: { type: String, default: null },
+
+    // ─── Plan Tier ───────────────────────────────────────────────────────────
+    /** Which subscription tier this boss is on. */
+    planTier: {
+      type: String,
+      enum: [...Object.values(SubscriptionTier), null],
+      default: null,
+    },
+
+    // ─── Scheduled Downgrade ─────────────────────────────────────────────────
+    /** Tier to switch to at the next billing cycle (downgrade deferred). */
+    pendingDowngradeTier: {
+      type: String,
+      enum: [...Object.values(SubscriptionTier), null],
+      default: null,
+    },
+    /** When the pending downgrade was scheduled. */
+    pendingDowngradeAt: { type: Date, default: null },
   },
   {
     timestamps: true,

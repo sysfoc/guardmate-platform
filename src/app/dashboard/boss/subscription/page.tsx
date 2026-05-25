@@ -8,8 +8,11 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
   CreditCard, ArrowLeft, CheckCircle2, Clock, AlertTriangle,
-  Shield, Calendar, DollarSign, Edit, Tag
+  Shield, Calendar, DollarSign, Edit, Tag, BarChart2,
+  Briefcase, Users, FileText, UserCheck, Check, X as XIcon,
 } from 'lucide-react';
+import type { ISubscriptionPlan } from '@/types/subscriptionPlan.types';
+import { SubscriptionTier } from '@/types/enums';
 import { subscriptionApi } from '@/lib/api/subscription.api';
 import { offerApi } from '@/lib/api/offer.api';
 import { usePlatformContext } from '@/context/PlatformContext';
@@ -127,6 +130,41 @@ function StripeCardForm({
   );
 }
 
+// ─── Plan tier display helpers ───────────────────────────────────────────────
+const TIER_LABEL: Record<SubscriptionTier, string> = {
+  [SubscriptionTier.STARTER]:      'Starter',
+  [SubscriptionTier.PROFESSIONAL]: 'Professional',
+  [SubscriptionTier.ENTERPRISE]:   'Enterprise',
+};
+const TIER_BORDER: Record<SubscriptionTier, string> = {
+  [SubscriptionTier.STARTER]:      'border-[var(--color-surface-border)]',
+  [SubscriptionTier.PROFESSIONAL]: 'border-[var(--color-primary)]',
+  [SubscriptionTier.ENTERPRISE]:   'border-amber-400',
+};
+const TIER_BADGE_BG: Record<SubscriptionTier, string> = {
+  [SubscriptionTier.STARTER]:      'bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)]',
+  [SubscriptionTier.PROFESSIONAL]: 'bg-[var(--color-primary-light)] text-[var(--color-primary)]',
+  [SubscriptionTier.ENTERPRISE]:   'bg-amber-50 text-amber-700 dark:bg-amber-950/30',
+};
+
+function PlanFeatureRow({ label, value, icon }: { label: string; value: boolean | number | string; icon: React.ReactNode }) {
+  const isCheck = typeof value === 'boolean';
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-[var(--color-surface-border)] last:border-0">
+      <span className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
+        <span className="text-[var(--color-text-muted)]">{icon}</span>{label}
+      </span>
+      {isCheck ? (
+        value
+          ? <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          : <XIcon className="h-4 w-4 text-[var(--color-text-muted)]" />
+      ) : (
+        <span className="text-xs font-bold text-[var(--color-text-primary)]">{value}</span>
+      )}
+    </div>
+  );
+}
+
 function SubscriptionContent() {
   const searchParams = useSearchParams();
   const paypalStatus = searchParams.get('paypal');
@@ -138,13 +176,19 @@ function SubscriptionContent() {
   const [cancelling, setCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
-  
+  const [plans, setPlans] = useState<ISubscriptionPlan[]>([]);
+  const [selectedPlanTier, setSelectedPlanTier] = useState<SubscriptionTier | null>(null);
+
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [showStripeForm, setShowStripeForm] = useState(false);
-  
+
   const [savedCard, setSavedCard] = useState<any>(null);
   const [isUpdatingCard, setIsUpdatingCard] = useState(false);
   const [pendingSubscriptionId, setPendingSubscriptionId] = useState<string | null>(null);
+
+  const [showChangePlan, setShowChangePlan] = useState(false);
+  const [changingPlan, setChangingPlan] = useState(false);
+  const [changePlanTarget, setChangePlanTarget] = useState<SubscriptionTier | null>(null);
 
   // Acquired offer state
   const [acquiredOffer, setAcquiredOffer] = useState<IOffer | null>(null);
@@ -159,8 +203,20 @@ function SubscriptionContent() {
   useEffect(() => {
     if (stripeAvailable && !paypalAvailable) setPaymentMethod('stripe');
     else if (!stripeAvailable && paypalAvailable) setPaymentMethod('paypal');
-    // If both are available, keep whatever is already selected (default 'stripe')
   }, [stripeAvailable, paypalAvailable]);
+
+  // Load available plans
+  useEffect(() => {
+    subscriptionApi.getPlans()
+      .then((data) => {
+        setPlans(data);
+        // Pre-select the first plan (typically Starter)
+        if (data.length > 0 && !selectedPlanTier) {
+          setSelectedPlanTier(data[0].tier as SubscriptionTier);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     // Fetch acquired subscription offer (only active AND unconsumed)
@@ -231,23 +287,22 @@ function SubscriptionContent() {
   };
 
   const handleSubscribe = async () => {
-    console.log('[frontend:handleSubscribe] 🚀 Subscribe button clicked. paymentMethod:', paymentMethod);
+    if (!selectedPlanTier) {
+      toast.error('Please select a subscription plan first.');
+      return;
+    }
     try {
       setSubscribing(true);
       if (paymentMethod === 'stripe') {
-        console.log('[frontend:handleSubscribe] 📤 Calling createStripeSubscription API...');
-        const result = await subscriptionApi.createStripeSubscription();
-        console.log('[frontend:handleSubscribe] 📥 API response — subscriptionId:', result.subscriptionId, '| clientSecret present:', !!result.clientSecret, '| amount:', result.amount, '| status requiresPayment:', result.requiresPayment);
+        const result = await subscriptionApi.createStripeSubscription(selectedPlanTier);
         if (!result.clientSecret) {
-          console.error('[frontend:handleSubscribe] ❌ No clientSecret in response. Throwing error.');
           throw new Error('Payment initialization failed – missing client secret. Please contact support.');
         }
-        console.log('[frontend:handleSubscribe] ✅ clientSecret received. Showing Stripe card form.');
         setPendingSubscriptionId(result.subscriptionId);
         setClientSecret(result.clientSecret);
         setShowStripeForm(true);
       } else {
-        const result = await subscriptionApi.createPaypalSubscription();
+        const result = await subscriptionApi.createPaypalSubscription(selectedPlanTier);
         if (result.approvalUrl) {
           window.location.href = result.approvalUrl;
           return;
@@ -288,6 +343,38 @@ function SubscriptionContent() {
     console.log('[frontend:handleStripeSuccess] 🔄 Reloading subscription status...');
     await loadStatus();
     console.log('[frontend:handleStripeSuccess] ✅ Status reload complete.');
+  };
+
+  const handleCancelDowngrade = async () => {
+    try {
+      setChangingPlan(true);
+      const result = await subscriptionApi.cancelPendingDowngrade();
+      toast.success(result.message);
+      await loadStatus();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to cancel downgrade');
+    } finally {
+      setChangingPlan(false);
+    }
+  };
+
+  const handleChangePlan = async (targetTier: SubscriptionTier) => {
+    try {
+      setChangingPlan(true);
+      const result = await subscriptionApi.changePlan(targetTier);
+      if (result.action === 'DOWNGRADE_SCHEDULED') {
+        toast.success(result.message);
+      } else {
+        toast.success(result.message);
+      }
+      setShowChangePlan(false);
+      setChangePlanTarget(null);
+      await loadStatus();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to change plan');
+    } finally {
+      setChangingPlan(false);
+    }
   };
 
   const handleCancel = async () => {
@@ -334,10 +421,8 @@ function SubscriptionContent() {
   const isSubscribed = subStatus?.isSubscribed ?? false;
   const statusLabel = subStatus?.status === 'ACTIVE' ? 'Active' : subStatus?.status === 'CANCELLED' ? 'Cancelled' : subStatus?.status === 'LAPSED' ? 'Lapsed' : 'Not Subscribed';
 
-  // Compute discounted amount for display when not subscribed
-  // subStatus.amount is always fresh (fetched directly from PlatformSettings DB),
-  // whereas platformSettings context may be stale/cached.
-  const baseSubscriptionAmount = subStatus?.amount ?? platformSettings?.bossSubscriptionAmount ?? 0;
+  const selectedPlan = plans.find((p) => p.tier === selectedPlanTier) ?? null;
+  const baseSubscriptionAmount = selectedPlan?.monthlyPrice ?? subStatus?.amount ?? platformSettings?.bossSubscriptionAmount ?? 0;
   let displayedAmount = baseSubscriptionAmount;
   if (!isSubscribed && acquiredOffer && acquiredOffer.discountValue != null) {
     if (acquiredOffer.discountType === 'FULL_WAIVER') {
@@ -382,7 +467,11 @@ function SubscriptionContent() {
               </div>
               <div>
                 <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider">Current Plan</p>
-                <h2 className="text-xl font-black text-[var(--color-text-primary)]">{statusLabel}</h2>
+                <h2 className="text-xl font-black text-[var(--color-text-primary)]">
+                  {isSubscribed && subStatus?.planTier
+                    ? TIER_LABEL[subStatus.planTier as SubscriptionTier] ?? statusLabel
+                    : statusLabel}
+                </h2>
                 {subStatus?.daysRemaining !== null && subStatus?.daysRemaining !== undefined && subStatus.daysRemaining > 0 && (
                   <p className="text-xs text-[var(--color-text-secondary)] mt-0.5 flex items-center gap-1">
                     <Clock className="h-3 w-3" />
@@ -394,12 +483,14 @@ function SubscriptionContent() {
             </div>
             <div className="flex flex-col items-end gap-2">
               <Badge variant={isSubscribed ? (subStatus?.status === 'ACTIVE' ? 'success' : 'info') : 'danger'} className="text-xs px-3 py-1">
-                {statusLabel.toUpperCase()}
+                {isSubscribed && subStatus?.planTier
+                  ? (TIER_LABEL[subStatus.planTier as SubscriptionTier] ?? statusLabel).toUpperCase()
+                  : statusLabel.toUpperCase()}
               </Badge>
               {subStatus?.amount !== undefined && subStatus.amount > 0 && (
                 <div className="text-right">
                   <p className="text-lg font-black text-[var(--color-text-primary)]">
-                    ${subStatus.amount.toFixed(2)} <span className="text-xs font-medium text-[var(--color-text-tertiary)]">/{subStatus.currency}/mo</span>
+                    ${subStatus.amount.toFixed(2)} <span className="text-xs font-medium text-[var(--color-text-tertiary)]">/mo</span>
                   </p>
                   {acquiredOffer && (
                     <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
@@ -410,102 +501,256 @@ function SubscriptionContent() {
               )}
             </div>
           </div>
+
+          {/* Active plan feature summary */}
+          {isSubscribed && subStatus?.planFeatures && (
+            <div className="mt-4 pt-4 border-t border-[var(--color-surface-border)] grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="text-center p-2 rounded-lg bg-[var(--color-bg-subtle)]">
+                <p className="text-lg font-black text-[var(--color-text-primary)]">{subStatus.planFeatures.maxActiveJobs}</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Active Jobs</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[var(--color-bg-subtle)]">
+                <p className="text-lg font-black text-[var(--color-text-primary)]">{subStatus.planFeatures.maxGuardsPerJob}</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Guards/Job</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[var(--color-bg-subtle)]">
+                <p className="text-lg font-black text-[var(--color-text-primary)]">{subStatus.planFeatures.maxDraftJobs}</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Draft Jobs</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[var(--color-bg-subtle)]">
+                {subStatus.planFeatures.analyticsEnabled
+                  ? <CheckCircle2 className="h-5 w-5 text-emerald-500 mx-auto" />
+                  : <XIcon className="h-5 w-5 text-[var(--color-text-muted)] mx-auto" />}
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Analytics</p>
+              </div>
+            </div>
+          )}
         </Card>
 
-        {/* Not Subscribed — Subscribe Section */}
+        {/* Not Subscribed — Plan Selection + Subscribe */}
         {!isSubscribed && (
-          <Card className="p-6 relative overflow-hidden">
-            {subscribing && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--color-bg-primary)]/80 backdrop-blur-sm rounded-xl">
-                <div className="h-8 w-8 border-3 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin mb-3" />
-                <p className="text-sm font-bold text-[var(--color-text-primary)]">Processing Payment...</p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1">Please wait while we set up your subscription</p>
+          <>
+            {/* Plan comparison */}
+            {plans.length > 0 && !showStripeForm && (
+              <div>
+                <h3 className="text-base font-bold text-[var(--color-text-primary)] mb-3">Choose Your Plan</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {plans.map((plan) => {
+                    const tier = plan.tier as SubscriptionTier;
+                    const isSelected = selectedPlanTier === tier;
+                    return (
+                      <button
+                        key={tier}
+                        onClick={() => setSelectedPlanTier(tier)}
+                        className={`text-left p-5 rounded-2xl border-2 transition-all focus:outline-none ${
+                          isSelected
+                            ? `${TIER_BORDER[tier]} shadow-md`
+                            : 'border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${TIER_BADGE_BG[tier]}`}>
+                            {TIER_LABEL[tier]}
+                          </span>
+                          {isSelected && <Check className="h-4 w-4 text-[var(--color-primary)]" />}
+                        </div>
+                        <p className="text-2xl font-black text-[var(--color-text-primary)]">
+                          ${plan.monthlyPrice.toFixed(2)}
+                          <span className="text-xs font-medium text-[var(--color-text-muted)]">/mo</span>
+                        </p>
+                        <div className="mt-3 space-y-0">
+                          <PlanFeatureRow label="Active Jobs" value={plan.maxActiveJobs} icon={<Briefcase className="h-3 w-3" />} />
+                          <PlanFeatureRow label="Guards/Job" value={plan.maxGuardsPerJob} icon={<Users className="h-3 w-3" />} />
+                          <PlanFeatureRow label="Draft Jobs" value={plan.maxDraftJobs} icon={<FileText className="h-3 w-3" />} />
+                          <PlanFeatureRow label="Analytics" value={plan.analyticsEnabled} icon={<BarChart2 className="h-3 w-3" />} />
+                          <PlanFeatureRow label="Full Profiles" value={plan.fullGuardProfileAccess} icon={<UserCheck className="h-3 w-3" />} />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
-            <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">Subscribe to Post Jobs</h3>
-            <p className="text-sm text-[var(--color-text-secondary)] mb-6">
-              A monthly subscription is required to post and manage jobs on GuardMate. Choose your preferred payment method below.
-            </p>
 
-            {!showStripeForm ? (
-              <>
-                {anyPaymentAvailable ? (
-                  <>
-                    <div className={`grid gap-4 mb-6 ${stripeAvailable && paypalAvailable ? 'grid-cols-2' : 'grid-cols-1 max-w-xs mx-auto'}`}>
-                      {stripeAvailable && (
-                        <button
-                          onClick={() => setPaymentMethod('stripe')}
-                          className={`p-4 rounded-xl border-2 transition-all ${
-                            paymentMethod === 'stripe'
-                              ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
-                              : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
-                          }`}
-                        >
-                          <CreditCard className="h-6 w-6 mb-2 text-[var(--color-primary)] mx-auto" />
-                          <p className="text-sm font-bold text-[var(--color-text-primary)] text-center">Card Payment</p>
-                        </button>
-                      )}
-                      {paypalAvailable && (
-                        <button
-                          onClick={() => setPaymentMethod('paypal')}
-                          className={`p-4 rounded-xl border-2 transition-all ${
-                            paymentMethod === 'paypal'
-                              ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
-                              : 'border-[var(--color-border-primary)] hover:border-[var(--color-primary)]/50'
-                          }`}
-                        >
-                          <DollarSign className="h-6 w-6 mb-2 text-blue-600 mx-auto" />
-                          <p className="text-sm font-bold text-[var(--color-text-primary)] text-center">PayPal</p>
-                        </button>
+            {/* Payment section */}
+            <Card className="p-6 relative overflow-hidden">
+              {subscribing && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--color-bg-primary)]/80 backdrop-blur-sm rounded-xl">
+                  <div className="h-8 w-8 border-3 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin mb-3" />
+                  <p className="text-sm font-bold text-[var(--color-text-primary)]">Processing Payment...</p>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-1">Please wait while we set up your subscription</p>
+                </div>
+              )}
+
+              {!showStripeForm ? (
+                <>
+                  {selectedPlan && (
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-[var(--color-text-muted)]">Selected Plan</p>
+                        <p className="text-sm font-bold text-[var(--color-text-primary)]">{TIER_LABEL[selectedPlanTier!]} — ${displayedAmount.toFixed(2)}/mo</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {acquiredOffer && (
+                    <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                      <p className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5" />
+                        Offer Applied: {acquiredOffer.name} ({offerDiscountLabel})
+                      </p>
+                      {displayedAmount !== baseSubscriptionAmount && (
+                        <p className="text-[10px] text-emerald-700 mt-1">
+                          Original: ${baseSubscriptionAmount.toFixed(2)}/mo → <span className="font-bold">${displayedAmount.toFixed(2)}/mo</span>
+                        </p>
                       )}
                     </div>
+                  )}
 
-                    {acquiredOffer && !isSubscribed && (
-                      <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                        <p className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
-                          <Tag className="h-3.5 w-3.5" />
-                          Offer Applied: {acquiredOffer.name} ({offerDiscountLabel})
-                        </p>
-                        {displayedAmount !== baseSubscriptionAmount && (
-                          <p className="text-[10px] text-emerald-700 mt-1">
-                            Original price: ${baseSubscriptionAmount.toFixed(2)}/mo →{' '}
-                            <span className="font-bold">${displayedAmount.toFixed(2)}/mo</span>
-                          </p>
-                        )}
-                      </div>
-                    )}
+                  {anyPaymentAvailable ? (
+                    <>
+                      {stripeAvailable && paypalAvailable && (
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <button onClick={() => setPaymentMethod('stripe')} className={`p-3 rounded-xl border-2 transition-all ${ paymentMethod === 'stripe' ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]' : 'border-[var(--color-surface-border)]'}` }>
+                            <CreditCard className="h-5 w-5 mb-1 text-[var(--color-primary)] mx-auto" />
+                            <p className="text-xs font-bold text-[var(--color-text-primary)] text-center">Card</p>
+                          </button>
+                          <button onClick={() => setPaymentMethod('paypal')} className={`p-3 rounded-xl border-2 transition-all ${ paymentMethod === 'paypal' ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]' : 'border-[var(--color-surface-border)]'}` }>
+                            <DollarSign className="h-5 w-5 mb-1 text-blue-600 mx-auto" />
+                            <p className="text-xs font-bold text-[var(--color-text-primary)] text-center">PayPal</p>
+                          </button>
+                        </div>
+                      )}
+                      <Button
+                        onClick={handleSubscribe}
+                        disabled={subscribing || !selectedPlanTier}
+                        className="w-full h-12 text-base font-bold shadow-lg shadow-[var(--color-primary)]/20"
+                      >
+                        {subscribing ? 'Processing...' : `Subscribe for $${displayedAmount.toFixed(2)}/month`}
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-center">
+                      <AlertTriangle className="h-6 w-6 text-amber-600 mx-auto mb-2" />
+                      <p className="text-sm font-bold text-amber-800">Payment Methods Not Configured</p>
+                      <p className="text-xs text-amber-700 mt-1">No payment providers are currently available. Please contact support.</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div>
+                  <h4 className="font-medium text-sm mb-3">Enter Card Details</h4>
+                  {platformSettings?.stripePublishableKey && (
+                    <Elements stripe={getStripe(platformSettings.stripePublishableKey)} options={{ clientSecret: clientSecret! }}>
+                      <StripeCardForm
+                        clientSecret={clientSecret!}
+                        onSuccess={handleStripeSuccess}
+                        onCancel={() => { setShowStripeForm(false); setClientSecret(null); setPendingSubscriptionId(null); }}
+                        buttonText={`Pay $${displayedAmount.toFixed(2)}`}
+                      />
+                    </Elements>
+                  )}
+                </div>
+              )}
+            </Card>
+          </>
+        )}
 
-                    <Button
-                      onClick={handleSubscribe}
-                      disabled={subscribing}
-                      className="w-full h-12 text-base font-bold shadow-lg shadow-[var(--color-primary)]/20"
+        {/* Active Subscription — Change Plan */}
+        {isSubscribed && subStatus?.status === 'ACTIVE' && plans.length > 0 && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Change Plan</h3>
+              <button
+                onClick={() => setShowChangePlan((v) => !v)}
+                className="text-xs text-[var(--color-primary)] hover:underline font-medium"
+              >
+                {showChangePlan ? 'Hide' : 'View plans'}
+              </button>
+            </div>
+
+            {subStatus.pendingDowngradeTier && (
+              <div className="mb-4 p-3 rounded-xl border border-amber-200 bg-amber-50 flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-xs text-amber-800">
+                    Downgrade to <span className="font-bold">{TIER_LABEL[subStatus.pendingDowngradeTier as SubscriptionTier]}</span> scheduled — takes effect at your next billing cycle.
+                  </p>
+                </div>
+                <button
+                  onClick={handleCancelDowngrade}
+                  disabled={changingPlan}
+                  className="text-[10px] font-bold text-amber-700 hover:underline shrink-0"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {showChangePlan && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {plans.map((plan) => {
+                  const tier = plan.tier as SubscriptionTier;
+                  const isCurrent = subStatus?.planTier === tier;
+                  const isPending = subStatus?.pendingDowngradeTier === tier;
+                  const isMoreExpensive = plan.monthlyPrice > (subStatus?.amount ?? 0);
+                  const isConfirming = changePlanTarget === tier;
+                  return (
+                    <div
+                      key={tier}
+                      className={`p-4 rounded-2xl border-2 ${
+                        isCurrent
+                          ? `${TIER_BORDER[tier]} bg-[var(--color-bg-subtle)]`
+                          : 'border-[var(--color-surface-border)]'
+                      }`}
                     >
-                      {subscribing ? 'Processing...' : `Subscribe for $${displayedAmount.toFixed(2)}/month`}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-center">
-                    <AlertTriangle className="h-6 w-6 text-amber-600 mx-auto mb-2" />
-                    <p className="text-sm font-bold text-amber-800">Payment Methods Not Configured</p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      No payment providers are currently available. Please contact support.
-                    </p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="mt-4">
-                <h4 className="font-medium text-sm mb-3">Enter Card Details</h4>
-                {platformSettings?.stripePublishableKey && (
-                  <Elements stripe={getStripe(platformSettings.stripePublishableKey)} options={{ clientSecret: clientSecret! }}>
-                    <StripeCardForm 
-                      clientSecret={clientSecret!} 
-                      onSuccess={handleStripeSuccess} 
-                      onCancel={() => { setShowStripeForm(false); setClientSecret(null); setPendingSubscriptionId(null); }}
-                      buttonText={`Pay $${displayedAmount.toFixed(2)}`}
-                    />
-                  </Elements>
-                )}
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${TIER_BADGE_BG[tier]}`}>
+                          {TIER_LABEL[tier]}
+                        </span>
+                        {isCurrent && <span className="text-[10px] font-bold text-emerald-600">Current</span>}
+                        {isPending && <span className="text-[10px] font-bold text-amber-600">Pending</span>}
+                      </div>
+                      <p className="text-xl font-black text-[var(--color-text-primary)] mb-3">
+                        ${plan.monthlyPrice.toFixed(2)}<span className="text-xs font-medium text-[var(--color-text-muted)]">/mo</span>
+                      </p>
+                      <PlanFeatureRow label="Active Jobs" value={plan.maxActiveJobs} icon={<Briefcase className="h-3 w-3" />} />
+                      <PlanFeatureRow label="Guards/Job" value={plan.maxGuardsPerJob} icon={<Users className="h-3 w-3" />} />
+                      <PlanFeatureRow label="Draft Jobs" value={plan.maxDraftJobs} icon={<FileText className="h-3 w-3" />} />
+                      {!isCurrent && (
+                        <div className="mt-3">
+                          {!isConfirming ? (
+                            <Button
+                              size="sm"
+                              variant={isMoreExpensive ? 'primary' : 'outline'}
+                              className="w-full"
+                              onClick={() => setChangePlanTarget(tier)}
+                              disabled={changingPlan}
+                            >
+                              {isMoreExpensive ? 'Upgrade' : 'Downgrade'}
+                            </Button>
+                          ) : (
+                            <div className="space-y-2">
+                              <p className="text-[10px] text-[var(--color-text-secondary)]">
+                                {isMoreExpensive
+                                  ? 'Upgrade now — prorated charge applied.'
+                                  : 'Downgrade at next billing cycle.'}
+                              </p>
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="danger" className="flex-1" onClick={() => handleChangePlan(tier)} disabled={changingPlan}>
+                                  {changingPlan ? '...' : 'Confirm'}
+                                </Button>
+                                <Button size="sm" variant="ghost" className="flex-1" onClick={() => setChangePlanTarget(null)} disabled={changingPlan}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </Card>
@@ -592,73 +837,16 @@ function SubscriptionContent() {
           </Card>
         )}
 
-        {/* Cancelled / Lapsed — Resubscribe */}
-        {(subStatus?.status === 'CANCELLED' || subStatus?.status === 'LAPSED') && (
-          <Card className="p-6 text-center relative overflow-hidden">
-            {subscribing && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--color-bg-primary)]/80 backdrop-blur-sm rounded-xl">
-                <div className="h-8 w-8 border-3 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin mb-3" />
-                <p className="text-sm font-bold text-[var(--color-text-primary)]">Processing Payment...</p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1">Please wait while we set up your subscription</p>
-              </div>
-            )}
-            <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">
-              {subStatus.status === 'CANCELLED' ? 'Subscription Cancelled' : 'Subscription Inactive'}
-            </h3>
-            <p className="text-sm text-[var(--color-text-secondary)] max-w-md mx-auto mb-6">
-              Resubscribe now to continue posting jobs and managing your security workforce on GuardMate.
+        {/* Cancelled / Lapsed — notice banner (plan selection shown above via !isSubscribed) */}
+        {(subStatus?.status === 'CANCELLED' || subStatus?.status === 'LAPSED') && !isSubscribed && (
+          <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+            <p className="text-sm text-amber-800">
+              {subStatus.status === 'CANCELLED'
+                ? 'Your subscription has been cancelled. Select a plan above to resubscribe.'
+                : 'Your subscription is inactive. Select a plan above to reactivate your account.'}
             </p>
-            {!showStripeForm ? (
-              <>
-                {anyPaymentAvailable ? (
-                  <>
-                    {stripeAvailable && paypalAvailable && (
-                      <div className="flex justify-center gap-4 mb-4">
-                        <button
-                          onClick={() => setPaymentMethod('stripe')}
-                          className={`px-4 py-2 rounded-lg border-2 text-sm font-bold ${paymentMethod === 'stripe' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-slate-500'}`}
-                        >Card</button>
-                        <button
-                          onClick={() => setPaymentMethod('paypal')}
-                          className={`px-4 py-2 rounded-lg border-2 text-sm font-bold ${paymentMethod === 'paypal' ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-slate-500'}`}
-                        >PayPal</button>
-                      </div>
-                    )}
-                    <Button
-                      onClick={handleSubscribe}
-                      disabled={subscribing}
-                      className="px-8 h-11 font-bold shadow-lg shadow-[var(--color-primary)]/20"
-                    >
-                      {subscribing ? 'Processing...' : `Resubscribe for $${(subStatus?.amount ?? 0).toFixed(2)}/month`}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-center">
-                    <AlertTriangle className="h-6 w-6 text-amber-600 mx-auto mb-2" />
-                    <p className="text-sm font-bold text-amber-800">Payment Methods Not Configured</p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      No payment providers are currently available. Please contact support.
-                    </p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="mt-4 text-left">
-                <h4 className="font-medium text-sm mb-3">Enter Card Details</h4>
-                {platformSettings?.stripePublishableKey && (
-                  <Elements stripe={getStripe(platformSettings.stripePublishableKey)} options={{ clientSecret: clientSecret! }}>
-                    <StripeCardForm 
-                      clientSecret={clientSecret!} 
-                      onSuccess={handleStripeSuccess} 
-                      onCancel={() => { setShowStripeForm(false); setClientSecret(null); setPendingSubscriptionId(null); }}
-                      buttonText={`Pay $${displayedAmount.toFixed(2)}`}
-                    />
-                  </Elements>
-                )}
-              </div>
-            )}
-          </Card>
+          </div>
         )}
       </div>
     </div>

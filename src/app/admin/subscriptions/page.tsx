@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/StatCard';
-import { CreditCard, Users, TrendingUp, AlertTriangle, Search, X, Filter } from 'lucide-react';
+import { CreditCard, Users, TrendingUp, AlertTriangle, Search, X, Filter, Settings } from 'lucide-react';
+import Link from 'next/link';
 import { apiGet } from '@/lib/apiClient';
 import { SubscriptionStatus } from '@/types/enums';
 import toast from 'react-hot-toast';
@@ -101,6 +102,13 @@ export default function AdminSubscriptionsPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/admin/subscriptions/plans"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--color-primary)] text-[var(--color-primary)] text-sm font-semibold hover:bg-[var(--color-primary-light)] transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+            Manage Plans
+          </Link>
           <div className="flex items-center gap-2 bg-[var(--color-surface)] px-3 py-2 rounded-xl border border-[var(--color-surface-border)] shadow-sm">
             <Filter className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
             <select

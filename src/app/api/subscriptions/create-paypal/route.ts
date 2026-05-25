@@ -5,7 +5,9 @@ import BossSubscription from '@/models/BossSubscription.model';
 import UserOffer from '@/models/UserOffer.model';
 import Offer from '@/models/Offer.model';
 import { verifyFirebaseToken } from '@/lib/firebase/firebaseAdmin';
-import { SubscriptionStatus, DiscountType, UserRole } from '@/types/enums';
+import { SubscriptionStatus, DiscountType, UserRole, SubscriptionTier } from '@/types/enums';
+import SubscriptionPlan from '@/models/SubscriptionPlan.model';
+import { seedSubscriptionPlans } from '@/lib/subscriptions/planEnforcement';
 import { getPayPalAccessToken, getPayPalConfig } from '@/lib/payments/paypalClient';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -45,9 +47,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'PayPal is not configured.' }, { status: 400 });
     }
 
-    let amount = settings.bossSubscriptionAmount;
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: 'Subscription amount not configured.' }, { status: 400 });
+    // ── Resolve plan tier and price ────────────────────────────────────────
+    const body = await request.json().catch(() => ({}));
+    const planTier: SubscriptionTier | null = Object.values(SubscriptionTier).includes(body.planTier)
+      ? body.planTier
+      : null;
+
+    await seedSubscriptionPlans();
+    let amount: number;
+
+    if (planTier) {
+      const plan = await SubscriptionPlan.findOne({ tier: planTier, isEnabled: true }).lean();
+      if (!plan) {
+        return NextResponse.json({ error: 'Selected subscription plan is not available.' }, { status: 400 });
+      }
+      amount = plan.monthlyPrice;
+    } else {
+      amount = settings.bossSubscriptionAmount ?? 0;
+      if (amount <= 0) {
+        return NextResponse.json({ error: 'Subscription amount not configured.' }, { status: 400 });
+      }
     }
 
     // ── Apply acquired subscription discount offer ────────────────────────────
@@ -83,6 +102,7 @@ export async function POST(request: NextRequest) {
 
     // ── Check existing active subscription ─────────────────────────────────
     const existing = await BossSubscription.findOne({
+      bossUid,
       status: SubscriptionStatus.ACTIVE,
     });
     if (existing) {
@@ -203,6 +223,7 @@ export async function POST(request: NextRequest) {
       failedPaymentAt: null,
       failureReason: null,
       appliedOfferId: appliedOffer?.offerId ?? null,
+      ...(planTier ? { planTier } : {}),
     };
 
     if (sub) {

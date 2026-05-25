@@ -3,14 +3,40 @@
 // Phase 8: Commission, Subscription & Offers System
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { apiGet, apiPost } from '@/lib/apiClient';
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/apiClient';
 import type { ISubscriptionStatus } from '@/types/subscription.types';
+import type { ISubscriptionPlan } from '@/types/subscriptionPlan.types';
+import type { SubscriptionTier } from '@/types/enums';
 
 export const subscriptionApi = {
   /**
+   * Get all enabled subscription plans available for the boss to choose from.
+   */
+  async getPlans(): Promise<ISubscriptionPlan[]> {
+    const res = await apiGet<ISubscriptionPlan[]>('/api/subscriptions/plans');
+    return res.data;
+  },
+
+  /**
+   * Admin: Get all subscription plans (including disabled).
+   */
+  async adminGetPlans(): Promise<ISubscriptionPlan[]> {
+    const res = await apiGet<ISubscriptionPlan[]>('/api/admin/subscriptions/plans');
+    return res.data;
+  },
+
+  /**
+   * Admin: Update a subscription plan tier configuration.
+   */
+  async adminUpdatePlan(tier: SubscriptionTier, updates: Partial<ISubscriptionPlan>): Promise<ISubscriptionPlan> {
+    const res = await apiPatch<ISubscriptionPlan>('/api/admin/subscriptions/plans', { tier, ...updates });
+    return res.data;
+  },
+
+  /**
    * Create a Stripe PaymentIntent for Boss subscription.
    */
-  async createStripeSubscription(): Promise<{
+  async createStripeSubscription(planTier?: SubscriptionTier): Promise<{
     subscriptionId: string;
     clientSecret: string | null;
     amount: number;
@@ -30,7 +56,7 @@ export const subscriptionApi = {
       currency: string;
       periodEnd: string;
       requiresPayment: boolean;
-    }>('/api/subscriptions/create-stripe', {});
+    }>('/api/subscriptions/create-stripe', planTier ? { planTier } : {});
     console.log('[api:subscription] 📥 createStripeSubscription response — success:', res.success, '| data keys:', Object.keys(res.data || {}));
     return res.data;
   },
@@ -38,7 +64,7 @@ export const subscriptionApi = {
   /**
    * Create a PayPal subscription for Boss.
    */
-  async createPaypalSubscription(): Promise<{
+  async createPaypalSubscription(planTier?: SubscriptionTier): Promise<{
     subscriptionId: string;
     approvalUrl: string;
     amount: number;
@@ -55,7 +81,7 @@ export const subscriptionApi = {
       appliedOffer: { offerId: string; offerName: string; originalAmount: number; discountedAmount: number } | null;
       currency: string;
       periodEnd: string;
-    }>('/api/subscriptions/create-paypal', {});
+    }>('/api/subscriptions/create-paypal', planTier ? { planTier } : {});
     return res.data;
   },
 
@@ -117,6 +143,35 @@ export const subscriptionApi = {
    */
   async updatePaymentMethod(paymentMethodId: string): Promise<any> {
     const res = await apiPost<any>('/api/subscriptions/payment-method', { paymentMethodId });
+    return res.data;
+  },
+
+  /**
+   * Cancel a previously scheduled downgrade, keeping the current plan.
+   */
+  async cancelPendingDowngrade(): Promise<{ message: string }> {
+    const res = await apiDelete<{ message: string }>('/api/subscriptions/change-plan');
+    return res.data;
+  },
+
+  /**
+   * Change the active subscription plan (upgrade immediately with proration,
+   * or schedule a downgrade for the next billing cycle).
+   */
+  async changePlan(planTier: SubscriptionTier): Promise<{
+    action: 'UPGRADED' | 'DOWNGRADE_SCHEDULED' | 'PLAN_UPDATED';
+    newTier: SubscriptionTier;
+    amount?: number;
+    effectiveAt?: string;
+    message: string;
+  }> {
+    const res = await apiPost<{
+      action: 'UPGRADED' | 'DOWNGRADE_SCHEDULED' | 'PLAN_UPDATED';
+      newTier: SubscriptionTier;
+      amount?: number;
+      effectiveAt?: string;
+      message: string;
+    }>('/api/subscriptions/change-plan', { planTier });
     return res.data;
   },
 };

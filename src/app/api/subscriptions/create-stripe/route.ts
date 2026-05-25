@@ -6,7 +6,9 @@ import BossSubscription from '@/models/BossSubscription.model';
 import UserOffer from '@/models/UserOffer.model';
 import Offer from '@/models/Offer.model';
 import { verifyFirebaseToken } from '@/lib/firebase/firebaseAdmin';
-import { SubscriptionStatus, DiscountType, UserRole } from '@/types/enums';
+import { SubscriptionStatus, DiscountType, UserRole, SubscriptionTier } from '@/types/enums';
+import SubscriptionPlan from '@/models/SubscriptionPlan.model';
+import { seedSubscriptionPlans } from '@/lib/subscriptions/planEnforcement';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/subscriptions/create-stripe
@@ -47,9 +49,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Stripe is not configured.' }, { status: 400 });
     }
 
-    let amount = settings.bossSubscriptionAmount;
-    console.log('[create-stripe] ⚙️ Platform settings loaded. Raw amount:', amount, '| stripeEnabled:', settings.stripeEnabled, '| stripeSecretKey present:', !!settings.stripeSecretKey);
-    if (!amount || amount <= 0) {
+    // ── Resolve plan tier and price ────────────────────────────────────────
+    const body = await request.json().catch(() => ({}));
+    const planTier: SubscriptionTier | null = Object.values(SubscriptionTier).includes(body.planTier)
+      ? body.planTier
+      : null;
+
+    await seedSubscriptionPlans();
+    let amount: number | null = null;
+
+    if (planTier) {
+      const plan = await SubscriptionPlan.findOne({ tier: planTier, isEnabled: true }).lean();
+      if (!plan) {
+        return NextResponse.json({ error: 'Selected subscription plan is not available.' }, { status: 400 });
+      }
+      amount = plan.monthlyPrice;
+    } else {
+      amount = settings.bossSubscriptionAmount;
+    }
+
+    console.log('[create-stripe] ⚙️ Plan tier:', planTier, '| Raw amount:', amount, '| stripeEnabled:', settings.stripeEnabled, '| stripeSecretKey present:', !!settings.stripeSecretKey);
+    if (amount == null || amount < 0) {
       return NextResponse.json({ error: 'Subscription amount not configured.' }, { status: 400 });
     }
 
@@ -241,6 +261,7 @@ export async function POST(request: NextRequest) {
       failedPaymentAt: null,
       failureReason: null,
       appliedOfferId: appliedOffer?.offerId ?? null,
+      ...(planTier ? { planTier } : {}),
     };
 
     if (sub) {

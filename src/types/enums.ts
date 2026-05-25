@@ -186,6 +186,12 @@ export enum SubscriptionStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum SubscriptionTier {
+  STARTER      = 'STARTER',
+  PROFESSIONAL = 'PROFESSIONAL',
+  ENTERPRISE   = 'ENTERPRISE',
+}
+
 export enum OfferType {
   SUBSCRIPTION_DISCOUNT = 'SUBSCRIPTION_DISCOUNT',
 }

@@ -18,6 +18,7 @@ import type { ShiftScheduleDay } from '@/types/job.types';
 import { processAutoReleases } from '@/lib/disputes/autoRelease';
 import BossSubscription from '@/models/BossSubscription.model';
 import { checkSubscriptionExpiries } from '@/lib/subscriptions/subscriptionChecker';
+import { checkJobPostingAllowed } from '@/lib/subscriptions/planEnforcement';
 
 /**
  * POST /api/jobs
@@ -117,8 +118,10 @@ export async function POST(request: NextRequest) {
     // ─── END MINIMUM RATE ENFORCEMENT ─────────────────────────────────────────
 
     // ─── SUBSCRIPTION ENFORCEMENT ────────────────────────────────────────────
+    let jobPlanTier: string | null = null;
     if (platformSettings?.bossSubscriptionEnabled) {
       const subscription = await BossSubscription.findOne({ bossUid: user.uid });
+      jobPlanTier = subscription?.planTier ?? null;
       const now = new Date();
       let isSubscribed = false;
 
@@ -141,6 +144,17 @@ export async function POST(request: NextRequest) {
           subscriptionAmount: platformSettings.bossSubscriptionAmount,
           currency: platformSettings.bossSubscriptionCurrency || currency,
         }, 'A monthly subscription is required to post jobs. Please subscribe to continue.', 400);
+      }
+
+      // ── Plan-level limits (only enforced when subscribed) ────────────────
+      const isDraft = body.status === JobStatus.DRAFT;
+      const numGuards = body.numberOfGuardsNeeded || 1;
+      const planCheck = await checkJobPostingAllowed(user.uid, numGuards, isDraft);
+      if (!planCheck.allowed) {
+        return createApiResponse(false, {
+          code: planCheck.code,
+          message: planCheck.message,
+        }, planCheck.message, 400);
       }
     }
     // ─── END SUBSCRIPTION ENFORCEMENT ────────────────────────────────────────
@@ -252,6 +266,7 @@ export async function POST(request: NextRequest) {
       isUrgent: body.isUrgent || false,
       urgentFeeAmount,
       paymentStatus: JobPaymentStatus.UNPAID,
+      planTier: jobPlanTier,
     });
 
     // Update boss stats
