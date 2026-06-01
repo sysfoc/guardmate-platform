@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import {
   Settings, Save, ToggleLeft, ToggleRight, ArrowLeft,
   Briefcase, Users, Bot, BarChart2, FileText, UserCheck,
-  DollarSign,
+  DollarSign, Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { subscriptionApi } from '@/lib/api/subscription.api';
@@ -208,7 +208,25 @@ export default function AdminSubscriptionPlansPage() {
                   enabled={plan.fullGuardProfileAccess}
                   onChange={(v) => updateField(plan.tier, 'fullGuardProfileAccess', v)}
                 />
+                <FeatureToggle
+                  icon={<Zap className="h-3.5 w-3.5" />}
+                  label="Job Boost Included"
+                  enabled={plan.boostJobsEnabled ?? false}
+                  onChange={(v) => updateField(plan.tier, 'boostJobsEnabled', v)}
+                />
               </div>
+
+              {/* Max Boosted Jobs */}
+              {(plan.boostJobsEnabled) && (
+                <div>
+                  <label className={labelCls}>
+                    <span className="flex items-center gap-1"><Zap className="h-3 w-3" /> Max Boosted Jobs</span>
+                  </label>
+                  <input type="number" min={0} step={1} value={plan.maxBoostedJobs ?? 0}
+                    onChange={(e) => updateField(plan.tier, 'maxBoostedJobs', Number(e.target.value))}
+                    className={inputCls} />
+                </div>
+              )}
             </div>
 
             {/* Save Button */}

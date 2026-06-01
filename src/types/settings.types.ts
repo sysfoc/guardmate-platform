@@ -48,6 +48,11 @@ export interface IPlatformSettings {
   urgentJobFeeValue: number;
   urgentJobNotificationRadiusMiles: number;
 
+  // ─── Mate Profile Boost Settings ─────────────────────────────────────────
+  mateBoostEnabled: boolean;
+  mateBoostFee: number;
+  mateBoostDurationDays: number;
+
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

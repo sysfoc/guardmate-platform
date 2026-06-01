@@ -132,6 +132,7 @@ export interface IJob {
   isUrgent: boolean;
   urgentFeeAmount: number;
   isFeatured: boolean;
+  featuredUntil: Date | string | null;
 
   // Cancellation / Completion
   cancelReason: string | null;

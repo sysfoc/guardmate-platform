@@ -58,7 +58,7 @@ export async function PATCH(request: NextRequest) {
     const allowedFields = [
       'isEnabled', 'monthlyPrice', 'maxActiveJobs', 'maxGuardsPerJob',
       'aiGuardMatchingEnabled', 'analyticsEnabled', 'maxDraftJobs',
-      'fullGuardProfileAccess',
+      'fullGuardProfileAccess', 'boostJobsEnabled', 'maxBoostedJobs',
     ];
     for (const key of allowedFields) {
       if (key in updates) allowed[key] = updates[key];
@@ -80,6 +80,9 @@ export async function PATCH(request: NextRequest) {
     }
     if (allowed.maxDraftJobs !== undefined && (typeof allowed.maxDraftJobs !== 'number' || (allowed.maxDraftJobs as number) < 0)) {
       return createApiResponse(false, null, 'maxDraftJobs must be a non-negative number.', 400);
+    }
+    if (allowed.maxBoostedJobs !== undefined && (typeof allowed.maxBoostedJobs !== 'number' || (allowed.maxBoostedJobs as number) < 0)) {
+      return createApiResponse(false, null, 'maxBoostedJobs must be a non-negative number.', 400);
     }
 
     const updated = await SubscriptionPlan.findOneAndUpdate(

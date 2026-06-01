@@ -29,6 +29,8 @@ const SubscriptionPlanSchema = new Schema<SubscriptionPlanDocument>(
     analyticsEnabled:        { type: Boolean, default: false },
     maxDraftJobs:            { type: Number, default: 3, min: 0 },
     fullGuardProfileAccess:  { type: Boolean, default: false },
+    boostJobsEnabled:        { type: Boolean, default: false },
+    maxBoostedJobs:          { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );
@@ -45,6 +47,8 @@ export const DEFAULT_PLANS: Omit<ISubscriptionPlan, '_id' | 'createdAt' | 'updat
     analyticsEnabled: false,
     maxDraftJobs: 3,
     fullGuardProfileAccess: false,
+    boostJobsEnabled: false,
+    maxBoostedJobs: 0,
   },
   {
     tier: SubscriptionTier.PROFESSIONAL,
@@ -56,6 +60,8 @@ export const DEFAULT_PLANS: Omit<ISubscriptionPlan, '_id' | 'createdAt' | 'updat
     analyticsEnabled: true,
     maxDraftJobs: 10,
     fullGuardProfileAccess: true,
+    boostJobsEnabled: true,
+    maxBoostedJobs: 3,
   },
   {
     tier: SubscriptionTier.ENTERPRISE,
@@ -67,6 +73,8 @@ export const DEFAULT_PLANS: Omit<ISubscriptionPlan, '_id' | 'createdAt' | 'updat
     analyticsEnabled: true,
     maxDraftJobs: 15,
     fullGuardProfileAccess: true,
+    boostJobsEnabled: true,
+    maxBoostedJobs: 10,
   },
 ];
 

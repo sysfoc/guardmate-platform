@@ -96,6 +96,11 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
   urgentJobFeeType: { type: String, enum: ['PERCENTAGE', 'FIXED'], default: 'PERCENTAGE' },
   urgentJobFeeValue: { type: Number, default: 0, min: 0 },
   urgentJobNotificationRadiusMiles: { type: Number, default: 200, min: 10 },
+
+  // ─── Mate Profile Boost Settings ──────────────────────────────────
+  mateBoostEnabled:      { type: Boolean, default: false },
+  mateBoostFee:          { type: Number, default: 9.99, min: 0 },
+  mateBoostDurationDays: { type: Number, default: 7, min: 1 },
 }, {
   timestamps: true,
 });

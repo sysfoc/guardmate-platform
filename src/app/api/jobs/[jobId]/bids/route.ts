@@ -210,8 +210,11 @@ export async function GET(
           guardSkills: '$guardDetails.skills',
           guardCertifications: '$guardDetails.certifications',
           guardReliabilityScore: '$guardDetails.reliabilityScore',
+          guardIsFeatured: { $ifNull: ['$guardDetails.isFeatured', false] },
+          guardFeaturedUntil: '$guardDetails.featuredUntil',
         }
       },
+      { $sort: { guardIsFeatured: -1, createdAt: -1 } },
       {
         $project: {
           guardDetails: 0

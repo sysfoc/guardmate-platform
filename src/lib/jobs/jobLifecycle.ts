@@ -40,6 +40,32 @@ export async function processJobLifecycle(): Promise<void> {
     await connectDB();
     const now = new Date();
 
+    // ── 0. Expire stale boosts (jobs + mate profiles) ─────────────────────
+    try {
+      const boostExpireResult = await Job.updateMany(
+        { isFeatured: true, featuredUntil: { $lt: now } },
+        { $set: { isFeatured: false, featuredUntil: null } }
+      );
+      if (isDev && boostExpireResult.modifiedCount > 0) {
+        console.log(`[Lifecycle] Boost expired: ${boostExpireResult.modifiedCount} job(s) un-featured`);
+      }
+    } catch (err) {
+      if (isDev) console.error('[Lifecycle] Job boost expiry error:', err);
+    }
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mateBoostExpireResult = await (User as any).updateMany(
+        { isFeatured: true, featuredUntil: { $lt: now } },
+        { $set: { isFeatured: false, featuredUntil: null } }
+      );
+      if (isDev && mateBoostExpireResult.modifiedCount > 0) {
+        console.log(`[Lifecycle] Boost expired: ${mateBoostExpireResult.modifiedCount} mate profile(s) un-featured`);
+      }
+    } catch (err) {
+      if (isDev) console.error('[Lifecycle] Mate boost expiry error:', err);
+    }
+
     // ── 1. OPEN → EXPIRED ─────────────────────────────────────────────────
     // Jobs whose applicationDeadline has passed and have no ACCEPTED bid.
     try {

@@ -61,6 +61,10 @@ export async function PATCH(request: NextRequest) {
       urgentJobFeeType: body.urgentJobFeeType,
       urgentJobFeeValue: body.urgentJobFeeValue,
       urgentJobNotificationRadiusMiles: body.urgentJobNotificationRadiusMiles,
+      // Mate Profile Boost Settings
+      mateBoostEnabled: body.mateBoostEnabled,
+      mateBoostFee: body.mateBoostFee,
+      mateBoostDurationDays: body.mateBoostDurationDays,
     };
 
     // Handle minimum rate enforcement fields
@@ -183,6 +187,15 @@ export async function PATCH(request: NextRequest) {
     }
     if (body.urgentJobNotificationRadiusMiles !== undefined) {
       detailsParts.push(`Urgent Notification Radius: ${body.urgentJobNotificationRadiusMiles} miles`);
+    }
+    if (body.mateBoostEnabled !== undefined) {
+      detailsParts.push(`Mate Boost: ${body.mateBoostEnabled ? 'Enabled' : 'Disabled'}`);
+    }
+    if (body.mateBoostFee !== undefined) {
+      detailsParts.push(`Mate Boost Fee: ${body.mateBoostFee}`);
+    }
+    if (body.mateBoostDurationDays !== undefined) {
+      detailsParts.push(`Mate Boost Duration: ${body.mateBoostDurationDays} days`);
     }
 
     await AdminActivity.create({

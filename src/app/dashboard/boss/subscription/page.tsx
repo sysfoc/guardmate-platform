@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import {
   CreditCard, ArrowLeft, CheckCircle2, Clock, AlertTriangle,
   Shield, Calendar, DollarSign, Edit, Tag, BarChart2,
-  Briefcase, Users, FileText, UserCheck, Check, X as XIcon,
+  Briefcase, Users, FileText, UserCheck, Check, X as XIcon, Zap,
 } from 'lucide-react';
 import type { ISubscriptionPlan } from '@/types/subscriptionPlan.types';
 import { SubscriptionTier } from '@/types/enums';
@@ -504,7 +504,7 @@ function SubscriptionContent() {
 
           {/* Active plan feature summary */}
           {isSubscribed && subStatus?.planFeatures && (
-            <div className="mt-4 pt-4 border-t border-[var(--color-surface-border)] grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="mt-4 pt-4 border-t border-[var(--color-surface-border)] grid grid-cols-3 sm:grid-cols-5 gap-3">
               <div className="text-center p-2 rounded-lg bg-[var(--color-bg-subtle)]">
                 <p className="text-lg font-black text-[var(--color-text-primary)]">{subStatus.planFeatures.maxActiveJobs}</p>
                 <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Active Jobs</p>
@@ -522,6 +522,12 @@ function SubscriptionContent() {
                   ? <CheckCircle2 className="h-5 w-5 text-emerald-500 mx-auto" />
                   : <XIcon className="h-5 w-5 text-[var(--color-text-muted)] mx-auto" />}
                 <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Analytics</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[var(--color-bg-subtle)]">
+                {subStatus.planFeatures.boostJobsEnabled
+                  ? <p className="text-lg font-black text-[var(--color-text-primary)]">{subStatus.planFeatures.maxBoostedJobs}</p>
+                  : <XIcon className="h-5 w-5 text-[var(--color-text-muted)] mx-auto" />}
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Boosted Jobs</p>
               </div>
             </div>
           )}
@@ -564,6 +570,7 @@ function SubscriptionContent() {
                           <PlanFeatureRow label="Draft Jobs" value={plan.maxDraftJobs} icon={<FileText className="h-3 w-3" />} />
                           <PlanFeatureRow label="Analytics" value={plan.analyticsEnabled} icon={<BarChart2 className="h-3 w-3" />} />
                           <PlanFeatureRow label="Full Profiles" value={plan.fullGuardProfileAccess} icon={<UserCheck className="h-3 w-3" />} />
+                          <PlanFeatureRow label="Job Boosts" value={plan.boostJobsEnabled ? `${plan.maxBoostedJobs ?? 0}` : false} icon={<Zap className="h-3 w-3" />} />
                         </div>
                       </button>
                     );
@@ -717,6 +724,7 @@ function SubscriptionContent() {
                       <PlanFeatureRow label="Active Jobs" value={plan.maxActiveJobs} icon={<Briefcase className="h-3 w-3" />} />
                       <PlanFeatureRow label="Guards/Job" value={plan.maxGuardsPerJob} icon={<Users className="h-3 w-3" />} />
                       <PlanFeatureRow label="Draft Jobs" value={plan.maxDraftJobs} icon={<FileText className="h-3 w-3" />} />
+                      <PlanFeatureRow label="Job Boosts" value={plan.boostJobsEnabled ? `${plan.maxBoostedJobs ?? 0}` : false} icon={<Zap className="h-3 w-3" />} />
                       {!isCurrent && (
                         <div className="mt-3">
                           {!isConfirming ? (

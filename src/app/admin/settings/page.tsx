@@ -57,6 +57,11 @@ export default function AdminSettingsPage() {
   const [urgentJobFeeValue, setUrgentJobFeeValue] = useState<number>(0);
   const [urgentJobNotificationRadiusMiles, setUrgentJobNotificationRadiusMiles] = useState<number>(200);
 
+  // Mate Profile Boost State
+  const [mateBoostEnabled, setMateBoostEnabled] = useState<boolean>(false);
+  const [mateBoostFee, setMateBoostFee] = useState<number>(9.99);
+  const [mateBoostDurationDays, setMateBoostDurationDays] = useState<number>(7);
+
   // Phase 9: Admin Management State
   const [adminManagement, setAdminManagement] = useState<AdminManagementData | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -120,6 +125,11 @@ export default function AdminSettingsPage() {
       setUrgentJobFeeType(platformData.urgentJobFeeType ?? 'PERCENTAGE');
       setUrgentJobFeeValue(platformData.urgentJobFeeValue ?? 0);
       setUrgentJobNotificationRadiusMiles(platformData.urgentJobNotificationRadiusMiles ?? 200);
+
+      // Mate Profile Boost Settings
+      setMateBoostEnabled(platformData.mateBoostEnabled ?? false);
+      setMateBoostFee(platformData.mateBoostFee ?? 9.99);
+      setMateBoostDurationDays(platformData.mateBoostDurationDays ?? 7);
     } catch (err: any) {
       setErrorMsg('Failed to load settings');
     } finally {
@@ -222,6 +232,10 @@ export default function AdminSettingsPage() {
         urgentJobFeeType,
         urgentJobFeeValue,
         urgentJobNotificationRadiusMiles,
+        // Mate Profile Boost Settings
+        mateBoostEnabled,
+        mateBoostFee,
+        mateBoostDurationDays,
       };
 
       const updated = await settingsApi.updatePlatformSettings(payload);
@@ -254,6 +268,11 @@ export default function AdminSettingsPage() {
       setUrgentJobFeeType(updated.urgentJobFeeType ?? 'PERCENTAGE');
       setUrgentJobFeeValue(updated.urgentJobFeeValue ?? 0);
       setUrgentJobNotificationRadiusMiles(updated.urgentJobNotificationRadiusMiles ?? 200);
+
+      // Sync Mate Boost Settings
+      setMateBoostEnabled(updated.mateBoostEnabled ?? false);
+      setMateBoostFee(updated.mateBoostFee ?? 9.99);
+      setMateBoostDurationDays(updated.mateBoostDurationDays ?? 7);
 
       await refreshSettings(); // Sync global context
       
@@ -1025,6 +1044,50 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* ── Mate Profile Boost Settings ──────────────────────────────── */}
+            <div className="space-y-4 pt-4 border-t border-[var(--color-border-primary)]">
+              <h4 className="text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+                <span className="text-yellow-500">⚡</span> Guard Profile Boost Settings
+              </h4>
+              <div className="flex items-center justify-between p-3 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-bg-subtle)]">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">Enable Guard Profile Boost</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">Allow guards to pay to appear at the top of bid lists.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMateBoostEnabled(!mateBoostEnabled)}
+                  className={`relative w-12 h-6 rounded-full transition-colors focus:outline-none ${mateBoostEnabled ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-surface-border)]'}`}
+                >
+                  <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${mateBoostEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              </div>
+              {mateBoostEnabled && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[var(--color-input-label)]">Boost Fee ({platformCurrency})</label>
+                    <input
+                      type="number" min="0" step="0.01"
+                      value={mateBoostFee}
+                      onChange={(e) => setMateBoostFee(Number(e.target.value))}
+                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                    <p className="text-xs text-[var(--color-text-muted)]">One-time fee charged to guard for boosting their profile.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[var(--color-input-label)]">Boost Duration (days)</label>
+                    <input
+                      type="number" min="1" step="1"
+                      value={mateBoostDurationDays}
+                      onChange={(e) => setMateBoostDurationDays(Number(e.target.value))}
+                      className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                    <p className="text-xs text-[var(--color-text-muted)]">Number of days the guard profile will be boosted after payment.</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end pt-4 border-t border-[var(--color-border-primary)]">

@@ -100,6 +100,7 @@ const JobSchema = new Schema<JobDocument>({
   isUrgent:        { type: Boolean, default: false },
   urgentFeeAmount: { type: Number, default: 0 },
   isFeatured:      { type: Boolean, default: false },
+  featuredUntil:   { type: Date, default: null },
 
   // Payment Status (Phase 6)
   paymentStatus: {
@@ -132,6 +133,8 @@ const JobSchema = new Schema<JobDocument>({
 JobSchema.index({ status: 1, applicationDeadline: 1 });
 JobSchema.index({ postedBy: 1, status: 1 });
 JobSchema.index({ locationCity: 1, status: 1 });
+JobSchema.index({ isFeatured: -1, createdAt: -1 });
+JobSchema.index({ isFeatured: 1, featuredUntil: 1 });
 
 // ─── HMR-safe Model ──────────────────────────────────────────────────────────
 

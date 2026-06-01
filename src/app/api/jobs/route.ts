@@ -446,21 +446,26 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // Sort
-    let sortObj: Record<string, 1 | -1> = { createdAt: -1 };
+    // Sort — featured jobs always float to top (except in myBids mode)
+    let baseSort: Record<string, 1 | -1>;
     switch (sortBy) {
       case 'budget_high':
-        sortObj = { budgetAmount: -1 };
+        baseSort = { budgetAmount: -1 };
         break;
       case 'budget_low':
-        sortObj = { budgetAmount: 1 };
+        baseSort = { budgetAmount: 1 };
         break;
       case 'deadline':
-        sortObj = { applicationDeadline: 1 };
+        baseSort = { applicationDeadline: 1 };
         break;
       default:
-        sortObj = { createdAt: -1 };
+        baseSort = { createdAt: -1 };
     }
+    // Prepend isFeatured desc so boosted jobs always appear first.
+    // myBids mode is guard viewing own applied jobs — featured order irrelevant there.
+    const sortObj: Record<string, 1 | -1> = myBids
+      ? baseSort
+      : { isFeatured: -1, ...baseSort };
 
     // When distance filtering, fetch more to account for post-filter reduction
     const fetchLimit = hasDistanceFilter ? limit * 5 : limit;

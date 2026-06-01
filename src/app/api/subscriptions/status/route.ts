@@ -61,6 +61,8 @@ export async function GET(request: NextRequest) {
         analyticsEnabled: plan.analyticsEnabled,
         maxDraftJobs: plan.maxDraftJobs,
         fullGuardProfileAccess: plan.fullGuardProfileAccess,
+        boostJobsEnabled: plan.boostJobsEnabled ?? false,
+        maxBoostedJobs: plan.maxBoostedJobs ?? 0,
       };
     };
 

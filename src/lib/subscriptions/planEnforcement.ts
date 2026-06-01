@@ -64,6 +64,8 @@ export async function getActivePlanFeatures(
     analyticsEnabled: plan.analyticsEnabled,
     maxDraftJobs: plan.maxDraftJobs,
     fullGuardProfileAccess: plan.fullGuardProfileAccess,
+    boostJobsEnabled: plan.boostJobsEnabled ?? false,
+    maxBoostedJobs: plan.maxBoostedJobs ?? 0,
   };
 }
 
@@ -118,6 +120,49 @@ export async function checkJobPostingAllowed(
         message: `Your ${features.tier} plan allows a maximum of ${features.maxActiveJobs} active job${features.maxActiveJobs !== 1 ? 's' : ''}. Upgrade your plan or close an existing job to post more.`,
       };
     }
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Checks whether a boss can boost an additional job given their active plan limits.
+ *
+ * @param bossUid - Firebase UID of the boss
+ * @returns `{ allowed: true }` or `{ allowed: false, code, message }`
+ */
+export async function checkJobBoostAllowed(
+  bossUid: string
+): Promise<{ allowed: true } | { allowed: false; code: string; message: string }> {
+  const features = await getActivePlanFeatures(bossUid);
+  if (!features) {
+    return { allowed: false, code: 'NO_ACTIVE_PLAN', message: 'No active subscription plan found.' };
+  }
+
+  if (!features.boostJobsEnabled) {
+    return {
+      allowed: false,
+      code: 'BOOST_NOT_IN_PLAN',
+      message: `Job boosting is not included in your ${features.tier} plan. Upgrade to Professional or Enterprise to boost job listings.`,
+    };
+  }
+
+  const Job = (await import('@/models/Job.model')).default;
+  const { JobStatus } = await import('@/types/enums');
+  const now = new Date();
+  const activeBoostedCount = await Job.countDocuments({
+    postedBy: bossUid,
+    status: JobStatus.OPEN,
+    isFeatured: true,
+    featuredUntil: { $gt: now },
+  });
+
+  if (activeBoostedCount >= features.maxBoostedJobs) {
+    return {
+      allowed: false,
+      code: 'MAX_BOOSTED_JOBS_EXCEEDED',
+      message: `Your ${features.tier} plan allows a maximum of ${features.maxBoostedJobs} boosted job${features.maxBoostedJobs !== 1 ? 's' : ''} at a time. Remove a boost to add another.`,
+    };
   }
 
   return { allowed: true };

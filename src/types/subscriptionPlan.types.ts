@@ -40,6 +40,12 @@ export interface ISubscriptionPlan {
   /** Whether the boss can view full guard profiles when reviewing bids. */
   fullGuardProfileAccess: boolean;
 
+  /** Whether this tier includes the ability to boost job listings to the top. */
+  boostJobsEnabled: boolean;
+
+  /** Max number of simultaneously boosted (featured) jobs allowed on this tier. */
+  maxBoostedJobs: number;
+
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -57,4 +63,6 @@ export interface IActivePlanFeatures {
   analyticsEnabled: boolean;
   maxDraftJobs: number;
   fullGuardProfileAccess: boolean;
+  boostJobsEnabled: boolean;
+  maxBoostedJobs: number;
 }

@@ -38,6 +38,35 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as any;
+
+        // ── Mate Profile Boost ────────────────────────────────────────────────
+        if (paymentIntent.metadata?.type === 'MATE_BOOST') {
+          const boostPaymentId = paymentIntent.metadata?.boostPaymentId;
+          const guardUid = paymentIntent.metadata?.guardUid;
+          if (!boostPaymentId || !guardUid) {
+            console.error(`[Webhook] MATE_BOOST payment intent ${paymentIntent.id} is missing boostPaymentId or guardUid metadata.`);
+            break;
+          }
+          {
+            const BoostPayment = (await import('@/models/BoostPayment.model')).default;
+            const User = (await import('@/models/User.model')).default;
+            const boostDoc = await BoostPayment.findById(boostPaymentId);
+            if (boostDoc && boostDoc.status === 'PENDING') {
+              const now = new Date();
+              const boostedUntil = new Date(now.getTime() + boostDoc.durationDays * 24 * 60 * 60 * 1000);
+              boostDoc.status = 'COMPLETED';
+              boostDoc.boostedUntil = boostedUntil;
+              await boostDoc.save();
+              await User.updateOne(
+                { uid: guardUid },
+                { $set: { isFeatured: true, featuredUntil: boostedUntil } }
+              );
+              console.log(`[Boost] Guard ${guardUid} profile boosted until ${boostedUntil.toISOString()}`);
+            }
+          }
+          break;
+        }
+
         const paymentId = paymentIntent.metadata?.paymentId;
 
         if (paymentId) {
@@ -109,8 +138,17 @@ export async function POST(request: NextRequest) {
 
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object as any;
-        const paymentId = paymentIntent.metadata?.paymentId;
 
+        if (paymentIntent.metadata?.type === 'MATE_BOOST') {
+          const boostPaymentId = paymentIntent.metadata?.boostPaymentId;
+          if (boostPaymentId) {
+            const BoostPayment = (await import('@/models/BoostPayment.model')).default;
+            await BoostPayment.findByIdAndUpdate(boostPaymentId, { $set: { status: 'FAILED' } });
+          }
+          break;
+        }
+
+        const paymentId = paymentIntent.metadata?.paymentId;
         if (paymentId) {
           const payment = await Payment.findById(paymentId);
           if (payment && payment.paymentStatus === EscrowPaymentStatus.PENDING) {
