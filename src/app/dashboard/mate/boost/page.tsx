@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StripePaymentModal } from '@/components/payments/StripePaymentModal';
-import { useAuthContext } from '@/context/AuthContext';
+import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
 import { apiGet, apiPost } from '@/lib/apiClient';
 import {
@@ -12,8 +12,27 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+interface BoostSettingsResponse {
+  mateBoostEnabled: boolean;
+  mateBoostFee: number;
+  mateBoostDurationDays: number;
+  currency: string;
+}
+
+interface BoostIntentResponse {
+  clientSecret: string;
+  fee: number;
+  durationDays: number;
+  currency: string;
+}
+
+interface MeResponse {
+  isFeatured: boolean;
+  featuredUntil: string | null;
+}
+
 export default function MateBoostPage() {
-  const { user } = useAuthContext();
+  const { user } = useUser();
   const { platformSettings } = usePlatformContext();
 
   const [loading, setLoading] = useState(true);
@@ -30,12 +49,12 @@ export default function MateBoostPage() {
 
   const currency = platformSettings?.platformCurrency || 'AUD';
   const currencySymbol = '$';
-  const mateBoostEnabled = (platformSettings as any)?.mateBoostEnabled ?? false;
+  const mateBoostEnabled = platformSettings?.mateBoostEnabled ?? false;
 
   const loadBoostStatus = async () => {
     try {
       setLoading(true);
-      const res = await apiGet('/api/auth/me');
+      const res = await apiGet<MeResponse>('/api/auth/me');
       if (res.success && res.data) {
         setBoostStatus({
           isFeatured: res.data.isFeatured ?? false,
@@ -51,7 +70,7 @@ export default function MateBoostPage() {
 
   const loadBoostSettings = async () => {
     try {
-      const res = await apiGet('/api/boost/mate/settings');
+      const res = await apiGet<BoostSettingsResponse>('/api/boost/mate/settings');
       if (res.success && res.data) {
         setBoostFee(res.data.mateBoostFee ?? 9.99);
         setBoostDays(res.data.mateBoostDurationDays ?? 7);
@@ -69,7 +88,7 @@ export default function MateBoostPage() {
   const handleBoost = async () => {
     try {
       setCreating(true);
-      const res = await apiPost('/api/boost/mate/create-intent', {});
+      const res = await apiPost<BoostIntentResponse>('/api/boost/mate/create-intent', {});
       if (!res.success) {
         toast.error(res.message || 'Failed to create boost payment.');
         return;

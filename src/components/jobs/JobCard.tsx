@@ -123,6 +123,11 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
                   <Zap className="h-2.5 w-2.5" /> URGENT
                 </Badge>
               )}
+              {job.isFeatured && (
+                <Badge variant="warning" className="text-[8px] h-4 gap-0.5">
+                  <Zap className="h-2.5 w-2.5" /> FEATURED
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-3 mt-1 text-[10px] text-[var(--color-text-tertiary)] font-medium flex-wrap">
               <span>{job.companyName}</span>
@@ -310,6 +315,11 @@ export function JobCard({ job, showActions = false, viewMode = 'grid', linkPrefi
             {job.isUrgent && (
               <Badge variant="danger" className="text-[8px] h-4 gap-0.5 px-1.5">
                 <Zap className="h-2.5 w-2.5" /> URGENT
+              </Badge>
+            )}
+            {job.isFeatured && (
+              <Badge variant="warning" className="text-[8px] h-4 gap-0.5 px-1.5">
+                <Zap className="h-2.5 w-2.5" /> FEATURED
               </Badge>
             )}
             {overlapWarning && (

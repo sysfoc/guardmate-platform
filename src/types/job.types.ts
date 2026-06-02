@@ -165,6 +165,8 @@ export interface IBid {
   guardSkills?: string[];
   guardCertifications?: Certification[];
   guardReliabilityScore?: number;
+  guardIsFeatured?: boolean;
+  guardFeaturedUntil?: string | Date | null;
   status: BidStatus;
   proposedRate: number;
   budgetType: BudgetType;

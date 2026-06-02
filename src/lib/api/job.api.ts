@@ -76,6 +76,22 @@ export async function cancelJob(jobId: string, cancelReason: string): Promise<Ap
 }
 
 /**
+ * Boost a job listing (Boss only, requires active plan with boost enabled).
+ * @param jobId - The job to boost
+ */
+export async function boostJob(jobId: string): Promise<ApiResponse<IJob>> {
+  return apiPost<IJob>(`/api/jobs/${jobId}/boost`, {});
+}
+
+/**
+ * Remove boost from a job listing (Boss only).
+ * @param jobId - The job to unboost
+ */
+export async function unboostJob(jobId: string): Promise<ApiResponse<IJob>> {
+  return apiDelete<IJob>(`/api/jobs/${jobId}/boost`);
+}
+
+/**
  * Get paginated job listings with filters.
  * Mates see OPEN jobs; Bosses see their own.
  * @param filters - Query filters and pagination

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
 import { usePlatformContext } from '@/context/PlatformContext';
-import { getJobById, cancelJob, completeJob } from '@/lib/api/job.api';
+import { getJobById, cancelJob, completeJob, boostJob, unboostJob } from '@/lib/api/job.api';
 import { getMyPendingReviews } from '@/lib/api/review.api';
 import { JobDetailView } from '@/components/jobs/JobDetailView';
 import { Button } from '@/components/ui/Button';
@@ -21,6 +21,7 @@ import toast from 'react-hot-toast';
 import type { IJob } from '@/types/job.types';
 import type { PendingReview } from '@/types/review.types';
 import { JobStatus, BidStatus, HiringStatus, JobPaymentStatus } from '@/types/enums';
+import { Zap } from 'lucide-react';
 import { Edit, Trash2, Users, ChevronLeft, Loader2, CheckCircle2, XCircle, Clock, MessageSquare, CalendarCheck, Lock } from 'lucide-react';
 import { getJobBids } from '@/lib/api/job.api';
 import { createOrGetConversation } from '@/lib/api/chat.api';
@@ -55,6 +56,10 @@ export default function BossJobDetailPage() {
   
   // Accepted bid amount for payment
   const [acceptedBidAmount, setAcceptedBidAmount] = useState<number | null>(null);
+
+  // Boost state
+  const [boosting, setBoosting] = useState(false);
+  const [unboosting, setUnboosting] = useState(false);
 
   useEffect(() => {
     if (!jobId) return;
@@ -136,6 +141,36 @@ export default function BossJobDetailPage() {
     finally { setCancelling(false); setShowCancel(false); setCancelReason(''); }
   };
 
+  const handleBoost = async () => {
+    if (!job) return;
+    setBoosting(true);
+    try {
+      const resp = await boostJob(job.jobId);
+      if (resp.success && resp.data) {
+        toast.success('Job boosted! It will appear at the top of job listings.');
+        setJob(resp.data);
+      } else {
+        toast.error(resp.message || 'Failed to boost job');
+      }
+    } catch { toast.error('Failed to boost job'); }
+    finally { setBoosting(false); }
+  };
+
+  const handleUnboost = async () => {
+    if (!job) return;
+    setUnboosting(true);
+    try {
+      const resp = await unboostJob(job.jobId);
+      if (resp.success && resp.data) {
+        toast.success('Boost removed from job.');
+        setJob(resp.data);
+      } else {
+        toast.error(resp.message || 'Failed to remove boost');
+      }
+    } catch { toast.error('Failed to remove boost'); }
+    finally { setUnboosting(false); }
+  };
+
   if (userLoading || loading) return <DashboardSkeleton />;
   if (!job) return (
     <div className="max-w-4xl mx-auto px-4 py-12 text-center">
@@ -147,6 +182,8 @@ export default function BossJobDetailPage() {
   const canEdit = job.status === JobStatus.DRAFT || job.status === JobStatus.OPEN;
   const canCancel = job.status === JobStatus.OPEN || job.status === JobStatus.DRAFT || job.status === JobStatus.FILLED;
   const canComplete = job.status === JobStatus.IN_PROGRESS;
+  const canBoost = job.status === JobStatus.OPEN && job.paymentStatus !== JobPaymentStatus.UNPAID && !job.isFeatured;
+  const canUnboost = job.isFeatured === true;
 
   const cancelWarning = job.status === JobStatus.FILLED
     ? 'Warning: A guard has already been hired for this job. Cancelling will affect your reliability score.'
@@ -311,6 +348,16 @@ export default function BossJobDetailPage() {
                 <Button size="sm" variant="ghost" leftIcon={<Edit className="h-4 w-4" />} className="border border-[var(--color-surface-border)]"
                   onClick={() => router.push(`/dashboard/boss/jobs/${job.jobId}/edit`)}>
                   Edit
+                </Button>
+              )}
+              {canBoost && (
+                <Button size="sm" variant="secondary" leftIcon={<Zap className="h-4 w-4" />} onClick={handleBoost} disabled={boosting} className="bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-950/30 dark:border-yellow-700 dark:text-yellow-300">
+                  {boosting ? 'Boosting...' : 'Boost Job'}
+                </Button>
+              )}
+              {canUnboost && (
+                <Button size="sm" variant="ghost" leftIcon={<Zap className="h-4 w-4 text-yellow-500" />} onClick={handleUnboost} disabled={unboosting} className="border border-yellow-200 text-yellow-700">
+                  {unboosting ? 'Removing...' : 'Remove Boost'}
                 </Button>
               )}
               {canCancel && (

@@ -21,6 +21,10 @@ interface PlatformContextType {
   urgentJobFeeType: 'PERCENTAGE' | 'FIXED';
   urgentJobFeeValue: number;
   urgentJobNotificationRadiusMiles: number;
+  // Mate Profile Boost context
+  mateBoostEnabled: boolean;
+  mateBoostFee: number;
+  mateBoostDurationDays: number;
   loading: boolean;
   refreshSettings: () => Promise<void>;
 }
@@ -63,6 +67,10 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     urgentJobFeeType: platformSettings?.urgentJobFeeType ?? 'PERCENTAGE',
     urgentJobFeeValue: platformSettings?.urgentJobFeeValue ?? 15,
     urgentJobNotificationRadiusMiles: platformSettings?.urgentJobNotificationRadiusMiles ?? 200,
+    // Mate Profile Boost context
+    mateBoostEnabled: platformSettings?.mateBoostEnabled ?? false,
+    mateBoostFee: platformSettings?.mateBoostFee ?? 9.99,
+    mateBoostDurationDays: platformSettings?.mateBoostDurationDays ?? 7,
     loading,
     refreshSettings: loadSettings,
   }), [platformSettings, loading]);
