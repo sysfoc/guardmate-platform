@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { StatCard } from '@/components/ui/StatCard';
 import { CreditCard, Users, TrendingUp, AlertTriangle, Search, X, Filter, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { apiGet } from '@/lib/apiClient';
@@ -135,17 +134,86 @@ export default function AdminSubscriptionsPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <StatCard label="Total Subscriptions" value={stats.total} icon={<Users />} variant="blue" />
-          <StatCard label="Active" value={stats.active} icon={<CreditCard />} variant="emerald" />
-          <StatCard label="Lapsed" value={stats.lapsed} icon={<AlertTriangle />} variant="rose" />
-          <StatCard label="Cancelled" value={stats.cancelled} icon={<X />} variant="amber" />
-          <StatCard
-            label="Monthly Recurring Revenue"
-            value={`$${stats.monthlyRecurringRevenue.toLocaleString()}`}
-            icon={<TrendingUp />}
-            variant="emerald"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          <Card className="p-4 sm:p-5 relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none ring-1 ring-[var(--color-surface-border)]">
+            <div className="flex items-center gap-4">
+              <div className="h-11 w-11 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0">
+                <Users className="h-5 w-5 text-blue-500" />
+              </div>
+              <div className="min-w-0 flex-1 break-words">
+                <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+                  Total Subscriptions
+                </p>
+                <h3 className="text-2xl font-bold text-[var(--color-text-primary)] tabular-nums mt-1 leading-none">
+                  {stats.total.toLocaleString()}
+                </h3>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 sm:p-5 relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none ring-1 ring-[var(--color-surface-border)]">
+            <div className="flex items-center gap-4">
+              <div className="h-11 w-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
+                <CreditCard className="h-5 w-5 text-emerald-500" />
+              </div>
+              <div className="min-w-0 flex-1 break-words">
+                <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+                  Active
+                </p>
+                <h3 className="text-2xl font-bold text-[var(--color-text-primary)] tabular-nums mt-1 leading-none">
+                  {stats.active.toLocaleString()}
+                </h3>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 sm:p-5 relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none ring-1 ring-[var(--color-surface-border)]">
+            <div className="flex items-center gap-4">
+              <div className="h-11 w-11 rounded-xl bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-rose-500" />
+              </div>
+              <div className="min-w-0 flex-1 break-words">
+                <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+                  Lapsed
+                </p>
+                <h3 className="text-2xl font-bold text-[var(--color-text-primary)] tabular-nums mt-1 leading-none">
+                  {stats.lapsed.toLocaleString()}
+                </h3>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 sm:p-5 relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none ring-1 ring-[var(--color-surface-border)]">
+            <div className="flex items-center gap-4">
+              <div className="h-11 w-11 rounded-xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center shrink-0">
+                <X className="h-5 w-5 text-amber-500" />
+              </div>
+              <div className="min-w-0 flex-1 break-words">
+                <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+                  Cancelled
+                </p>
+                <h3 className="text-2xl font-bold text-[var(--color-text-primary)] tabular-nums mt-1 leading-none">
+                  {stats.cancelled.toLocaleString()}
+                </h3>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 sm:p-5 relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none ring-1 ring-[var(--color-surface-border)] lg:col-span-2 xl:col-span-1">
+            <div className="flex items-center gap-4">
+              <div className="h-11 w-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
+                <TrendingUp className="h-5 w-5 text-emerald-500" />
+              </div>
+              <div className="min-w-0 flex-1 break-words">
+                <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+                  Monthly Recurring Revenue
+                </p>
+                <h3 className="text-2xl font-bold text-[var(--color-text-primary)] tabular-nums mt-1 leading-none">
+                  ${stats.monthlyRecurringRevenue.toLocaleString()}
+                </h3>
+              </div>
+            </div>
+          </Card>
         </div>
       )}
 

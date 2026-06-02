@@ -4,7 +4,7 @@ import Job from '@/models/Job.model';
 import Bid from '@/models/Bid.model';
 import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { JobStatus, UserRole, BudgetType, JobPaymentStatus } from '@/types/enums';
+import { JobStatus, UserRole, BudgetType } from '@/types/enums';
 import { processJobLifecycle } from '@/lib/jobs/jobLifecycle';
 import {
   isOvernightShift,
@@ -40,11 +40,6 @@ export async function GET(
     // Only increment viewCount if this user hasn't viewed before
     const existing = await Job.findOne({ jobId }).lean();
     if (!existing) {
-      return createApiResponse(false, null, 'Job not found.', 404);
-    }
-
-    // Hide unpaid jobs from guards until escrow is completed
-    if (user.role === UserRole.MATE && existing.paymentStatus === JobPaymentStatus.UNPAID) {
       return createApiResponse(false, null, 'Job not found.', 404);
     }
 

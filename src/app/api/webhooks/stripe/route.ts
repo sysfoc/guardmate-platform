@@ -292,8 +292,8 @@ export async function POST(request: NextRequest) {
           try {
             const settings = await PlatformSettings.findOne().lean();
             const SubscriptionPlan = (await import('@/models/SubscriptionPlan.model')).default;
-            // Use plan tier price when available, else fall back to flat platform setting
-            let baseAmount = settings?.bossSubscriptionAmount ?? 0;
+            // Use plan tier price for next period
+            let baseAmount = 0;
             if (sub.planTier) {
               const plan = await SubscriptionPlan.findOne({ tier: sub.planTier }).lean();
               if (plan) baseAmount = plan.monthlyPrice;

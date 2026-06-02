@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { verifyAndGetUser, createApiResponse } from "@/lib/serverAuth";
 import connectDB from "@/lib/mongodb";
-import PlatformSettings from "@/models/PlatformSettings.model";
 import BossSubscription from "@/models/BossSubscription.model";
 import { UserRole, SubscriptionStatus } from "@/types/enums";
 import type { ISubscriptionStatus } from "@/types/subscription.types";
@@ -24,27 +23,10 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const settings = await PlatformSettings.findOne().lean();
     await seedSubscriptionPlans();
-
-    if (!settings?.bossSubscriptionEnabled) {
-      const result: ISubscriptionStatus = {
-        isSubscribed: true,
-        status: 'NOT_REQUIRED',
-        expiresAt: null,
-        daysRemaining: null,
-        amount: 0,
-        currency: '$',
-        planTier: null,
-        planFeatures: null,
-        pendingDowngradeTier: null,
-      };
-      return createApiResponse(true, result, "Subscription not required.", 200);
-    }
 
     const subscription = await BossSubscription.findOne({ bossUid: user.uid });
     const now = new Date();
-    const amount = settings.bossSubscriptionAmount ?? 0;
     const currency = '$';
 
     // Helper: resolve plan features for a subscription
@@ -73,7 +55,7 @@ export async function GET(request: NextRequest) {
         status: 'NONE',
         expiresAt: null,
         daysRemaining: null,
-        amount,
+        amount: 0,
         currency,
         planTier: null,
         planFeatures: null,
@@ -93,7 +75,7 @@ export async function GET(request: NextRequest) {
         status: SubscriptionStatus.ACTIVE,
         expiresAt: endDate?.toISOString() || null,
         daysRemaining,
-        amount: subscription.amount || amount,
+        amount: subscription.amount || 0,
         currency: subscription.currency || currency,
         planTier: subscription.planTier ?? null,
         planFeatures,
@@ -112,7 +94,7 @@ export async function GET(request: NextRequest) {
         status: SubscriptionStatus.CANCELLED,
         expiresAt: endDate?.toISOString() || null,
         daysRemaining: isStillActive ? daysRemaining : 0,
-        amount: subscription.amount || amount,
+        amount: subscription.amount || 0,
         currency: subscription.currency || currency,
         planTier: isStillActive ? (subscription.planTier ?? null) : null,
         planFeatures: isStillActive ? planFeatures : null,
@@ -128,7 +110,7 @@ export async function GET(request: NextRequest) {
         status: SubscriptionStatus.LAPSED,
         expiresAt: null,
         daysRemaining: 0,
-        amount: subscription.amount || amount,
+        amount: subscription.amount || 0,
         currency: subscription.currency || currency,
         planTier: null,
         planFeatures: null,
@@ -143,7 +125,7 @@ export async function GET(request: NextRequest) {
       status: subscription.status,
       expiresAt: null,
       daysRemaining: null,
-      amount,
+      amount: subscription?.amount ?? 0,
       currency,
       planTier: null,
       planFeatures: null,

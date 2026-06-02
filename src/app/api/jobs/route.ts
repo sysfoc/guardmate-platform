@@ -119,43 +119,39 @@ export async function POST(request: NextRequest) {
 
     // ─── SUBSCRIPTION ENFORCEMENT ────────────────────────────────────────────
     let jobPlanTier: string | null = null;
-    if (platformSettings?.bossSubscriptionEnabled) {
-      const subscription = await BossSubscription.findOne({ bossUid: user.uid });
-      jobPlanTier = subscription?.planTier ?? null;
-      const now = new Date();
-      let isSubscribed = false;
+    const subscription = await BossSubscription.findOne({ bossUid: user.uid });
+    jobPlanTier = subscription?.planTier ?? null;
+    const now = new Date();
+    let isSubscribed = false;
 
-      if (subscription) {
-        if (subscription.status === SubscriptionStatus.ACTIVE) {
-          const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
-          isSubscribed = endDate ? now < endDate : false;
-        } else if (subscription.status === SubscriptionStatus.CANCELLED) {
-          const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
-          isSubscribed = endDate ? now < endDate : false;
-        } else if (subscription.status === SubscriptionStatus.LAPSED) {
-          isSubscribed = false;
-        }
+    if (subscription) {
+      if (subscription.status === SubscriptionStatus.ACTIVE) {
+        const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+        isSubscribed = endDate ? now < endDate : false;
+      } else if (subscription.status === SubscriptionStatus.CANCELLED) {
+        const endDate = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+        isSubscribed = endDate ? now < endDate : false;
+      } else if (subscription.status === SubscriptionStatus.LAPSED) {
+        isSubscribed = false;
       }
+    }
 
-      if (!isSubscribed) {
-        return createApiResponse(false, {
-          code: 'SUBSCRIPTION_REQUIRED',
-          message: 'A monthly subscription is required to post jobs. Please subscribe to continue.',
-          subscriptionAmount: platformSettings.bossSubscriptionAmount,
-          currency: platformSettings.bossSubscriptionCurrency || currency,
-        }, 'A monthly subscription is required to post jobs. Please subscribe to continue.', 400);
-      }
+    if (!isSubscribed) {
+      return createApiResponse(false, {
+        code: 'SUBSCRIPTION_REQUIRED',
+        message: 'A monthly subscription is required to post jobs. Please subscribe to continue.',
+      }, 'A monthly subscription is required to post jobs. Please subscribe to continue.', 400);
+    }
 
-      // ── Plan-level limits (only enforced when subscribed) ────────────────
-      const isDraft = body.status === JobStatus.DRAFT;
-      const numGuards = body.numberOfGuardsNeeded || 1;
-      const planCheck = await checkJobPostingAllowed(user.uid, numGuards, isDraft);
-      if (!planCheck.allowed) {
-        return createApiResponse(false, {
-          code: planCheck.code,
-          message: planCheck.message,
-        }, planCheck.message, 400);
-      }
+    // ── Plan-level limits ────────────────────────────────────────────────
+    const isDraft = body.status === JobStatus.DRAFT;
+    const numGuards = body.numberOfGuardsNeeded || 1;
+    const planCheck = await checkJobPostingAllowed(user.uid, numGuards, isDraft);
+    if (!planCheck.allowed) {
+      return createApiResponse(false, {
+        code: planCheck.code,
+        message: planCheck.message,
+      }, planCheck.message, 400);
     }
     // ─── END SUBSCRIPTION ENFORCEMENT ────────────────────────────────────────
 
@@ -345,6 +341,7 @@ export async function GET(request: NextRequest) {
 
     const { user } = authResult;
     await connectDB();
+    const now = new Date();
 
     // Run lifecycle transitions silently (OPEN→EXPIRED, FILLED→IN_PROGRESS, etc.)
     processJobLifecycle().catch(() => {});
@@ -402,9 +399,10 @@ export async function GET(request: NextRequest) {
         query.jobId = { $in: jobIds };
 
       } else {
-        // By default, Mate only sees OPEN jobs for applying
+        // By default, Mate only sees OPEN jobs still accepting applications
         query.status = JobStatus.OPEN;
-        query.paymentStatus = { $ne: JobPaymentStatus.UNPAID };
+        query.hiringStatus = { $ne: HiringStatus.FULLY_HIRED };
+        query.applicationDeadline = { $gte: now };
       }
     } else if (user.role === UserRole.BOSS) {
       query.postedBy = user.uid;

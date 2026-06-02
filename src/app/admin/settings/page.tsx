@@ -48,9 +48,6 @@ export default function AdminSettingsPage() {
   const [paypalWebhookId, setPaypalWebhookId] = useState<string>('');
   const [paypalMode, setPaypalMode] = useState<'sandbox' | 'live'>('sandbox');
 
-  // Phase 8: Subscription Settings State
-  const [bossSubscriptionEnabled, setBossSubscriptionEnabled] = useState<boolean>(false);
-  const [bossSubscriptionAmount, setBossSubscriptionAmount] = useState<number | null>(null);
 
   // Phase 9: Urgent Job Fee State
   const [urgentJobFeeType, setUrgentJobFeeType] = useState<'PERCENTAGE' | 'FIXED'>('PERCENTAGE');
@@ -116,11 +113,6 @@ export default function AdminSettingsPage() {
       setPaypalWebhookId(platformData.paypalWebhookId || '');
       setPaypalMode(platformData.paypalMode || 'sandbox');
 
-      // Phase 8: Load Subscription Settings
-      setBossSubscriptionEnabled(platformData.bossSubscriptionEnabled ?? false);
-      setBossSubscriptionAmount(platformData.bossSubscriptionAmount ?? null);
-      // bossSubscriptionCurrency is hardcoded to AUD
-
       // Phase 9: Load Urgent Job Fee Settings
       setUrgentJobFeeType(platformData.urgentJobFeeType ?? 'PERCENTAGE');
       setUrgentJobFeeValue(platformData.urgentJobFeeValue ?? 0);
@@ -184,15 +176,6 @@ export default function AdminSettingsPage() {
         }
       }
 
-      // Validation: If bossSubscriptionEnabled is true, amount must be set
-      if (bossSubscriptionEnabled) {
-        if (bossSubscriptionAmount === null || bossSubscriptionAmount === undefined || bossSubscriptionAmount <= 0) {
-          setErrorMsg('Please set a subscription amount greater than 0 before enabling subscriptions');
-          setPlatformSaving(false);
-          return;
-        }
-      }
-
       const targetCountry = selectedCountryCode === 'none' 
         ? null 
         : countries.find(c => c.code === selectedCountryCode) || null;
@@ -222,11 +205,6 @@ export default function AdminSettingsPage() {
         paypalClientSecret,
         paypalWebhookId,
         paypalMode,
-
-        // Phase 8: Subscription Settings
-        bossSubscriptionEnabled,
-        bossSubscriptionAmount,
-        bossSubscriptionCurrency: 'AUD',
 
         // Phase 9: Urgent Job Fee Settings
         urgentJobFeeType,
@@ -259,10 +237,6 @@ export default function AdminSettingsPage() {
       setPaypalClientSecret(updated.paypalClientSecret || '');
       setPaypalWebhookId(updated.paypalWebhookId || '');
       setPaypalMode(updated.paypalMode || 'sandbox');
-
-      setBossSubscriptionEnabled(updated.bossSubscriptionEnabled ?? false);
-      setBossSubscriptionAmount(updated.bossSubscriptionAmount ?? null);
-      // bossSubscriptionCurrency is hardcoded to AUD
 
       // Phase 9: Sync Urgent Job Fee Settings
       setUrgentJobFeeType(updated.urgentJobFeeType ?? 'PERCENTAGE');
@@ -925,44 +899,6 @@ export default function AdminSettingsPage() {
             <div className="flex gap-2 items-center text-xs text-[var(--color-warning)] bg-[var(--color-warning)]/10 p-3 rounded border border-[var(--color-warning)]/20">
               <AlertTriangle className="h-4 w-4" />
               <span>Keys are saved as simple strings temporarily. (Encryption-at-rest integration deferred).</span>
-            </div>
-
-            {/* Phase 8: Boss Subscription Settings */}
-            <div className="space-y-4 pt-6 border-t border-[var(--color-border-primary)]">
-              <div className="flex items-center justify-between bg-[var(--color-secondary)]/10 p-4 rounded-xl border border-[var(--color-secondary)]/20">
-                <div>
-                  <h4 className="text-lg font-bold text-[var(--color-text-primary)]">Boss Monthly Subscription</h4>
-                  <p className="text-sm text-[var(--color-text-secondary)]">Require Bosses to maintain a monthly subscription to post jobs.</p>
-                </div>
-                <Toggle checked={bossSubscriptionEnabled} onCheckedChange={setBossSubscriptionEnabled} />
-              </div>
-
-              {bossSubscriptionEnabled && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-[var(--color-input-label)]">Subscription Amount</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">AUD</span>
-                      <input
-                        type="number"
-                        min="0.01" step="0.01"
-                        value={bossSubscriptionAmount ?? ''}
-                        onChange={(e) => setBossSubscriptionAmount(e.target.value ? Number(e.target.value) : null)}
-                        placeholder="e.g. 49.99"
-                        className="w-full flex h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-4 pl-14 text-base transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                      />
-                    </div>
-                    <p className="text-xs text-[var(--color-text-muted)]">Monthly fee charged to Bosses via Stripe or PayPal. Currency is locked to AUD.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-[var(--color-input-label)]">Currency</label>
-                    <div className="flex items-center h-11 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-bg-tertiary)] px-4 text-base text-[var(--color-text-primary)] font-bold">
-                      AUD — Australian Dollar
-                    </div>
-                    <p className="text-xs text-[var(--color-text-muted)]">Subscription currency is locked to AUD platform-wide.</p>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Phase 9: Urgent / Emergency Hiring Fees */}

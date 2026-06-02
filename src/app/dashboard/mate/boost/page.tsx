@@ -196,7 +196,7 @@ export default function MateBoostPage() {
         <div className="space-y-3">
           {[
             { icon: <TrendingUp className="h-4 w-4 text-[var(--color-primary)]" />, text: 'Your profile appears at the top of the bid list for every job you apply to.' },
-            { icon: <Shield className="h-4 w-4 text-[var(--color-primary)]" />, text: 'Employers reviewing bids see featured applicants first, marked with a ⚡ badge.' },
+            { icon: <Shield className="h-4 w-4 text-[var(--color-primary)]" />, text: 'Employers reviewing bids see featured applicants first, marked with a badge.' },
             { icon: <Clock className="h-4 w-4 text-[var(--color-primary)]" />, text: `Boost lasts ${boostDays} day${boostDays !== 1 ? 's' : ''} from payment.` },
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-3">

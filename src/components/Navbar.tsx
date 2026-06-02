@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Shield, LogOut as LogOutIcon, LayoutDashboard, Briefcase, Send, Tag,
-  User, ChevronDown, Star, Wallet, CreditCard, ShieldAlert,
+  User, ChevronDown, Star, Wallet, CreditCard, ShieldAlert, Zap,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useUser } from '@/context/UserContext';
@@ -28,10 +28,10 @@ export function Navbar() {
   const [subStatus, setSubStatus] = useState<ISubscriptionStatus | null>(null);
 
   useEffect(() => {
-    if (user?.role === 'BOSS' && platformSettings?.bossSubscriptionEnabled) {
+    if (user?.role === 'BOSS') {
       subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
     }
-  }, [user?.role, platformSettings?.bossSubscriptionEnabled]);
+  }, [user?.role]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -80,7 +80,7 @@ export function Navbar() {
               <Button href={getDashboardPath()} variant="ghost" size="sm" leftIcon={<LayoutDashboard className="h-4 w-4" aria-hidden="true" />}>
                 <span className="hidden sm:inline">Dashboard</span>
               </Button>
-              {user.role === 'BOSS' && platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed) && (
+              {user.role === 'BOSS' && (!subStatus || !subStatus.isSubscribed) && (
                 <Button
                   href="/dashboard/boss/subscription"
                   size="sm"
@@ -162,6 +162,10 @@ export function Navbar() {
                       <DropdownItem onClick={() => router.push('/dashboard/mate/bids')}>
                         <Send className="h-4 w-4 mr-2" />
                         My Bids
+                      </DropdownItem>
+                      <DropdownItem onClick={() => router.push('/dashboard/mate/boost')}>
+                        <Zap className="h-4 w-4 mr-2" />
+                        Boost My Profile
                       </DropdownItem>
                       <DropdownItem onClick={() => router.push('/dashboard/mate/wallet')}>
                         <Wallet className="h-4 w-4 mr-2" />

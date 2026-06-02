@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
 import connectDB from '@/lib/mongodb';
 import Job from '@/models/Job.model';
-import { UserRole, JobPaymentStatus } from '@/types/enums';
+import { UserRole, JobStatus, HiringStatus } from '@/types/enums';
 
 // ─── POST /api/jobs/ai-match ─────────────────────────────────────────────────
 // Called by Mate users to get AI-ranked job matches.
@@ -73,7 +73,13 @@ export async function POST(request: NextRequest) {
     // 6. Fetch full job documents in one query
     await connectDB();
     const jobIds = matches.map((m) => m.jobId);
-    const jobs = await Job.find({ jobId: { $in: jobIds }, paymentStatus: { $ne: JobPaymentStatus.UNPAID } }).lean();
+    const now = new Date();
+    const jobs = await Job.find({
+      jobId: { $in: jobIds },
+      status: JobStatus.OPEN,
+      hiringStatus: { $ne: HiringStatus.FULLY_HIRED },
+      applicationDeadline: { $gte: now },
+    }).lean();
 
     // 7. Build lookup map and preserve AI ranking order
     const jobMap: Record<string, typeof jobs[number]> = {};

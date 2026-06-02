@@ -40,10 +40,7 @@ export async function POST(request: NextRequest) {
 
     // ── Platform Settings ──────────────────────────────────────────────────
     const settings = await PlatformSettings.findOne().lean();
-    if (!settings?.bossSubscriptionEnabled) {
-      return NextResponse.json({ error: 'Boss subscriptions are not enabled.' }, { status: 400 });
-    }
-    if (!settings.paypalEnabled || !settings.paypalClientId) {
+    if (!settings?.paypalEnabled || !settings?.paypalClientId) {
       return NextResponse.json({ error: 'PayPal is not configured.' }, { status: 400 });
     }
 
@@ -63,10 +60,7 @@ export async function POST(request: NextRequest) {
       }
       amount = plan.monthlyPrice;
     } else {
-      amount = settings.bossSubscriptionAmount ?? 0;
-      if (amount <= 0) {
-        return NextResponse.json({ error: 'Subscription amount not configured.' }, { status: 400 });
-      }
+      return NextResponse.json({ error: 'Subscription plan tier is required.' }, { status: 400 });
     }
 
     // ── Apply acquired subscription discount offer ────────────────────────────

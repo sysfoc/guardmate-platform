@@ -167,7 +167,8 @@ export async function getAdminRevenue(
   dateFrom?: string,
   dateTo?: string,
   method?: string,
-  status?: string
+  status?: string,
+  category?: string
 ): Promise<ApiResponse<any>> {
   const queryParams = new URLSearchParams();
   queryParams.append('page', page.toString());
@@ -177,6 +178,7 @@ export async function getAdminRevenue(
   if (dateTo) queryParams.append('dateTo', dateTo);
   if (method) queryParams.append('method', method);
   if (status) queryParams.append('status', status);
+  if (category) queryParams.append('category', category);
 
   return apiGet<any>(`/api/admin/revenue?${queryParams.toString()}`);
 }

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAndGetUser, createApiResponse } from "@/lib/serverAuth";
 import connectDB from "@/lib/mongodb";
 import PlatformSettings from "@/models/PlatformSettings.model";
-import { UserRole } from "@/types/enums";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,10 +10,6 @@ export async function GET(request: NextRequest) {
       return createApiResponse(false, null, "Unauthorized.", 401);
     }
     const { user } = authResult;
-    if (user.role !== UserRole.BOSS) {
-      return createApiResponse(false, null, "Only Boss accounts can access payment config.", 403);
-    }
-
     await connectDB();
 
     const settings = await PlatformSettings.findOne().lean();

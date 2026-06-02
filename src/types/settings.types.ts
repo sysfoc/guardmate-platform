@@ -38,11 +38,6 @@ export interface IPlatformSettings {
   autoReleaseWindowHours: number;
   disputeDeadlineWarningHours: number;
 
-  // ─── Phase 8: Boss Subscription Settings ────────────────────────────────
-  bossSubscriptionEnabled: boolean;
-  bossSubscriptionAmount: number | null;
-  bossSubscriptionCurrency: string;
-
   // ─── Phase 9: Urgent Job Fee Settings ──────────────────────────────────
   urgentJobFeeType: 'PERCENTAGE' | 'FIXED';
   urgentJobFeeValue: number;

@@ -238,7 +238,7 @@ export default function AdminOffersPage() {
           <table className="w-full text-left">
             <thead className="bg-[var(--color-bg-secondary)] text-[var(--color-text-tertiary)] uppercase text-[10px] font-bold tracking-widest">
               <tr>
-                <th className="px-5 py-3">Offer</th>
+                <th className="px-5 py-3 w-[35%]">Offer</th>
                 <th className="px-5 py-3">Type</th>
                 <th className="px-5 py-3">Discount</th>
                 <th className="px-5 py-3">Eligibility</th>
@@ -266,10 +266,9 @@ export default function AdminOffersPage() {
                 offers.map((offer) => (
                   <tr key={offer._id} className="hover:bg-[var(--color-bg-secondary)]/50 transition-colors">
                     <td className="px-5 py-3">
-                      <div>
-                        <p className="text-sm font-bold text-[var(--color-text-primary)]">{offer.name}</p>
-                        <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5 line-clamp-1">{offer.description}</p>
-                      </div>
+                      <p className="text-sm font-bold text-[var(--color-text-primary)] truncate cursor-default" title={offer.description}>
+                        {offer.name}
+                      </p>
                     </td>
                     <td className="px-5 py-3">
                       <Badge variant="info" className="text-[9px] whitespace-nowrap">

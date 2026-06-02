@@ -9,7 +9,6 @@
 import connectDB from '@/lib/mongodb';
 import BossSubscription from '@/models/BossSubscription.model';
 import User from '@/models/User.model';
-import PlatformSettings from '@/models/PlatformSettings.model';
 import { SubscriptionStatus } from '@/types/enums';
 
 /**
@@ -22,9 +21,6 @@ import { SubscriptionStatus } from '@/types/enums';
 export async function checkSubscriptionExpiries(): Promise<void> {
   try {
     await connectDB();
-
-    const settings = await PlatformSettings.findOne().lean();
-    if (!settings?.bossSubscriptionEnabled) return;
 
     const now = new Date();
 

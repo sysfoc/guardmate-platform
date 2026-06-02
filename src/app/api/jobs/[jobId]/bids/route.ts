@@ -6,7 +6,7 @@ import Bid from '@/models/Bid.model';
 import User from '@/models/User.model';
 import PlatformSettings from '@/models/PlatformSettings.model';
 import { verifyAndGetUser, createApiResponse } from '@/lib/serverAuth';
-import { UserRole, UserStatus, BidStatus, LicenseStatus, JobStatus, JobPaymentStatus } from '@/types/enums';
+import { UserRole, UserStatus, BidStatus, LicenseStatus, JobStatus, HiringStatus } from '@/types/enums';
 import { sendBidReceived } from '@/lib/email/emailTriggers';
 import { checkDateOverlap } from '@/lib/jobs/overlapCheck';
 
@@ -67,8 +67,8 @@ export async function POST(
       return createApiResponse(false, null, 'This job is no longer accepting bids.', 400);
     }
 
-    if (job.paymentStatus === JobPaymentStatus.UNPAID) {
-      return createApiResponse(false, null, 'This job is not yet accepting bids — escrow payment is pending.', 403);
+    if (job.hiringStatus === HiringStatus.FULLY_HIRED) {
+      return createApiResponse(false, null, 'This job has already filled all guard positions.', 403);
     }
 
     // Check guard hasn't already bid

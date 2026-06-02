@@ -191,16 +191,14 @@ function BossHome() {
   }, []);
 
   useEffect(() => {
-    if (platformSettings?.bossSubscriptionEnabled) {
-      subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
-    }
-  }, [platformSettings?.bossSubscriptionEnabled]);
+    subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
+  }, []);
 
   const boss = user as BossProfile | null;
   const displayName = boss?.companyName || boss?.firstName || 'Business';
 
   const quickActions = [
-    platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed)
+    (!subStatus || !subStatus.isSubscribed)
       ? { icon: CreditCard, label: 'Subscribe', href: '/dashboard/boss/subscription', desc: 'Unlock posting' }
       : { icon: Briefcase, label: 'Post a Job', href: '/dashboard/boss/jobs/new', desc: 'New shift' },
     { icon: LayoutDashboard, label: 'My Jobs', href: '/dashboard/boss/jobs', desc: 'Manage shifts' },

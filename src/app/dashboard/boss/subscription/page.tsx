@@ -487,7 +487,7 @@ function SubscriptionContent() {
                   ? (TIER_LABEL[subStatus.planTier as SubscriptionTier] ?? statusLabel).toUpperCase()
                   : statusLabel.toUpperCase()}
               </Badge>
-              {subStatus?.amount !== undefined && subStatus.amount > 0 && (
+              {isSubscribed && subStatus?.amount !== undefined && subStatus.amount > 0 && (
                 <div className="text-right">
                   <p className="text-lg font-black text-[var(--color-text-primary)]">
                     ${subStatus.amount.toFixed(2)} <span className="text-xs font-medium text-[var(--color-text-tertiary)]">/mo</span>

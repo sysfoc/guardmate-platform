@@ -42,10 +42,7 @@ export async function POST(request: NextRequest) {
 
     // ── Platform Settings ──────────────────────────────────────────────────
     const settings = await PlatformSettings.findOne().lean();
-    if (!settings?.bossSubscriptionEnabled) {
-      return NextResponse.json({ error: 'Boss subscriptions are not enabled.' }, { status: 400 });
-    }
-    if (!settings.stripeEnabled || !settings.stripeSecretKey) {
+    if (!settings?.stripeEnabled || !settings?.stripeSecretKey) {
       return NextResponse.json({ error: 'Stripe is not configured.' }, { status: 400 });
     }
 
@@ -64,8 +61,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Selected subscription plan is not available.' }, { status: 400 });
       }
       amount = plan.monthlyPrice;
-    } else {
-      amount = settings.bossSubscriptionAmount;
     }
 
     console.log('[create-stripe] ⚙️ Plan tier:', planTier, '| Raw amount:', amount, '| stripeEnabled:', settings.stripeEnabled, '| stripeSecretKey present:', !!settings.stripeSecretKey);

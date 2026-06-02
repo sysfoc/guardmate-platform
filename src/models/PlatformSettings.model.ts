@@ -87,11 +87,6 @@ const PlatformSettingsSchema = new Schema<PlatformSettingsDocument>({
   autoReleaseWindowHours: { type: Number, default: 48 },
   disputeDeadlineWarningHours: { type: Number, default: 6 },
 
-  // ─── Phase 8: Boss Subscription Settings ───────────────────────────────
-  bossSubscriptionEnabled: { type: Boolean, default: false },
-  bossSubscriptionAmount: { type: Number, default: null },
-  bossSubscriptionCurrency: { type: String, default: 'AUD' },
-
   // ─── Phase 9: Urgent Job Fee Settings ─────────────────────────────
   urgentJobFeeType: { type: String, enum: ['PERCENTAGE', 'FIXED'], default: 'PERCENTAGE' },
   urgentJobFeeValue: { type: Number, default: 0, min: 0 },
