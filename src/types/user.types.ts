@@ -355,4 +355,57 @@ export interface MateProfileUpdatePayload extends BaseProfileUpdatePayload {
   victorianBusinessLicenceVerifiedAt?: string | null;
 }
 
+// ─── Guard Public Profile (exposed to Boss with fullGuardProfileAccess) ───────
+
+export interface GuardWorkHistoryItem {
+  jobId: string;
+  jobTitle: string;
+  completedAt: string;
+  bossName: string;
+}
+
+export interface GuardReviewItem {
+  rating: number;
+  comment: string;
+  reviewerName: string;
+  jobName: string;
+  createdAt: string;
+}
+
+export interface IGuardPublicProfile {
+  uid: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  profilePhoto: string | null;
+  bio: string | null;
+  averageRating: number;
+  totalReviews: number;
+  skills: string[];
+  languages: string[];
+  experience: number | null;
+  hourlyRate: number | null;
+  minimumHours: number | null;
+
+  // Stats
+  totalJobsCompleted: number;
+  totalEarnings: number;
+  completionRate: number;
+  onTimeRate: number;
+  reliabilityScore: number;
+
+  // Verification badges (status only, no documents/numbers)
+  licenseStatus: string;
+  idVerificationStatus: string;
+  backgroundCheckStatus: string;
+  firstAidCertificateStatus: string | null;
+  constructionWhiteCardStatus: string | null;
+  workingWithChildrenCheckStatus: string | null;
+  abnVerified: boolean;
+
+  // Associated data
+  workHistory: GuardWorkHistoryItem[];
+  reviews: GuardReviewItem[];
+}
+
 export type ProfileUpdatePayload = BossProfileUpdatePayload | MateProfileUpdatePayload;

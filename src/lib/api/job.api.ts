@@ -18,6 +18,7 @@ import type {
   BidWithJob,
   ShiftAssignment,
 } from '@/types/job.types';
+import type { IGuardPublicProfile } from '@/types/user.types';
 
 // ─── Job Endpoints ────────────────────────────────────────────────────────────
 
@@ -200,6 +201,14 @@ export async function getMyBids(filters?: { status?: string; page?: number; limi
   }
   const query = params.toString();
   return apiGet<PaginatedResponse<BidWithJob>>(`/api/jobs/mate/my-bids${query ? `?${query}` : ''}`);
+}
+
+/**
+ * Get a guard's full public profile (Boss only, requires fullGuardProfileAccess plan).
+ * @param guardUid - The guard's Firebase UID
+ */
+export async function getGuardProfile(guardUid: string): Promise<ApiResponse<IGuardPublicProfile>> {
+  return apiGet<IGuardPublicProfile>(`/api/guards/${guardUid}/profile`);
 }
 
 // ─── Dashboard Activity Endpoints ─────────────────────────────────────────────

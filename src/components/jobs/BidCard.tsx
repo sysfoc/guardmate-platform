@@ -11,7 +11,7 @@ import type { IBid } from '@/types/job.types';
 import {
   Clock, DollarSign, Shield, Calendar,
   CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronUp, MessageSquare,
-  Building2
+  Building2, User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +36,8 @@ interface BidCardProps {
   onSelectForCompare?: (bidId: string, checked: boolean) => void;
   isSelectedForCompare?: boolean;
   isCompareSelectable?: boolean;
+  hasFullProfileAccess?: boolean;
+  onViewProfile?: (bidId: string, guardUid: string) => void;
   className?: string;
 }
 
@@ -52,6 +54,8 @@ export function BidCard({
   onSelectForCompare,
   isSelectedForCompare = false,
   isCompareSelectable = true,
+  hasFullProfileAccess = false,
+  onViewProfile,
   className,
 }: BidCardProps) {
   const [expanded, setExpanded] = React.useState(false);
@@ -162,6 +166,19 @@ export function BidCard({
 
           {/* Actions */}
           <div className="flex items-center gap-2 mt-4 flex-wrap sm:flex-nowrap">
+            {onViewProfile && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onViewProfile(bid.bidId, bid.guardUid)}
+                disabled={!hasFullProfileAccess}
+                className="w-full sm:w-auto text-[10px] sm:text-xs h-8 sm:h-9 px-3 sm:px-4 font-bold border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                leftIcon={<User className="h-3 w-3 sm:h-4 sm:w-4" />}
+                title={hasFullProfileAccess ? 'View full guard profile' : 'Upgrade to Professional or Enterprise to view full profiles'}
+              >
+                {hasFullProfileAccess ? 'View Profile' : 'Profile Locked'}
+              </Button>
+            )}
             {onMessage && isAccepted && (
               <Button
                 size="sm"

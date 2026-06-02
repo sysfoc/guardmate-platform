@@ -23,11 +23,9 @@ import type { BossProfile } from '@/types/user.types';
 import { VerificationStatus, LicenseStatus, UserRole } from '@/types/enums';
 import { subscriptionApi } from '@/lib/api/subscription.api';
 import type { ISubscriptionStatus } from '@/types/subscription.types';
-import { usePlatformContext } from '@/context/PlatformContext';
 
 export default function BossDashboard() {
   const { user, isLoading } = useUser();
-  const { platformSettings } = usePlatformContext();
   const [activity, setActivity] = useState<BossActivityItem[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
@@ -51,10 +49,8 @@ export default function BossDashboard() {
 
   // Fetch subscription status
   useEffect(() => {
-    if (platformSettings?.bossSubscriptionEnabled) {
-      subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
-    }
-  }, [platformSettings?.bossSubscriptionEnabled]);
+    subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
+  }, []);
 
   if (isLoading) return <DashboardSkeleton />;
   if (!user) return null;
@@ -121,7 +117,7 @@ export default function BossDashboard() {
               View Profile
             </Button>
             {/* Subscription-aware Post Job button */}
-            {platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed) ? (
+            {!subStatus?.isSubscribed ? (
               <Button
                 href="/dashboard/boss/subscription"
                 size="sm"
@@ -259,7 +255,7 @@ export default function BossDashboard() {
                         <div className="flex flex-col items-center gap-2">
                           <Briefcase className="h-6 w-6 text-[var(--color-text-muted)] opacity-40" />
                           <p className="text-[11px] text-[var(--color-text-tertiary)]">No jobs posted yet. Create your first listing!</p>
-                          {isVerified && !(platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed)) && (
+                          {isVerified && subStatus?.isSubscribed && (
                             <Button href="/dashboard/boss/jobs/new" size="sm" variant="ghost" className="text-[10px] border border-[var(--color-border-primary)] mt-1">
                               Post a Job
                             </Button>

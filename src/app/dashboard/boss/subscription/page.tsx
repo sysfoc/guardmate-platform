@@ -399,30 +399,11 @@ function SubscriptionContent() {
     );
   }
 
-  if (!platformSettings?.bossSubscriptionEnabled) {
-    return (
-      <div className="min-h-screen bg-[var(--color-bg-primary)]">
-        <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-          <Shield className="h-12 w-12 text-[var(--color-primary)] mx-auto mb-4 opacity-40" />
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Subscriptions Not Required</h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-2">
-            The platform does not currently require a subscription to post jobs. You have full access!
-          </p>
-          <Link href="/dashboard/boss">
-            <Button variant="ghost" className="mt-6" leftIcon={<ArrowLeft className="h-4 w-4" />}>
-              Back to Dashboard
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   const isSubscribed = subStatus?.isSubscribed ?? false;
   const statusLabel = subStatus?.status === 'ACTIVE' ? 'Active' : subStatus?.status === 'CANCELLED' ? 'Cancelled' : subStatus?.status === 'LAPSED' ? 'Lapsed' : 'Not Subscribed';
 
   const selectedPlan = plans.find((p) => p.tier === selectedPlanTier) ?? null;
-  const baseSubscriptionAmount = selectedPlan?.monthlyPrice ?? subStatus?.amount ?? platformSettings?.bossSubscriptionAmount ?? 0;
+  const baseSubscriptionAmount = selectedPlan?.monthlyPrice ?? subStatus?.amount ?? 0;
   let displayedAmount = baseSubscriptionAmount;
   if (!isSubscribed && acquiredOffer && acquiredOffer.discountValue != null) {
     if (acquiredOffer.discountType === 'FULL_WAIVER') {

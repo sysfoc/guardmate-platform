@@ -63,10 +63,6 @@ export default function NewJobPage() {
 
   // ─── Subscription Gate ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!platformSettings?.bossSubscriptionEnabled) {
-      setCheckingSub(false);
-      return;
-    }
     subscriptionApi.getStatus().then((status) => {
       setSubStatus(status);
       if (!status?.isSubscribed) {
@@ -74,7 +70,7 @@ export default function NewJobPage() {
       }
       setCheckingSub(false);
     }).catch(() => setCheckingSub(false));
-  }, [platformSettings?.bossSubscriptionEnabled, router]);
+  }, [router]);
 
   const [form, setForm] = useState<Partial<CreateJobPayload>>({
     title: '', description: '', jobType: JobType.ONE_TIME,

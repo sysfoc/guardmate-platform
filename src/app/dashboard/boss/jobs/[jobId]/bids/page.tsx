@@ -4,10 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
-import { getJobBids, acceptBid, rejectBid } from '@/lib/api/job.api';
+import { getJobBids, acceptBid, rejectBid, getGuardProfile } from '@/lib/api/job.api';
 import { createOrGetConversation } from '@/lib/api/chat.api';
 import { BidCard } from '@/components/jobs/BidCard';
 import { BidComparisonModal } from '@/components/jobs/BidComparisonModal';
+import { GuardProfileModal } from '@/components/jobs/GuardProfileModal';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DashboardSkeleton } from '@/components/ui/DashboardSkeleton';
@@ -15,8 +16,10 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Modal } from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import type { IBid, IJob } from '@/types/job.types';
+import type { IGuardPublicProfile } from '@/types/user.types';
 import { BidStatus, HiringStatus } from '@/types/enums';
 import { ChevronLeft, Users, Loader2, Inbox } from 'lucide-react';
+import { subscriptionApi } from '@/lib/api/subscription.api';
 
 export default function BossJobBidsPage() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -37,16 +40,27 @@ export default function BossJobBidsPage() {
   const [selectedBids, setSelectedBids] = useState<string[]>([]);
   const [showCompare, setShowCompare] = useState(false);
 
+  // Profile Modal State
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [selectedGuardUid, setSelectedGuardUid] = useState<string | null>(null);
+  const [guardProfile, setGuardProfile] = useState<IGuardPublicProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [hasFullProfileAccess, setHasFullProfileAccess] = useState(false);
+
   useEffect(() => {
     if (!jobId) return;
     const fetch = async () => {
       setLoading(true);
       try {
-        const resp = await getJobBids(jobId);
-        if (resp.success && resp.data) {
-          setBids(resp.data.bids);
-          setJob(resp.data.job);
+        const [bidsResp, subResp] = await Promise.all([
+          getJobBids(jobId),
+          subscriptionApi.getStatus(),
+        ]);
+        if (bidsResp.success && bidsResp.data) {
+          setBids(bidsResp.data.bids);
+          setJob(bidsResp.data.job);
         }
+        setHasFullProfileAccess(!!subResp.planFeatures?.fullGuardProfileAccess);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
@@ -84,6 +98,26 @@ export default function BossJobBidsPage() {
       }
     } catch { toast.error('Failed to reject bid'); }
     finally { setRejecting(false); setShowRejectModal(null); setRejectReason(''); }
+  };
+
+  const handleViewProfile = async (_bidId: string, guardUid: string) => {
+    if (!hasFullProfileAccess) return;
+    setSelectedGuardUid(guardUid);
+    setProfileModalOpen(true);
+    setProfileLoading(true);
+    setGuardProfile(null);
+    try {
+      const resp = await getGuardProfile(guardUid);
+      if (resp.success && resp.data) {
+        setGuardProfile(resp.data);
+      } else {
+        toast.error(resp.message || 'Failed to load profile.');
+      }
+    } catch {
+      toast.error('Error loading guard profile.');
+    } finally {
+      setProfileLoading(false);
+    }
   };
 
   const handleMessageGuard = async (bidId: string, guardId: string) => {
@@ -152,9 +186,11 @@ export default function BossJobBidsPage() {
                 <h2 className="text-xs font-bold text-[var(--color-success)] uppercase tracking-wider mb-2">✓ Accepted Bids ({acceptedBids.length}/{job?.numberOfGuardsNeeded})</h2>
                 <div className="space-y-3">
                   {acceptedBids.map((bid) => (
-                    <BidCard 
+                    <BidCard
                       key={bid.bidId}
-                      bid={bid} 
+                      bid={bid}
+                      hasFullProfileAccess={hasFullProfileAccess}
+                      onViewProfile={handleViewProfile}
                       onMessage={(bidId, guardId) => handleMessageGuard(bidId, guardId)}
                     />
                   ))}
@@ -172,6 +208,8 @@ export default function BossJobBidsPage() {
                       key={bid.bidId}
                       bid={bid}
                       showActions={!isFullyHired}
+                      hasFullProfileAccess={hasFullProfileAccess}
+                      onViewProfile={handleViewProfile}
                       onAccept={(id) => setConfirmAccept(id)}
                       onReject={(id) => setShowRejectModal(id)}
                       onSelectForCompare={handleSelectForCompare}
@@ -188,7 +226,14 @@ export default function BossJobBidsPage() {
               <div>
                 <h2 className="text-xs font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-2">Other ({otherBids.length})</h2>
                 <div className="space-y-3">
-                  {otherBids.map((bid) => <BidCard key={bid.bidId} bid={bid} />)}
+                  {otherBids.map((bid) => (
+                    <BidCard
+                      key={bid.bidId}
+                      bid={bid}
+                      hasFullProfileAccess={hasFullProfileAccess}
+                      onViewProfile={handleViewProfile}
+                    />
+                  ))}
                 </div>
               </div>
             )}
@@ -241,6 +286,15 @@ export default function BossJobBidsPage() {
           </div>
         </div>
       )}
+
+      {/* Guard Profile Modal */}
+      <GuardProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        profile={guardProfile}
+        loading={profileLoading}
+        onMessage={selectedGuardUid ? () => handleMessageGuard('', selectedGuardUid) : undefined}
+      />
 
       {/* Comparison Modal */}
       {job && (

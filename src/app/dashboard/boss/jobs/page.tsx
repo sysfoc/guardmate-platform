@@ -4,7 +4,6 @@ import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
-import { usePlatformContext } from '@/context/PlatformContext';
 import { getMyJobs } from '@/lib/api/job.api';
 import { JobCard } from '@/components/jobs/JobCard';
 import { Pagination } from '@/components/ui/Pagination';
@@ -29,7 +28,6 @@ const TABS = [
 
 function BossJobsContent() {
   const { user, isLoading: userLoading } = useUser();
-  const { platformSettings } = usePlatformContext();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -42,10 +40,8 @@ function BossJobsContent() {
 
   // Fetch subscription status
   useEffect(() => {
-    if (platformSettings?.bossSubscriptionEnabled) {
-      subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
-    }
-  }, [platformSettings?.bossSubscriptionEnabled]);
+    subscriptionApi.getStatus().then(setSubStatus).catch(() => {});
+  }, []);
 
   const currentTab = searchParams.get('status') || '';
   const currentPage = parseInt(searchParams.get('page') || '1');
@@ -95,7 +91,7 @@ function BossJobsContent() {
             <h1 className="text-xl font-black text-[var(--color-text-primary)] tracking-tight">My Jobs</h1>
             <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{total} total jobs</p>
           </div>
-          {platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed) ? (
+          {!subStatus?.isSubscribed ? (
             <Link href="/dashboard/boss/subscription">
               <Button size="sm" leftIcon={<CreditCard className="h-4 w-4" />} className="shadow-md shadow-[var(--color-primary)]/10">Subscribe to Post</Button>
             </Link>
@@ -135,7 +131,7 @@ function BossJobsContent() {
             <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
               {currentTab ? 'No jobs match this status filter.' : "You haven't posted any jobs yet."}
             </p>
-            {platformSettings?.bossSubscriptionEnabled && (!subStatus || !subStatus.isSubscribed) ? (
+            {!subStatus?.isSubscribed ? (
               <Link href="/dashboard/boss/subscription" className="block w-full sm:w-auto">
                 <Button size="sm" leftIcon={<CreditCard className="h-4 w-4" />} className="whitespace-nowrap w-full sm:w-auto">Subscribe to Post</Button>
               </Link>
