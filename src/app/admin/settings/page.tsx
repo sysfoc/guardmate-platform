@@ -16,6 +16,22 @@ import { useUser } from '@/context/UserContext';
 import { sendAdminInvite, getAdminManagement, AdminManagementData } from '@/lib/api/adminAuth.api';
 import { AdminLevel } from '@/types/enums';
 
+// ─── Standalone InputField (must be outside main component to avoid focus loss) ──
+function InputField({ label, value, onChange, type = 'text', placeholder = '' }: any) {
+  return (
+    <div className="flex flex-col space-y-1">
+      <label className="text-sm font-medium text-[var(--color-text-secondary)]">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-md border border-[var(--color-input-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+      />
+    </div>
+  );
+}
+
 export default function AdminSettingsPage() {
   const { refreshSettings } = usePlatformContext();
   const { user: currentUser } = useUser();
@@ -68,7 +84,6 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -309,30 +324,6 @@ export default function AdminSettingsPage() {
       };
     });
   };
-
-  const InputField = ({ label, value, onChange, type = 'text', placeholder = '' }: any) => (
-    <div className="flex flex-col space-y-1">
-      <label className="text-sm font-medium text-[var(--color-text-secondary)]">{label}</label>
-      <div className="relative">
-        <input
-          type={type === 'password' && showPassword ? 'text' : type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full rounded-md border border-[var(--color-input-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-        />
-        {type === 'password' && (
-          <button
-            type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        )}
-      </div>
-    </div>
-  );
 
   const categories = {
     'Account Notifications': [
