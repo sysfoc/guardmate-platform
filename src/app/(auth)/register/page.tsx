@@ -195,11 +195,7 @@ function RegisterForm() {
         setIsLoading(false);
         return;
       }
-      if (platformCountry && formData.phoneCountryCode && formData.phoneCountryCode !== platformCountry.countryCode) {
-        toast.error(`Only ${platformCountry.countryName} phone numbers are accepted on this platform.`);
-        setIsLoading(false);
-        return;
-      }
+
       if (formData.phone.trim() && !formData.phoneCountryCode && !platformCountry) {
         toast.error('Please select a country for your phone number.');
         setIsLoading(false);
@@ -378,7 +374,7 @@ function RegisterForm() {
             label="First Name"
             placeholder="John"
             value={formData.firstName}
-            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
             leftIcon={<UserCircle2 className="h-5 w-5" />}
             required
             autoComplete="given-name"
@@ -387,7 +383,7 @@ function RegisterForm() {
             label="Last Name"
             placeholder="Doe"
             value={formData.lastName}
-            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
             required
             autoComplete="family-name"
           />
@@ -401,7 +397,7 @@ function RegisterForm() {
               type="email"
               placeholder="john@example.com"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               leftIcon={<Mail className="h-5 w-5" />}
               required
               autoComplete="email"
@@ -411,8 +407,8 @@ function RegisterForm() {
               label="Phone Number"
               value={formData.phone}
               defaultCountry={formData.phoneCountryCode as any}
-              onChange={(val) => setFormData({ ...formData, phone: val })}
-              onCountryChange={(c) => setFormData({ ...formData, phoneCountryCode: c.code })}
+              onChange={(val) => setFormData(prev => ({ ...prev, phone: val }))}
+              onCountryChange={(c) => setFormData(prev => ({ ...prev, phoneCountryCode: c.code }))}
               lockedCountry={lockedCountry}
               required
             />
@@ -423,7 +419,7 @@ function RegisterForm() {
                 type="password"
                 placeholder="••••••••"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 leftIcon={<Lock className="h-5 w-5" />}
                 required
                 autoComplete="new-password"
@@ -435,7 +431,7 @@ function RegisterForm() {
                 type="password"
                 placeholder="••••••••"
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 leftIcon={<KeyRound className="h-5 w-5" />}
                 required
                 autoComplete="new-password"
@@ -466,7 +462,7 @@ function RegisterForm() {
             </span>
           }
           checked={formData.termsAccepted}
-          onChange={(e) => setFormData({ ...formData, termsAccepted: e.target.checked })}
+          onChange={(e) => setFormData(prev => ({ ...prev, termsAccepted: e.target.checked }))}
         />
 
         <Button
